@@ -1,4 +1,5 @@
-import { useEffect, useState, type PointerEvent } from "react";
+import { useState, type PointerEvent } from "react";
+import { useAppStore } from "../../store/useAppStore";
 import type { Board, Scrap } from "../../types";
 import { ScrapRenderer } from "./ScrapRenderer";
 
@@ -6,6 +7,8 @@ type DragState = {
   scrapId: string;
   pointerOffsetX: number;
   pointerOffsetY: number;
+  x: number;
+  y: number;
 };
 
 type BoardSurfaceProps = {
@@ -13,22 +16,8 @@ type BoardSurfaceProps = {
 };
 
 export function BoardSurface({ board }: BoardSurfaceProps) {
-  const [scraps, setScraps] = useState(board.scraps);
+  const updateScrapPosition = useAppStore((state) => state.updateScrapPosition);
   const [dragState, setDragState] = useState<DragState | null>(null);
-
-  useEffect(() => {
-    if (dragState === null) {
-      setScraps(board.scraps);
-    }
-  }, [board.scraps, dragState]);
-
-  const updateScrapPosition = (scrapId: string, x: number, y: number) => {
-    setScraps((currentScraps) =>
-      currentScraps.map((scrap) =>
-        scrap.id === scrapId ? { ...scrap, x, y } : scrap,
-      ),
-    );
-  };
 
   const handlePointerDown = (
     event: PointerEvent<HTMLDivElement>,
@@ -44,6 +33,8 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
       scrapId: scrap.id,
       pointerOffsetX: event.clientX - bounds.left - scrap.x,
       pointerOffsetY: event.clientY - bounds.top - scrap.y,
+      x: scrap.x,
+      y: scrap.y,
     });
 
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -58,14 +49,22 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
     const nextX = event.clientX - bounds.left - dragState.pointerOffsetX;
     const nextY = event.clientY - bounds.top - dragState.pointerOffsetY;
 
-    updateScrapPosition(
-      dragState.scrapId,
-      Math.max(24, nextX),
-      Math.max(24, nextY),
+    setDragState((current) =>
+      current
+        ? {
+            ...current,
+            x: Math.max(24, nextX),
+            y: Math.max(24, nextY),
+          }
+        : null,
     );
   };
 
   const handlePointerUp = () => {
+    if (dragState) {
+      updateScrapPosition(board.id, dragState.scrapId, dragState.x, dragState.y);
+    }
+
     setDragState(null);
   };
 
@@ -80,14 +79,21 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        {scraps.map((scrap) => (
-          <ScrapRenderer
-            key={scrap.id}
-            isDragging={dragState?.scrapId === scrap.id}
-            onPointerDown={handlePointerDown}
-            scrap={scrap}
-          />
-        ))}
+        {board.scraps.map((scrap) => {
+          const renderedScrap =
+            dragState?.scrapId === scrap.id
+              ? { ...scrap, x: dragState.x, y: dragState.y }
+              : scrap;
+
+          return (
+            <ScrapRenderer
+              key={scrap.id}
+              isDragging={dragState?.scrapId === scrap.id}
+              onPointerDown={handlePointerDown}
+              scrap={renderedScrap}
+            />
+          );
+        })}
       </div>
     </div>
   );

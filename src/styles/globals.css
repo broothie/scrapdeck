@@ -145,9 +145,40 @@ a {
   gap: 1rem;
 }
 
+.board-view__title-block {
+  display: grid;
+  gap: 0.1rem;
+}
+
 .board-view__summary {
   max-width: 30rem;
-  text-align: right;
+}
+
+.board-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.65rem;
+}
+
+.board-toolbar__button {
+  padding: 0.72rem 1rem;
+  color: #f5efe2;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.board-toolbar__button:hover,
+.board-toolbar__button:focus-visible {
+  transform: translateY(-1px);
+  background: rgba(240, 189, 102, 0.14);
+  border-color: rgba(240, 189, 102, 0.45);
 }
 
 .board-surface-wrap {
@@ -201,9 +232,8 @@ a {
   top: 0;
   left: 0;
   cursor: grab;
-  transition:
-    transform 140ms ease,
-    box-shadow 140ms ease;
+  transition: box-shadow 140ms ease;
+  will-change: transform;
 }
 
 .scrap-frame.is-dragging {
@@ -330,6 +360,10 @@ a {
 
   .board-view__summary {
     text-align: left;
+  }
+
+  .board-toolbar {
+    justify-content: start;
   }
 }
 
