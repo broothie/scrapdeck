@@ -37,6 +37,7 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
         {scrap.description ? <Paragraph>{scrap.description}</Paragraph> : null}
         <Anchor
           href={scrap.url}
+          className="nodrag nopan"
           theme="blue"
           style={{ marginTop: "auto" }}
           onPointerDown={(event) => event.stopPropagation()}

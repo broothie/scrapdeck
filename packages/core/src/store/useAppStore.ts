@@ -2,16 +2,17 @@ import { create } from "zustand";
 import { mockBoards } from "../data/mockBoards";
 import type { Board, Scrap } from "../types";
 
+type ScrapLayoutPatch = Partial<Pick<Scrap, "x" | "y" | "width" | "height">>;
+
 type AppState = {
   boards: Board[];
   activeBoardId: string;
   setActiveBoard: (boardId: string) => void;
   addScrap: (boardId: string, scrap: Scrap) => void;
-  updateScrapPosition: (
+  updateScrapLayout: (
     boardId: string,
     scrapId: string,
-    x: number,
-    y: number,
+    patch: ScrapLayoutPatch,
   ) => void;
 };
 
@@ -27,14 +28,14 @@ export const useAppStore = create<AppState>((set) => ({
           : board,
       ),
     })),
-  updateScrapPosition: (boardId, scrapId, x, y) =>
+  updateScrapLayout: (boardId, scrapId, patch) =>
     set((state) => ({
       boards: state.boards.map((board) =>
         board.id === boardId
           ? {
               ...board,
               scraps: board.scraps.map((scrap) =>
-                scrap.id === scrapId ? { ...scrap, x, y } : scrap,
+                scrap.id === scrapId ? { ...scrap, ...patch } : scrap,
               ),
             }
           : board,

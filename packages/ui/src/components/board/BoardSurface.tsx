@@ -1,14 +1,18 @@
-import { useState, type PointerEvent } from "react";
+import { useEffect, type MouseEvent } from "react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  MiniMap,
+  ReactFlow,
+  useNodesState,
+} from "@xyflow/react";
 import { Text, View } from "tamagui";
 import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
-import { ScrapRenderer } from "./ScrapRenderer";
+import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
 
-type DragState = {
-  scrapId: string;
-  pointerOffsetX: number;
-  pointerOffsetY: number;
-  x: number;
-  y: number;
+const nodeTypes = {
+  scrap: ScrapNode,
 };
 
 type BoardSurfaceProps = {
@@ -16,56 +20,35 @@ type BoardSurfaceProps = {
 };
 
 export function BoardSurface({ board }: BoardSurfaceProps) {
-  const updateScrapPosition = useAppStore((state) => state.updateScrapPosition);
-  const [dragState, setDragState] = useState<DragState | null>(null);
+  const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
+  const [nodes, setNodes, onNodesChange] = useNodesState<ScrapFlowNode>([]);
 
-  const handlePointerDown = (
-    event: PointerEvent<HTMLDivElement>,
-    scrap: Scrap,
-  ) => {
-    const bounds = event.currentTarget.parentElement?.getBoundingClientRect();
-
-    if (!bounds) {
-      return;
-    }
-
-    setDragState({
-      scrapId: scrap.id,
-      pointerOffsetX: event.clientX - bounds.left - scrap.x,
-      pointerOffsetY: event.clientY - bounds.top - scrap.y,
-      x: scrap.x,
-      y: scrap.y,
-    });
-
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!dragState) {
-      return;
-    }
-
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const nextX = event.clientX - bounds.left - dragState.pointerOffsetX;
-    const nextY = event.clientY - bounds.top - dragState.pointerOffsetY;
-
-    setDragState((current) =>
-      current
-        ? {
-            ...current,
-            x: Math.max(24, nextX),
-            y: Math.max(24, nextY),
-          }
-        : null,
+  useEffect(() => {
+    setNodes(
+      board.scraps.map((scrap) => ({
+        id: scrap.id,
+        type: "scrap",
+        position: {
+          x: scrap.x,
+          y: scrap.y,
+        },
+        width: scrap.width,
+        height: scrap.height,
+        data: {
+          scrap,
+          onResizeEnd: (scrapId, nextLayout) => {
+            updateScrapLayout(board.id, scrapId, nextLayout);
+          },
+        },
+      })),
     );
-  };
+  }, [board, setNodes, updateScrapLayout]);
 
-  const handlePointerUp = () => {
-    if (dragState) {
-      updateScrapPosition(board.id, dragState.scrapId, dragState.x, dragState.y);
-    }
-
-    setDragState(null);
+  const handleNodeDragStop = (_event: MouseEvent, node: ScrapFlowNode) => {
+    updateScrapLayout(board.id, node.id, {
+      x: Math.max(24, node.position.x),
+      y: Math.max(24, node.position.y),
+    });
   };
 
   return (
@@ -82,56 +65,70 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
           "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 32px 80px rgba(0, 0, 0, 0.24)",
       }}
     >
-      <View
-        style={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          opacity: 0.28,
-          backgroundImage:
-            "linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-        }}
-      />
+      <ReactFlow
+        key={board.id}
+        className="scrapdeck-flow"
+        nodes={nodes}
+        edges={[]}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onNodeDragStop={handleNodeDragStop}
+        fitView
+        fitViewOptions={{ padding: 0.18 }}
+        minZoom={0.4}
+        maxZoom={1.8}
+        panOnScroll
+        deleteKeyCode={null}
+        nodesConnectable={false}
+        nodesFocusable
+      >
+        <Background
+          color="rgba(255,255,255,0.1)"
+          gap={28}
+          variant={BackgroundVariant.Dots}
+        />
+        <MiniMap
+          pannable
+          zoomable
+          maskColor="rgba(8, 12, 18, 0.76)"
+          nodeColor={(node) => {
+            const scrap = node.data?.scrap as Scrap | undefined;
+
+            if (!scrap) {
+              return "#8c96aa";
+            }
+
+            if (scrap.type === "note") {
+              return "#f1c66f";
+            }
+
+            if (scrap.type === "image") {
+              return "#7fd3b5";
+            }
+
+            return "#82a7ff";
+          }}
+        />
+        <Controls showInteractive={false} />
+      </ReactFlow>
       <View
         style={{
           position: "absolute",
           top: 16,
           right: 16,
-          zIndex: 2,
+          zIndex: 6,
           padding: "0.45rem 0.8rem",
           border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: 999,
-          background: "rgba(9,16,23,0.66)",
+          background: "rgba(9,16,23,0.72)",
           backdropFilter: "blur(12px)",
+          pointerEvents: "none",
         }}
       >
         <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
-          Drag scraps to rearrange this board.
+          Drag, pan, zoom, and resize scraps.
         </Text>
       </View>
-      <div
-        style={{ position: "relative", minHeight: "100%", overflow: "hidden" }}
-        onPointerLeave={handlePointerUp}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-      >
-        {board.scraps.map((scrap) => {
-          const renderedScrap =
-            dragState?.scrapId === scrap.id
-              ? { ...scrap, x: dragState.x, y: dragState.y }
-              : scrap;
-
-          return (
-            <ScrapRenderer
-              key={scrap.id}
-              isDragging={dragState?.scrapId === scrap.id}
-              onPointerDown={handlePointerDown}
-              scrap={renderedScrap}
-            />
-          );
-        })}
-      </div>
     </View>
   );
 }

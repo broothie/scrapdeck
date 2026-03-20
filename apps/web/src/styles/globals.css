@@ -41,3 +41,26 @@ button {
 a {
   color: inherit;
 }
+
+.scrapdeck-flow {
+  width: 100%;
+  height: 100%;
+}
+
+.scrapdeck-flow .react-flow__node-scrap {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  border-radius: 18px;
+}
+
+.scrapdeck-flow .react-flow__node-scrap.selectable.selected {
+  box-shadow: none;
+}
+
+.scrapdeck-flow .react-flow__controls,
+.scrapdeck-flow .react-flow__minimap {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(5, 8, 14, 0.22);
+}
