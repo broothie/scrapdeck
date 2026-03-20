@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
 import type { Board } from "../../types";
 import { BoardSurface } from "./BoardSurface";
 import { useAppStore } from "../../store/useAppStore";
@@ -16,14 +17,6 @@ export function BoardView({ board }: BoardViewProps) {
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkError, setLinkError] = useState("");
-  const linkInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (isAddingLink) {
-      linkInputRef.current?.focus();
-      linkInputRef.current?.select();
-    }
-  }, [isAddingLink]);
 
   const closeLinkComposer = () => {
     setIsAddingLink(false);
@@ -115,35 +108,41 @@ export function BoardView({ board }: BoardViewProps) {
   };
 
   return (
-    <section className="board-view">
-      <header className="board-view__header">
-        <div className="board-view__title-block">
-          <p className="board-view__eyebrow">Active board</p>
-          <h2>{board.title}</h2>
-          <p className="board-view__summary">{board.description}</p>
-        </div>
-        <div className="board-toolbar" aria-label="Create scraps">
-          <button className="board-toolbar__button" onClick={handleAddNote} type="button">
+    <YStack gap="$4" height="100%">
+      <XStack style={{ alignItems: "flex-end", justifyContent: "space-between", gap: "1rem" }}>
+        <YStack style={{ gap: "0.25rem" }}>
+          <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
+            Active board
+          </Text>
+          <H2 style={{ margin: 0 }}>{board.title}</H2>
+          <Paragraph style={{ margin: 0, maxWidth: 480 }}>
+            {board.description}
+          </Paragraph>
+        </YStack>
+        <XStack style={{ gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <Button onPress={handleAddNote}>
             Add note
-          </button>
-          <button className="board-toolbar__button" onClick={handleAddImage} type="button">
+          </Button>
+          <Button onPress={handleAddImage}>
             Add image
-          </button>
-          <button className="board-toolbar__button" onClick={handleAddLink} type="button">
+          </Button>
+          <Button onPress={handleAddLink}>
             Add link
-          </button>
-        </div>
-      </header>
+          </Button>
+        </XStack>
+      </XStack>
 
       {isAddingLink ? (
-        <div className="link-composer" role="dialog" aria-label="Add a link">
-          <div className="link-composer__copy">
-            <strong>Save a link</strong>
-            <span>Paste a full URL and we’ll create a link scrap for this board.</span>
-          </div>
-          <input
-            ref={linkInputRef}
-            className="link-composer__input"
+        <Card style={{ borderRadius: 16, borderWidth: 1 }}>
+          <YStack gap="$3" style={{ padding: "1rem" }} role="dialog" aria-label="Add a link">
+            <YStack gap="$1">
+              <Text fontWeight="700">Save a link</Text>
+              <Paragraph>
+              Paste a full URL and we&apos;ll create a link scrap for this board.
+              </Paragraph>
+            </YStack>
+            <Input
+            value={linkUrl}
             onChange={(event) => setLinkUrl(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -155,22 +154,26 @@ export function BoardView({ board }: BoardViewProps) {
               }
             }}
             placeholder="https://example.com/article"
-            type="url"
-            value={linkUrl}
+            keyboardType="url"
           />
-          {linkError ? <p className="link-composer__error">{linkError}</p> : null}
-          <div className="link-composer__actions">
-            <button className="board-toolbar__button" onClick={closeLinkComposer} type="button">
+          {linkError ? (
+            <Text theme="red" fontSize={14}>
+              {linkError}
+            </Text>
+          ) : null}
+          <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
+            <Button onPress={closeLinkComposer}>
               Cancel
-            </button>
-            <button className="board-toolbar__button is-primary" onClick={handleSaveLink} type="button">
+            </Button>
+            <Button theme="blue" onPress={handleSaveLink}>
               Save link
-            </button>
-          </div>
-        </div>
+            </Button>
+          </XStack>
+          </YStack>
+        </Card>
       ) : null}
 
       <BoardSurface board={board} />
-    </section>
+    </YStack>
   );
 }

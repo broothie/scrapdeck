@@ -1,3 +1,4 @@
+import { Button, H2, Paragraph, Text, YStack } from "tamagui";
 import type { Board } from "../../types";
 
 type BoardSidebarProps = {
@@ -12,34 +13,58 @@ export function BoardSidebar({
   onSelectBoard,
 }: BoardSidebarProps) {
   return (
-    <aside className="sidebar">
-      <div className="sidebar__header">
-        <p className="sidebar__eyebrow">Scrapdeck</p>
-        <h1>Boards</h1>
-        <p className="sidebar__copy">
+    <YStack
+      style={{
+        gap: "1.5rem",
+        width: 290,
+        minWidth: 250,
+        padding: "1.5rem",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(10,14,20,0.74)",
+        backdropFilter: "blur(24px)",
+      }}
+    >
+      <YStack style={{ gap: "0.5rem" }}>
+        <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
+          Scrapdeck
+        </Text>
+        <H2 style={{ margin: 0 }}>
+          Boards
+        </H2>
+        <Paragraph style={{ margin: 0 }}>
           Spatial collections for notes, images, and saved links.
-        </p>
-      </div>
+        </Paragraph>
+      </YStack>
 
-      <nav className="sidebar__nav" aria-label="Boards">
+      <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
         {boards.map((board) => {
           const isActive = board.id === activeBoardId;
 
           return (
-            <button
+            <Button
               key={board.id}
-              className={`board-nav-item${isActive ? " is-active" : ""}`}
-              onClick={() => onSelectBoard(board.id)}
-              type="button"
+              onPress={() => onSelectBoard(board.id)}
+              theme={isActive ? "blue" : undefined}
+              variant={isActive ? undefined : "outlined"}
+              style={{
+                width: "100%",
+                justifyContent: "flex-start",
+                height: "auto",
+                minHeight: 76,
+              }}
             >
-              <span className="board-nav-item__title">{board.title}</span>
-              <span className="board-nav-item__meta">
-                {board.scraps.length} scraps
-              </span>
-            </button>
+              <YStack style={{ gap: "0.25rem" }}>
+                <Text style={{ fontSize: 16, fontWeight: 700 }}>
+                  {board.title}
+                </Text>
+                <Text style={{ opacity: 0.7, fontSize: 14 }}>
+                  {board.scraps.length} scraps
+                </Text>
+              </YStack>
+            </Button>
           );
         })}
-      </nav>
-    </aside>
+      </YStack>
+    </YStack>
   );
 }

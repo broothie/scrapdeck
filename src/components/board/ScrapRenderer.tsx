@@ -1,4 +1,4 @@
-import type { PointerEvent } from "react";
+import type { CSSProperties, PointerEvent } from "react";
 import type { Scrap } from "../../types";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
@@ -18,15 +18,21 @@ export function ScrapRenderer({
   isDragging,
   onPointerDown,
 }: ScrapRendererProps) {
-  const style = {
+  const style: CSSProperties = {
+    position: "absolute",
+    top: 0,
+    left: 0,
     width: `${scrap.width}px`,
     height: `${scrap.height}px`,
     transform: `translate(${scrap.x}px, ${scrap.y}px)`,
+    cursor: isDragging ? "grabbing" : "grab",
+    transition: "box-shadow 140ms ease",
+    willChange: "transform",
+    zIndex: isDragging ? 5 : undefined,
   };
 
   return (
     <div
-      className={`scrap-frame${isDragging ? " is-dragging" : ""}`}
       onPointerDown={(event) => onPointerDown(event, scrap)}
       style={style}
     >

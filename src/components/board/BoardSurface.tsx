@@ -1,4 +1,5 @@
 import { useState, type PointerEvent } from "react";
+import { Text, View } from "tamagui";
 import { useAppStore } from "../../store/useAppStore";
 import type { Board, Scrap } from "../../types";
 import { ScrapRenderer } from "./ScrapRenderer";
@@ -69,12 +70,49 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
   };
 
   return (
-    <div className="board-surface-wrap">
-      <div className="board-surface__hint">
-        Drag scraps to rearrange this board.
-      </div>
+    <View
+      style={{
+        position: "relative",
+        flex: 1,
+        overflow: "hidden",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 28,
+        background:
+          "linear-gradient(0deg, rgba(5, 10, 14, 0.08), rgba(5, 10, 14, 0.08)), radial-gradient(circle at 20% 0%, rgba(240, 189, 102, 0.12), transparent 28%), linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02))",
+        boxShadow:
+          "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 32px 80px rgba(0, 0, 0, 0.24)",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          opacity: 0.28,
+          backgroundImage:
+            "linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          top: 16,
+          right: 16,
+          zIndex: 2,
+          padding: "0.45rem 0.8rem",
+          border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 999,
+          background: "rgba(9,16,23,0.66)",
+          backdropFilter: "blur(12px)",
+        }}
+      >
+        <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
+          Drag scraps to rearrange this board.
+        </Text>
+      </View>
       <div
-        className="board-surface"
+        style={{ position: "relative", minHeight: "100%", overflow: "hidden" }}
         onPointerLeave={handlePointerUp}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -95,6 +133,6 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
           );
         })}
       </div>
-    </div>
+    </View>
   );
 }

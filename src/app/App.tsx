@@ -1,3 +1,4 @@
+import { View, XStack } from "tamagui";
 import { BoardView } from "../components/board/BoardView";
 import { BoardSidebar } from "../components/sidebar/BoardSidebar";
 import { useAppStore } from "../store/useAppStore";
@@ -11,15 +12,22 @@ export function App() {
     boards.find((board) => board.id === activeBoardId) ?? boards[0];
 
   return (
-    <div className="app-shell">
+    <XStack
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#091017",
+        background:
+          "radial-gradient(circle at top, rgba(242, 196, 114, 0.16), transparent 30%), linear-gradient(135deg, #1a2431 0%, #0f1319 50%, #091017 100%)",
+      }}
+    >
       <BoardSidebar
         activeBoardId={activeBoard.id}
         boards={boards}
         onSelectBoard={setActiveBoard}
       />
-      <main className="main-panel">
+      <View style={{ flex: 1, padding: "1.5rem" }}>
         <BoardView board={activeBoard} />
-      </main>
-    </div>
+      </View>
+    </XStack>
   );
 }
