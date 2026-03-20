@@ -72,7 +72,6 @@ export const mockBoards: Board[] = [
         title: "Why the best research tools feel spatial, not sequential",
         description:
           "An argument for arranging references next to each other instead of burying them in folders.",
-        previewImage: "/demo-assets/browser-futures.svg",
       },
       {
         id: "note-quote",

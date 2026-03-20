@@ -181,6 +181,63 @@ a {
   border-color: rgba(240, 189, 102, 0.45);
 }
 
+.board-toolbar__button.is-primary {
+  color: #20160a;
+  background: #e7bc6b;
+  border-color: #f0bd66;
+}
+
+.board-toolbar__button.is-primary:hover,
+.board-toolbar__button.is-primary:focus-visible {
+  background: #f0c981;
+}
+
+.link-composer {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  background: rgba(10, 14, 20, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
+
+.link-composer__copy {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.link-composer__copy span {
+  color: rgba(245, 239, 226, 0.72);
+  font-size: 0.94rem;
+}
+
+.link-composer__input {
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  color: #f5efe2;
+  background: #111821;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  outline: none;
+}
+
+.link-composer__input:focus {
+  border-color: rgba(240, 189, 102, 0.5);
+  box-shadow: 0 0 0 3px rgba(240, 189, 102, 0.15);
+}
+
+.link-composer__error {
+  margin: 0;
+  color: #f2a98b;
+  font-size: 0.9rem;
+}
+
+.link-composer__actions {
+  display: flex;
+  justify-content: end;
+  gap: 0.65rem;
+}
+
 .board-surface-wrap {
   position: relative;
   overflow: hidden;
@@ -276,6 +333,11 @@ a {
   color: #1d2330;
 }
 
+.scrap-card--link-no-preview .scrap-card__link-body {
+  justify-content: flex-start;
+  gap: 0.1rem;
+}
+
 .scrap-card__pill {
   align-self: flex-start;
   margin-bottom: 0.8rem;
@@ -301,6 +363,7 @@ a {
 
 .scrap-card__preview {
   height: 48%;
+  border-bottom: 1px solid #d7c7ad;
 }
 
 .scrap-card__caption {

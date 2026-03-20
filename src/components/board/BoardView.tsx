@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import type { Board } from "../../types";
 import { BoardSurface } from "./BoardSurface";
 import { useAppStore } from "../../store/useAppStore";
@@ -12,6 +13,23 @@ type BoardViewProps = {
 
 export function BoardView({ board }: BoardViewProps) {
   const addScrap = useAppStore((state) => state.addScrap);
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState("");
+  const linkInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (isAddingLink) {
+      linkInputRef.current?.focus();
+      linkInputRef.current?.select();
+    }
+  }, [isAddingLink]);
+
+  const closeLinkComposer = () => {
+    setIsAddingLink(false);
+    setLinkUrl("");
+    setLinkError("");
+  };
 
   const nextPlacement = () => {
     const offset = board.scraps.length * 22;
@@ -54,7 +72,31 @@ export function BoardView({ board }: BoardViewProps) {
   };
 
   const handleAddLink = () => {
+    setIsAddingLink(true);
+    setLinkError("");
+  };
+
+  const handleSaveLink = () => {
+    const trimmedUrl = linkUrl.trim();
+
+    if (!trimmedUrl) {
+      setLinkError("Enter a URL to save.");
+      return;
+    }
+
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(trimmedUrl);
+    } catch {
+      setLinkError("Enter a valid URL, including https://");
+      return;
+    }
+
     const { x, y } = nextPlacement();
+    const hostname = parsedUrl.hostname.replace(/^www\./, "");
+    const path = parsedUrl.pathname === "/" ? "" : parsedUrl.pathname;
+    const summary = [hostname, path].filter(Boolean).join("");
 
     addScrap(board.id, {
       id: createId("link"),
@@ -62,13 +104,14 @@ export function BoardView({ board }: BoardViewProps) {
       x,
       y,
       width: 360,
-      height: 244,
-      url: "https://example.com/new-reference",
-      siteName: "Saved Link",
-      title: "New website preview",
-      description: "A placeholder saved link for testing composition on the board.",
-      previewImage: "/demo-assets/design-dispatch.svg",
+      height: 208,
+      url: parsedUrl.toString(),
+      siteName: hostname || "Saved Link",
+      title: summary || parsedUrl.toString(),
+      description: "Saved from a pasted URL.",
     });
+
+    closeLinkComposer();
   };
 
   return (
@@ -91,6 +134,41 @@ export function BoardView({ board }: BoardViewProps) {
           </button>
         </div>
       </header>
+
+      {isAddingLink ? (
+        <div className="link-composer" role="dialog" aria-label="Add a link">
+          <div className="link-composer__copy">
+            <strong>Save a link</strong>
+            <span>Paste a full URL and we’ll create a link scrap for this board.</span>
+          </div>
+          <input
+            ref={linkInputRef}
+            className="link-composer__input"
+            onChange={(event) => setLinkUrl(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                handleSaveLink();
+              }
+
+              if (event.key === "Escape") {
+                closeLinkComposer();
+              }
+            }}
+            placeholder="https://example.com/article"
+            type="url"
+            value={linkUrl}
+          />
+          {linkError ? <p className="link-composer__error">{linkError}</p> : null}
+          <div className="link-composer__actions">
+            <button className="board-toolbar__button" onClick={closeLinkComposer} type="button">
+              Cancel
+            </button>
+            <button className="board-toolbar__button is-primary" onClick={handleSaveLink} type="button">
+              Save link
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <BoardSurface board={board} />
     </section>
