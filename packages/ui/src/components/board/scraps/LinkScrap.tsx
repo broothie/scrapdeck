@@ -1,5 +1,5 @@
 import { Anchor, Card, H4, Paragraph, SizableText, YStack } from "tamagui";
-import type { LinkScrap } from "../../../types";
+import type { LinkScrap } from "@scrapdeck/core";
 
 type LinkScrapCardProps = {
   scrap: LinkScrap;

@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
-import type { Board } from "../../types";
+import { useAppStore, type Board } from "@scrapdeck/core";
 import { BoardSurface } from "./BoardSurface";
-import { useAppStore } from "../../store/useAppStore";
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -138,37 +137,37 @@ export function BoardView({ board }: BoardViewProps) {
             <YStack gap="$1">
               <Text fontWeight="700">Save a link</Text>
               <Paragraph>
-              Paste a full URL and we&apos;ll create a link scrap for this board.
+                Paste a full URL and we&apos;ll create a link scrap for this board.
               </Paragraph>
             </YStack>
             <Input
-            value={linkUrl}
-            onChange={(event) => setLinkUrl(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                handleSaveLink();
-              }
+              value={linkUrl}
+              onChange={(event) => setLinkUrl(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  handleSaveLink();
+                }
 
-              if (event.key === "Escape") {
-                closeLinkComposer();
-              }
-            }}
-            placeholder="https://example.com/article"
-            keyboardType="url"
-          />
-          {linkError ? (
-            <Text theme="red" fontSize={14}>
-              {linkError}
-            </Text>
-          ) : null}
-          <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
-            <Button onPress={closeLinkComposer}>
-              Cancel
-            </Button>
-            <Button theme="blue" onPress={handleSaveLink}>
-              Save link
-            </Button>
-          </XStack>
+                if (event.key === "Escape") {
+                  closeLinkComposer();
+                }
+              }}
+              placeholder="https://example.com/article"
+              keyboardType="url"
+            />
+            {linkError ? (
+              <Text theme="red" fontSize={14}>
+                {linkError}
+              </Text>
+            ) : null}
+            <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
+              <Button onPress={closeLinkComposer}>
+                Cancel
+              </Button>
+              <Button theme="blue" onPress={handleSaveLink}>
+                Save link
+              </Button>
+            </XStack>
           </YStack>
         </Card>
       ) : null}

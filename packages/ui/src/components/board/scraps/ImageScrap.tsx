@@ -1,5 +1,5 @@
 import { Card, Paragraph, YStack } from "tamagui";
-import type { ImageScrap } from "../../../types";
+import type { ImageScrap } from "@scrapdeck/core";
 
 type ImageScrapCardProps = {
   scrap: ImageScrap;

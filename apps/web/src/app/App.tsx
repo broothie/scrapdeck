@@ -1,7 +1,6 @@
 import { View, XStack } from "tamagui";
-import { BoardView } from "../components/board/BoardView";
-import { BoardSidebar } from "../components/sidebar/BoardSidebar";
-import { useAppStore } from "../store/useAppStore";
+import { useAppStore } from "@scrapdeck/core";
+import { BoardSidebar, BoardView } from "@scrapdeck/ui";
 
 export function App() {
   const boards = useAppStore((state) => state.boards);

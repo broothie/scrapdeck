@@ -1,0 +1,12 @@
+{
+  "name": "@scrapdeck/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "zustand": "^5.0.1"
+  }
+}

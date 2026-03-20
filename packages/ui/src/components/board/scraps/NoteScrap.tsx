@@ -1,5 +1,5 @@
 import { Card, H4, Paragraph, SizableText, YStack } from "tamagui";
-import type { NoteScrap } from "../../../types";
+import type { NoteScrap } from "@scrapdeck/core";
 
 type NoteScrapCardProps = {
   scrap: NoteScrap;

@@ -1,5 +1,5 @@
 import { Button, H2, Paragraph, Text, YStack } from "tamagui";
-import type { Board } from "../../types";
+import type { Board } from "@scrapdeck/core";
 
 type BoardSidebarProps = {
   boards: Board[];

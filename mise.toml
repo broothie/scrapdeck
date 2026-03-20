@@ -1,2 +1,10 @@
 [tools]
 node = "22"
+
+[tasks.dev]
+description = "Run the Scrapdeck web app"
+run = "npm run dev"
+
+[tasks.build]
+description = "Build the Scrapdeck web app"
+run = "npm run build"

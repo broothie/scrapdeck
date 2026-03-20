@@ -1,5 +1,5 @@
 import type { CSSProperties, PointerEvent } from "react";
-import type { Scrap } from "../../types";
+import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
 import { NoteScrapCard } from "./scraps/NoteScrap";

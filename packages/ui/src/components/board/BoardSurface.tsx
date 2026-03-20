@@ -1,7 +1,6 @@
 import { useState, type PointerEvent } from "react";
 import { Text, View } from "tamagui";
-import { useAppStore } from "../../store/useAppStore";
-import type { Board, Scrap } from "../../types";
+import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { ScrapRenderer } from "./ScrapRenderer";
 
 type DragState = {
