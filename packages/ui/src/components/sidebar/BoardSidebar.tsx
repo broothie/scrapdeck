@@ -5,12 +5,18 @@ type BoardSidebarProps = {
   boards: Board[];
   activeBoardId: string;
   onSelectBoard: (boardId: string) => void;
+  accountUsername?: string;
+  onSignOut?: () => void;
+  isSigningOut?: boolean;
 };
 
 export function BoardSidebar({
   boards,
   activeBoardId,
   onSelectBoard,
+  accountUsername,
+  onSignOut,
+  isSigningOut = false,
 }: BoardSidebarProps) {
   return (
     <YStack
@@ -65,6 +71,38 @@ export function BoardSidebar({
           );
         })}
       </YStack>
+
+      {accountUsername ? (
+        <YStack
+          gap="$3"
+          style={{
+            marginTop: "auto",
+            paddingTop: "0.75rem",
+            borderTopWidth: 1,
+            borderTopColor: "rgba(255,255,255,0.08)",
+          }}
+        >
+          <YStack style={{ gap: "0.25rem" }}>
+            <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
+              Signed in
+            </Text>
+            {accountUsername ? (
+              <Text style={{ fontSize: 16, fontWeight: 700 }}>
+                @{accountUsername}
+              </Text>
+            ) : null}
+          </YStack>
+          {onSignOut ? (
+            <Button
+              onPress={onSignOut}
+              variant="outlined"
+              disabled={isSigningOut}
+            >
+              Sign out
+            </Button>
+          ) : null}
+        </YStack>
+      ) : null}
     </YStack>
   );
 }
