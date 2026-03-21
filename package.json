@@ -12,6 +12,10 @@
   "scripts": {
     "dev": "npm --workspace @scrapdeck/web run dev",
     "build": "npm --workspace @scrapdeck/web run build",
-    "preview": "npm --workspace @scrapdeck/web run preview"
+    "preview": "npm --workspace @scrapdeck/web run preview",
+    "db:types": "sh -c 'tmp=\"$(mktemp -t scrapdeck-database-types)\" && supabase gen types --lang=typescript --linked --schema public > \"$tmp\" && mv \"$tmp\" packages/core/src/database.types.ts'"
+  },
+  "devDependencies": {
+    "supabase": "^2.48.3"
   }
 }

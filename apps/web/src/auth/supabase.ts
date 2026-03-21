@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@scrapdeck/core";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const supabaseKey =
@@ -9,7 +10,7 @@ const supabaseKey =
 export const hasSupabaseConfig = Boolean(supabaseUrl && supabaseKey);
 
 export const supabase = hasSupabaseConfig
-  ? createClient(supabaseUrl!, supabaseKey!, {
+  ? createClient<Database>(supabaseUrl!, supabaseKey!, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,

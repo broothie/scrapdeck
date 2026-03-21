@@ -5,6 +5,7 @@ type BoardSidebarProps = {
   boards: Board[];
   activeBoardId: string;
   onSelectBoard: (boardId: string) => void;
+  onCreateBoard?: () => void;
   accountUsername?: string;
   onSignOut?: () => void;
   isSigningOut?: boolean;
@@ -14,6 +15,7 @@ export function BoardSidebar({
   boards,
   activeBoardId,
   onSelectBoard,
+  onCreateBoard,
   accountUsername,
   onSignOut,
   isSigningOut = false,
@@ -43,6 +45,12 @@ export function BoardSidebar({
       </YStack>
 
       <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
+        {onCreateBoard ? (
+          <Button theme="blue" onPress={onCreateBoard}>
+            New board
+          </Button>
+        ) : null}
+
         {boards.map((board) => {
           const isActive = board.id === activeBoardId;
 
@@ -70,6 +78,12 @@ export function BoardSidebar({
             </Button>
           );
         })}
+
+        {boards.length === 0 ? (
+          <Paragraph style={{ margin: 0, opacity: 0.72 }}>
+            No boards yet. Create your first one to start arranging scraps.
+          </Paragraph>
+        ) : null}
       </YStack>
 
       {accountUsername ? (
