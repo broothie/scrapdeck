@@ -12,7 +12,7 @@ import {
 } from "@xyflow/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
-import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
+import { useAppStore, type Board, type Scrap } from "@plumboard/core";
 import { PlacementPreviewNode } from "./PlacementPreviewNode";
 import {
   resolveScrapMenuActions,
@@ -320,7 +320,7 @@ export function BoardSurface({
     >
       <ReactFlow
         key={board.id}
-        className="scrapdeck-flow"
+        className="plumboard-flow"
         nodes={flowNodes}
         edges={[]}
         nodeTypes={nodeTypes}

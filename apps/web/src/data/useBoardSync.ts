@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useAppStore } from "@scrapdeck/core";
+import { useAppStore } from "@plumboard/core";
 import { fetchBoards, saveBoards } from "./boards";
 
 function serializeBoards(value: unknown) {

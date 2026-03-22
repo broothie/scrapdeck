@@ -1,5 +1,5 @@
 import { useEffect, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useAppStore, type Board } from "@scrapdeck/core";
+import { useAppStore, type Board } from "@plumboard/core";
 
 export function useBoardMetadataEditor(board: Board) {
   const updateBoard = useAppStore((state) => state.updateBoard);

@@ -16,7 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, XStack, YStack, useTheme } from "tamagui";
-import { useAppStore, type NoteScrap } from "@scrapdeck/core";
+import { useAppStore, type NoteScrap } from "@plumboard/core";
 
 type NoteScrapCardProps = {
   boardId: string;
@@ -82,7 +82,7 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
     }
 
     const toolbarRect = toolbarRef.current.getBoundingClientRect();
-    const flowPane = toolbarRef.current.closest(".scrapdeck-flow");
+    const flowPane = toolbarRef.current.closest(".plumboard-flow");
 
     if (!(flowPane instanceof HTMLElement)) {
       return;
@@ -128,7 +128,7 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
     },
     editorProps: {
       attributes: {
-        class: "nodrag nopan scrapdeck-note-prose",
+        class: "nodrag nopan plumboard-note-prose",
         style: [
           "height:100%",
           "min-height:0",
@@ -372,7 +372,7 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
           ) : (
             <div
               ref={readBodyRef}
-              className="scrapdeck-note-prose"
+              className="plumboard-note-prose"
               style={{
                 flex: 1,
                 minHeight: 0,

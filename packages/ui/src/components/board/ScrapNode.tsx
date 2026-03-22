@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { NodeResizer, NodeToolbar, Position, type Node, type NodeProps } from "@xyflow/react";
-import type { Scrap } from "@scrapdeck/core";
+import type { Scrap } from "@plumboard/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
 import { NoteScrapCard } from "./scraps/NoteScrap";

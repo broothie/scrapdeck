@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@scrapdeck/core";
+import type { Database } from "@plumboard/core";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
 const supabaseKey =

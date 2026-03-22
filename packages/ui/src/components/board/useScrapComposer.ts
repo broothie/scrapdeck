@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { createScrapId, resolveScrapDefaults, useAppStore, type Scrap } from "@scrapdeck/core";
+import { createScrapId, resolveScrapDefaults, useAppStore, type Scrap } from "@plumboard/core";
 
 export type PlacementIntent = {
   type: Scrap["type"];

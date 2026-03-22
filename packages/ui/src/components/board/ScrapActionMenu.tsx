@@ -1,6 +1,6 @@
 import { useState, type CSSProperties } from "react";
 import { useTheme } from "tamagui";
-import type { Scrap } from "@scrapdeck/core";
+import type { Scrap } from "@plumboard/core";
 
 export type ScrapContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 

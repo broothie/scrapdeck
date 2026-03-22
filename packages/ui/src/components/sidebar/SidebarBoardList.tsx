@@ -1,5 +1,5 @@
 import { Button, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
-import type { Board } from "@scrapdeck/core";
+import type { Board } from "@plumboard/core";
 
 type SidebarBoardListProps = {
   boards: Board[];

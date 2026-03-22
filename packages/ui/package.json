@@ -1,5 +1,5 @@
 {
-  "name": "@scrapdeck/ui",
+  "name": "@plumboard/ui",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -8,7 +8,7 @@
     "./tamagui-config": "./src/tamagui.config.ts"
   },
   "dependencies": {
-    "@scrapdeck/core": "*",
+    "@plumboard/core": "*",
     "@tamagui/config": "^2.0.0-rc.29",
     "@tiptap/react": "^3.20.4",
     "@tiptap/starter-kit": "^3.20.4",

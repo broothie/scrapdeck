@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useTheme } from "tamagui";
-import { useAppStore } from "@scrapdeck/core";
-import { BoardSidebar, BoardView } from "@scrapdeck/ui";
+import { useAppStore } from "@plumboard/core";
+import { BoardSidebar, BoardView } from "@plumboard/ui";
 import { AuthProvider, useAuth } from "../auth/AuthProvider";
 import { supabase } from "../auth/supabase";
 import { EmptyBoardsState } from "./EmptyBoardsState";
@@ -43,13 +43,13 @@ function resolveStoredThemePreference(): ThemePreference {
     return "system";
   }
 
-  const savedPreference = window.localStorage.getItem("scrapdeck-theme-preference");
+  const savedPreference = window.localStorage.getItem("plumboard-theme-preference");
 
   if (savedPreference === "system" || savedPreference === "light" || savedPreference === "dark") {
     return savedPreference;
   }
 
-  const legacyTheme = window.localStorage.getItem("scrapdeck-theme");
+  const legacyTheme = window.localStorage.getItem("plumboard-theme");
   if (legacyTheme === "light" || legacyTheme === "dark") {
     return legacyTheme;
   }
@@ -309,8 +309,8 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("scrapdeck-theme-preference", themePreference);
-    window.localStorage.removeItem("scrapdeck-theme");
+    window.localStorage.setItem("plumboard-theme-preference", themePreference);
+    window.localStorage.removeItem("plumboard-theme");
     document.documentElement.style.colorScheme = themeMode;
     document.documentElement.dataset.themeMode = themeMode;
   }, [themeMode, themePreference]);

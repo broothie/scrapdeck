@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useAppStore, type Board } from "@scrapdeck/core";
+import { useAppStore, type Board } from "@plumboard/core";
 import type { ScrapContextMenuAction } from "./ScrapActionMenu";
 import { browserScrapEditAdapter, type ScrapEditAdapter } from "./scrapEditAdapter";
 

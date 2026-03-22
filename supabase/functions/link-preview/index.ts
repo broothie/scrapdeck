@@ -72,7 +72,7 @@ Deno.serve(async (request) => {
       redirect: "follow",
       signal: abortController.signal,
       headers: {
-        "user-agent": "ScrapdeckLinkPreviewBot/1.0",
+        "user-agent": "PlumboardLinkPreviewBot/1.0",
         "accept-language": "en-US,en;q=0.9",
       },
     });

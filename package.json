@@ -1,5 +1,5 @@
 {
-  "name": "scrapdeck",
+  "name": "plumboard",
   "private": true,
   "packageManager": "npm@11.7.0",
   "engines": {
@@ -10,11 +10,11 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm --workspace @scrapdeck/web run dev",
-    "build": "npm --workspace @scrapdeck/web run build",
-    "preview": "npm --workspace @scrapdeck/web run preview",
-    "test": "npm --workspace @scrapdeck/web run test",
-    "db:types": "sh -c 'tmp=\"$(mktemp -t scrapdeck-database-types)\" && supabase gen types --lang=typescript --linked --schema public > \"$tmp\" && mv \"$tmp\" packages/core/src/database.types.ts'"
+    "dev": "npm --workspace @plumboard/web run dev",
+    "build": "npm --workspace @plumboard/web run build",
+    "preview": "npm --workspace @plumboard/web run preview",
+    "test": "npm --workspace @plumboard/web run test",
+    "db:types": "sh -c 'tmp=\"$(mktemp -t plumboard-database-types)\" && supabase gen types --lang=typescript --linked --schema public > \"$tmp\" && mv \"$tmp\" packages/core/src/database.types.ts'"
   },
   "devDependencies": {
     "supabase": "^2.48.3"

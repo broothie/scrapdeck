@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useAppStore, type Board } from "@scrapdeck/core";
+import { useAppStore, type Board } from "@plumboard/core";
 import * as boardService from "./boards";
 import { useBoardSync } from "./useBoardSync";
 

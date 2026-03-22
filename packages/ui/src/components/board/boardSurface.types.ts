@@ -1,4 +1,4 @@
-import type { Scrap } from "@scrapdeck/core";
+import type { Scrap } from "@plumboard/core";
 
 export type PlacementPreview = {
   type: Scrap["type"];

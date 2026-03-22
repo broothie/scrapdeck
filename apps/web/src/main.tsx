@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { TamaguiProvider } from "tamagui";
-import config from "@scrapdeck/ui/tamagui-config";
+import config from "@plumboard/ui/tamagui-config";
 import "@xyflow/react/dist/style.css";
 import { App } from "./app/App";
 import "./styles/globals.css";

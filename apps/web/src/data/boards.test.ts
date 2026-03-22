@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { useAppStore, type Board } from "@scrapdeck/core";
+import { useAppStore, type Board } from "@plumboard/core";
 import {
   assembleBoards,
   mapScrapRowToScrap,

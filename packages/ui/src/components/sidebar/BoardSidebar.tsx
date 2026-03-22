@@ -1,5 +1,5 @@
 import { YStack, useTheme } from "tamagui";
-import type { Board } from "@scrapdeck/core";
+import type { Board } from "@plumboard/core";
 import { SidebarAccountSection } from "./SidebarAccountSection";
 import { SidebarBoardList } from "./SidebarBoardList";
 import { SidebarBrand } from "./SidebarBrand";
@@ -45,7 +45,7 @@ export function BoardSidebar({
         backdropFilter: "blur(24px)",
       }}
     >
-      <SidebarBrand title="Boards" subtitle="Scrapdeck" />
+      <SidebarBrand title="Boards" subtitle="Plumboard" />
       <SidebarBoardList
         boards={boards}
         activeBoardId={activeBoardId}

@@ -1,4 +1,4 @@
-# Scrapdeck
+# Plumboard
 
 A frontend-first prototype for a spatial note board. The first goal is to prove the interaction model: a sidebar of boards, a large board area, and mixed content scraps that feel good to browse and arrange.
 
@@ -8,7 +8,7 @@ A frontend-first prototype for a spatial note board. The first goal is to prove 
 
 Build a believable prototype that answers one question well:
 
-**Does Scrapdeck feel compelling when a user can switch between boards and arrange notes, images, and website previews on a large visual surface?**
+**Does Plumboard feel compelling when a user can switch between boards and arrange notes, images, and website previews on a large visual surface?**
 
 This phase is intentionally frontend-only. No auth, backend, uploads, or live scraping yet.
 
@@ -213,7 +213,7 @@ type LinkScrap = ScrapBase & {
 ## Suggested Project Structure
 
 ```
-scrapdeck/
+plumboard/
 ├── src/
 │   ├── app/
 │   │   └── App.tsx

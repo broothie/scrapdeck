@@ -1,5 +1,5 @@
 import { Anchor, Card, YStack, useTheme } from "tamagui";
-import type { LinkScrap } from "@scrapdeck/core";
+import type { LinkScrap } from "@plumboard/core";
 
 type LinkScrapCardProps = {
   scrap: LinkScrap;

@@ -1,5 +1,5 @@
 {
-  "name": "@scrapdeck/web",
+  "name": "@plumboard/web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,8 +11,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@scrapdeck/core": "*",
-    "@scrapdeck/ui": "*",
+    "@plumboard/core": "*",
+    "@plumboard/ui": "*",
     "@supabase/supabase-js": "^2.57.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

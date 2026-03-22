@@ -1,4 +1,4 @@
-import type { Board, Database, Scrap } from "@scrapdeck/core";
+import type { Board, Database, Scrap } from "@plumboard/core";
 import { supabase } from "../auth/supabase";
 
 type BoardRow = Database["public"]["Tables"]["boards"]["Row"];

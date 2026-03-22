@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
-import type { Board } from "@scrapdeck/core";
+import type { Board } from "@plumboard/core";
 import { BoardSurface } from "./BoardSurface";
 import { useBoardMetadataEditor } from "./useBoardMetadataEditor";
 import { useScrapComposer } from "./useScrapComposer";

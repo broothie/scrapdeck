@@ -1,5 +1,5 @@
-import type { Scrap } from "@scrapdeck/core";
-import { placementColors } from "@scrapdeck/core";
+import type { Scrap } from "@plumboard/core";
+import { placementColors } from "@plumboard/core";
 import type { Node } from "@xyflow/react";
 import { PLACEMENT_PREVIEW_NODE_ID } from "./boardSurface.constants";
 import type { PlacementNodeData, PlacementPreview } from "./boardSurface.types";

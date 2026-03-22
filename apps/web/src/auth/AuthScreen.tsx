@@ -46,7 +46,7 @@ export function AuthScreen() {
         <Card.Header style={{ padding: "1.25rem" }}>
           <YStack gap="$3">
             <Text style={{ fontSize: 13, opacity: 0.7, textTransform: "uppercase", letterSpacing: 2 }}>
-              Scrapdeck
+              Plumboard
             </Text>
             <H2 style={{ margin: 0 }}>Sign in to your boards</H2>
             <Paragraph style={{ margin: 0 }}>
