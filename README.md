@@ -25,6 +25,22 @@ Board and scrap data now live in Supabase too.
 Apply the SQL migration in `supabase/migrations/20260320183000_create_boards_and_scraps.sql`
 to create the `boards` and `scraps` tables plus RLS policies.
 
+## Link Preview Function
+
+Link scraps can fetch Open Graph metadata through a Supabase Edge Function:
+
+```sh
+supabase functions deploy link-preview
+```
+
+`supabase/config.toml` sets `verify_jwt = false` for this function, so it can be invoked from the web client without a user JWT requirement.
+
+For local function development:
+
+```sh
+supabase functions serve link-preview --no-verify-jwt
+```
+
 ## Supabase Types
 
 The typed Supabase client uses the generated schema type in `packages/core/src/database.types.ts`.
@@ -49,7 +65,9 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [x] Delete scraps
 - [x] Upload real images with Supabase Storage
 - [x] Replace placeholder image scraps with uploaded images
-- [ ] Fetch real link metadata and social preview images
+- [ ] Rename "images" to "files" across UI and data labels
+- [x] Fetch real link metadata and social preview images
+- [ ] Fix link-preview scrap footer text clipping/cutoff
 - [x] Persist deletions to Supabase
 - [ ] Add shared boards / multi-user collaboration
 - [ ] Add realtime sync

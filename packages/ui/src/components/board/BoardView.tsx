@@ -23,6 +23,11 @@ type PlacementIntent = {
   create: (position: { x: number; y: number }) => Scrap;
 };
 
+function hasMeaningfulTitle(value: string) {
+  const alphanumericCount = (value.match(/[A-Za-z0-9]/g) ?? []).length;
+  return alphanumericCount >= 3;
+}
+
 type BoardViewProps = {
   board: Board;
   onUploadImage?: (file: File) => Promise<{
@@ -30,14 +35,22 @@ type BoardViewProps = {
     alt?: string;
     caption?: string;
   }>;
+  onResolveLinkPreview?: (url: string) => Promise<{
+    url?: string;
+    siteName?: string;
+    title?: string;
+    description?: string;
+    previewImage?: string;
+  }>;
 };
 
-export function BoardView({ board, onUploadImage }: BoardViewProps) {
+export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardViewProps) {
   const theme = useTheme();
   const addScrap = useAppStore((state) => state.addScrap);
   const updateBoard = useAppStore((state) => state.updateBoard);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [isAddingLink, setIsAddingLink] = useState(false);
+  const [isResolvingLink, setIsResolvingLink] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkError, setLinkError] = useState("");
@@ -123,7 +136,11 @@ export function BoardView({ board, onUploadImage }: BoardViewProps) {
     setLinkError("");
   };
 
-  const handleSaveLink = () => {
+  const handleSaveLink = async () => {
+    if (isResolvingLink) {
+      return;
+    }
+
     const trimmedUrl = linkUrl.trim();
 
     if (!trimmedUrl) {
@@ -140,31 +157,74 @@ export function BoardView({ board, onUploadImage }: BoardViewProps) {
       return;
     }
 
-    const hostname = parsedUrl.hostname.replace(/^www\./, "");
-    const path = parsedUrl.pathname === "/" ? "" : parsedUrl.pathname;
-    const summary = [hostname, path].filter(Boolean).join("");
+    setLinkError("");
+    setIsResolvingLink(true);
+    try {
+      let metadata:
+        | {
+            url?: string;
+            siteName?: string;
+            title?: string;
+            description?: string;
+            previewImage?: string;
+          }
+        | undefined;
 
-    const { width, height } = resolveScrapDefaults("link");
+      if (onResolveLinkPreview) {
+        try {
+          metadata = await onResolveLinkPreview(parsedUrl.toString());
+        } catch {
+          metadata = undefined;
+        }
+      }
 
-    setPlacementIntent({
-      type: "link",
-      width,
-      height,
-      create: ({ x, y }) => ({
-        id: createScrapId("link"),
+      const resolvedUrl = metadata?.url ? metadata.url.trim() : "";
+      const normalizedUrl = resolvedUrl || parsedUrl.toString();
+      const safeUrl = (() => {
+        try {
+          return new URL(normalizedUrl).toString();
+        } catch {
+          return parsedUrl.toString();
+        }
+      })();
+
+      const safeParsedUrl = new URL(safeUrl);
+      const hostname = safeParsedUrl.hostname.replace(/^www\./, "");
+      const path = safeParsedUrl.pathname === "/" ? "" : safeParsedUrl.pathname;
+      const summary = [hostname, path].filter(Boolean).join("");
+
+      const metadataTitle = metadata?.title?.trim() || "";
+      const title = hasMeaningfulTitle(metadataTitle) ? metadataTitle : (summary || safeUrl);
+      const description = metadata?.description?.trim() || undefined;
+      const siteName = metadata?.siteName?.trim() || hostname || "Saved Link";
+      const previewImage = metadata?.previewImage?.trim() || undefined;
+
+      const { width, height } = resolveScrapDefaults("link");
+      const resolvedHeight = previewImage ? height : 148;
+
+      setPlacementIntent({
         type: "link",
-        x,
-        y,
         width,
-        height,
-        url: parsedUrl.toString(),
-        siteName: hostname || "Saved Link",
-        title: summary || parsedUrl.toString(),
-        description: "Saved from a pasted URL.",
-      }),
-    });
+        height: resolvedHeight,
+        create: ({ x, y }) => ({
+          id: createScrapId("link"),
+          type: "link",
+          x,
+          y,
+          width,
+          height: resolvedHeight,
+          url: safeUrl,
+          siteName,
+          title,
+          description,
+          previewImage,
+        }),
+      });
 
-    closeLinkComposer();
+      closeLinkComposer();
+    } finally {
+      setIsResolvingLink(false);
+    }
   };
 
   const handlePlaceScrap = (position: { x: number; y: number }) => {
@@ -364,7 +424,7 @@ export function BoardView({ board, onUploadImage }: BoardViewProps) {
                 onChange={(event) => setLinkUrl(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
-                    handleSaveLink();
+                    void handleSaveLink();
                   }
 
                   if (event.key === "Escape") {
@@ -373,6 +433,7 @@ export function BoardView({ board, onUploadImage }: BoardViewProps) {
                 }}
                 placeholder="https://example.com/article"
                 keyboardType="url"
+                disabled={isResolvingLink}
               />
               {linkError ? (
                 <Text theme="red" fontSize={14}>
@@ -380,11 +441,11 @@ export function BoardView({ board, onUploadImage }: BoardViewProps) {
                 </Text>
               ) : null}
               <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
-                <Button onPress={closeLinkComposer}>
+                <Button onPress={closeLinkComposer} disabled={isResolvingLink}>
                   Cancel
                 </Button>
-                <Button theme="blue" onPress={handleSaveLink}>
-                  Save link
+                <Button theme="blue" onPress={() => void handleSaveLink()} disabled={isResolvingLink}>
+                  {isResolvingLink ? "Fetching preview..." : "Save link"}
                 </Button>
               </XStack>
             </YStack>

@@ -22,6 +22,14 @@ type AppShellProps = {
   onThemePreferenceChange: (nextPreference: ThemePreference) => void;
 };
 
+type LinkPreviewResponse = {
+  url?: string;
+  siteName?: string;
+  title?: string;
+  description?: string;
+  previewImage?: string;
+};
+
 function resolveSystemThemeMode(): AppThemeMode {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return "dark";
@@ -201,6 +209,28 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     };
   };
 
+  const handleResolveLinkPreview = async (url: string): Promise<LinkPreviewResponse> => {
+    if (!supabase) {
+      return {};
+    }
+
+    const { data, error } = await supabase.functions.invoke<LinkPreviewResponse>("link-preview", {
+      body: { url },
+    });
+
+    if (error || !data || typeof data !== "object") {
+      return {};
+    }
+
+    return {
+      url: typeof data.url === "string" ? data.url : undefined,
+      siteName: typeof data.siteName === "string" ? data.siteName : undefined,
+      title: typeof data.title === "string" ? data.title : undefined,
+      description: typeof data.description === "string" ? data.description : undefined,
+      previewImage: typeof data.previewImage === "string" ? data.previewImage : undefined,
+    };
+  };
+
   return (
     <XStack
       style={{
@@ -222,7 +252,11 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       />
       <View style={{ flex: 1, minHeight: 0 }}>
         {activeBoard ? (
-          <BoardView board={activeBoard} onUploadImage={handleUploadImage} />
+          <BoardView
+            board={activeBoard}
+            onUploadImage={handleUploadImage}
+            onResolveLinkPreview={handleResolveLinkPreview}
+          />
         ) : (
           <EmptyBoardsState onCreateBoard={handleCreateBoard} />
         )}
