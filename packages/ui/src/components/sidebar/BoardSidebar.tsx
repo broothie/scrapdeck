@@ -1,4 +1,4 @@
-import { Button, H2, Paragraph, Text, XStack, YStack } from "tamagui";
+import { Button, H2, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@scrapdeck/core";
 
 type BoardSidebarProps = {
@@ -8,6 +8,8 @@ type BoardSidebarProps = {
   onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
+  themeMode?: "light" | "dark";
+  onToggleTheme?: () => void;
   onSignOut?: () => void;
   isSigningOut?: boolean;
 };
@@ -19,9 +21,13 @@ export function BoardSidebar({
   onDeleteBoard,
   onCreateBoard,
   accountUsername,
+  themeMode,
+  onToggleTheme,
   onSignOut,
   isSigningOut = false,
 }: BoardSidebarProps) {
+  const theme = useTheme();
+
   return (
     <YStack
       style={{
@@ -29,13 +35,20 @@ export function BoardSidebar({
         width: 290,
         minWidth: 250,
         padding: "1.5rem",
-        borderRight: "1px solid rgba(255,255,255,0.08)",
-        background: "rgba(10,14,20,0.74)",
+        borderRight: `1px solid ${theme.borderSubtle.val}`,
+        backgroundColor: theme.surface.val,
         backdropFilter: "blur(24px)",
       }}
     >
       <YStack style={{ gap: "0.5rem" }}>
-        <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
+        <Text
+          style={{
+            color: theme.textSecondary.val,
+            fontSize: 12,
+            letterSpacing: 2,
+            textTransform: "uppercase",
+          }}
+        >
           Scrapdeck
         </Text>
         <H2 style={{ margin: 0 }}>
@@ -45,7 +58,15 @@ export function BoardSidebar({
 
       <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
         {onCreateBoard ? (
-          <Button theme="blue" onPress={onCreateBoard}>
+          <Button
+            onPress={onCreateBoard}
+            style={{
+              backgroundColor: theme.accentDefault.val,
+              borderColor: theme.accentStrong.val,
+              borderWidth: 1,
+              color: theme.accentText.val,
+            }}
+          >
             New board
           </Button>
         ) : null}
@@ -57,20 +78,33 @@ export function BoardSidebar({
             <XStack key={board.id} style={{ width: "100%", gap: "0.5rem", alignItems: "stretch" }}>
               <Button
                 onPress={() => onSelectBoard(board.id)}
-                theme={isActive ? "blue" : undefined}
                 variant={isActive ? undefined : "outlined"}
                 style={{
                   flex: 1,
                   justifyContent: "flex-start",
                   height: "auto",
                   minHeight: 76,
+                  backgroundColor: isActive ? theme.accentSubtle.val : theme.surface.val,
+                  borderColor: isActive ? theme.accentDefault.val : theme.borderDefault.val,
+                  borderWidth: 1,
                 }}
               >
                 <YStack style={{ gap: "0.25rem" }}>
-                  <Text style={{ fontSize: 16, fontWeight: 700 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: 700,
+                      color: isActive ? theme.accentText.val : theme.textPrimary.val,
+                    }}
+                  >
                     {board.title}
                   </Text>
-                  <Text style={{ opacity: 0.7, fontSize: 14 }}>
+                  <Text
+                    style={{
+                      color: isActive ? theme.accentStrong.val : theme.textSecondary.val,
+                      fontSize: 14,
+                    }}
+                  >
                     {board.scraps.length} scraps
                   </Text>
                 </YStack>
@@ -90,7 +124,7 @@ export function BoardSidebar({
         })}
 
         {boards.length === 0 ? (
-          <Paragraph style={{ margin: 0, opacity: 0.72 }}>
+          <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
             No boards yet. Create your first one to start arranging scraps.
           </Paragraph>
         ) : null}
@@ -103,7 +137,7 @@ export function BoardSidebar({
             marginTop: "auto",
             paddingTop: "0.75rem",
             borderTopWidth: 1,
-            borderTopColor: "rgba(255,255,255,0.08)",
+            borderTopColor: theme.borderSubtle.val,
           }}
         >
           <YStack style={{ gap: "0.25rem" }}>
@@ -113,6 +147,11 @@ export function BoardSidebar({
               </Text>
             ) : null}
           </YStack>
+          {onToggleTheme ? (
+            <Button onPress={onToggleTheme} variant="outlined">
+              {themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            </Button>
+          ) : null}
           {onSignOut ? (
             <Button
               onPress={onSignOut}

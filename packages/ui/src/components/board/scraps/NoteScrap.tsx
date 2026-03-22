@@ -1,4 +1,4 @@
-import { Card, Input, SizableText, YStack } from "tamagui";
+import { Card, Input, SizableText, YStack, useTheme } from "tamagui";
 import { useAppStore, type NoteScrap } from "@scrapdeck/core";
 
 type NoteScrapCardProps = {
@@ -7,6 +7,7 @@ type NoteScrapCardProps = {
 };
 
 export function NoteScrapCard({ boardId, scrap }: NoteScrapCardProps) {
+  const theme = useTheme();
   const updateNoteScrap = useAppStore((state) => state.updateNoteScrap);
 
   return (
@@ -47,9 +48,9 @@ export function NoteScrapCard({ boardId, scrap }: NoteScrapCardProps) {
             minHeight: 0,
             resize: "none",
             borderRadius: 12,
-            border: "1px solid rgba(255,255,255,0.12)",
-            background: "rgba(255,255,255,0.04)",
-            color: "inherit",
+            border: `1px solid ${theme.borderDefault.val}`,
+            backgroundColor: theme.surfaceHover.val,
+            color: theme.textPrimary.val,
             font: "inherit",
             lineHeight: 1.5,
             padding: "0.75rem 0.85rem",

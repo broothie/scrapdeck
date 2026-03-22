@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Card, H2, Paragraph, Spinner, Text, View, XStack, YStack } from "tamagui";
+import { useEffect, useState } from "react";
+import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useTheme } from "tamagui";
 import { useAppStore } from "@scrapdeck/core";
 import { BoardSidebar, BoardView } from "@scrapdeck/ui";
 import { AuthProvider, useAuth } from "../auth/AuthProvider";
@@ -13,7 +13,15 @@ function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function AppShell() {
+type AppThemeMode = "light" | "dark";
+
+type AppShellProps = {
+  themeMode: AppThemeMode;
+  onToggleTheme: () => void;
+};
+
+function AppShell({ themeMode, onToggleTheme }: AppShellProps) {
+  const theme = useTheme();
   const boards = useAppStore((state) => state.boards);
   const activeBoardId = useAppStore((state) => state.activeBoardId);
   const addBoard = useAppStore((state) => state.addBoard);
@@ -134,9 +142,7 @@ function AppShell() {
     <XStack
       style={{
         minHeight: "100vh",
-        backgroundColor: "#091017",
-        background:
-          "radial-gradient(circle at top, rgba(242, 196, 114, 0.16), transparent 30%), linear-gradient(135deg, #1a2431 0%, #0f1319 50%, #091017 100%)",
+        backgroundColor: theme.canvas.val,
       }}
     >
       <BoardSidebar
@@ -146,6 +152,8 @@ function AppShell() {
         onSelectBoard={setActiveBoard}
         onDeleteBoard={handleDeleteBoard}
         accountUsername={username}
+        themeMode={themeMode}
+        onToggleTheme={onToggleTheme}
         isSigningOut={isSigningOut}
         onSignOut={handleSignOut}
       />
@@ -161,9 +169,29 @@ function AppShell() {
 }
 
 export function App() {
+  const [themeMode, setThemeMode] = useState<AppThemeMode>(() => {
+    if (typeof window === "undefined") {
+      return "dark";
+    }
+
+    const savedTheme = window.localStorage.getItem("scrapdeck-theme");
+    return savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem("scrapdeck-theme", themeMode);
+    document.documentElement.style.colorScheme = themeMode;
+  }, [themeMode]);
+
+  const handleToggleTheme = () => {
+    setThemeMode((previousTheme) => (previousTheme === "dark" ? "light" : "dark"));
+  };
+
   return (
-    <AuthProvider>
-      <AppShell />
-    </AuthProvider>
+    <Theme name={themeMode}>
+      <AuthProvider>
+        <AppShell themeMode={themeMode} onToggleTheme={handleToggleTheme} />
+      </AuthProvider>
+    </Theme>
   );
 }

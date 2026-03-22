@@ -12,7 +12,7 @@ import {
   useNodesState,
 } from "@xyflow/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
-import { Text, View } from "tamagui";
+import { Text, View, useTheme } from "tamagui";
 import { placementColors, useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
 
@@ -40,6 +40,7 @@ type BoardSurfaceProps = {
 };
 
 function PlacementPreviewNode(props: NodeProps) {
+  const theme = useTheme();
   const data = props.data as PlacementNodeData;
 
   return (
@@ -50,7 +51,7 @@ function PlacementPreviewNode(props: NodeProps) {
         borderWidth: 2,
         borderStyle: "dashed",
         borderColor: data.borderColor,
-        backgroundColor: "rgba(241, 198, 111, 0.12)",
+        backgroundColor: theme.accentSubtle.val,
         borderRadius: 16,
         pointerEvents: "none",
       }}
@@ -71,6 +72,7 @@ export function BoardSurface({
   placementPreview,
   onPlaceScrap,
   }: BoardSurfaceProps) {
+  const theme = useTheme();
   const deleteScrap = useAppStore((state) => state.deleteScrap);
   const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -210,12 +212,11 @@ export function BoardSurface({
         position: "relative",
         flex: 1,
         overflow: "hidden",
-        border: "1px solid rgba(255,255,255,0.08)",
+        border: `1px solid ${theme.borderSubtle.val}`,
         borderRadius: 28,
-        background:
-          "linear-gradient(0deg, rgba(5, 10, 14, 0.08), rgba(5, 10, 14, 0.08)), radial-gradient(circle at 20% 0%, rgba(240, 189, 102, 0.12), transparent 28%), linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02))",
+        backgroundColor: theme.surface.val,
         boxShadow:
-          "inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 32px 80px rgba(0, 0, 0, 0.24)",
+          "inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 28px 60px rgba(0, 0, 0, 0.18)",
       }}
     >
       <ReactFlow
@@ -242,19 +243,19 @@ export function BoardSurface({
         nodesFocusable
       >
         <Background
-          color="rgba(255,255,255,0.1)"
+          color={theme.borderSubtle.val}
           gap={28}
           variant={BackgroundVariant.Dots}
         />
         <MiniMap
           pannable
           zoomable
-          maskColor="rgba(8, 12, 18, 0.76)"
+          maskColor={theme.overlay.val}
           nodeColor={(node) => {
             const scrap = node.data?.scrap as Scrap | undefined;
 
             if (!scrap) {
-              return "#8c96aa";
+              return theme.textMuted.val;
             }
 
             if (scrap.type === "note") {
@@ -278,14 +279,14 @@ export function BoardSurface({
             right: 16,
             zIndex: 6,
             padding: "0.45rem 0.8rem",
-            border: "1px solid rgba(255,255,255,0.08)",
+            border: `1px solid ${theme.borderSubtle.val}`,
             borderRadius: 999,
-            background: "rgba(9,16,23,0.72)",
+            backgroundColor: theme.overlay.val,
             backdropFilter: "blur(12px)",
             pointerEvents: "none",
           }}
         >
-          <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
+          <Text style={{ color: theme.textPrimary.val, fontSize: 13 }}>
             {`Place ${placementPreview.type}`}
           </Text>
         </View>

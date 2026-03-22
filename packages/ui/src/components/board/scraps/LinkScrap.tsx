@@ -1,4 +1,4 @@
-import { Anchor, Card, H4, Paragraph, SizableText, YStack } from "tamagui";
+import { Anchor, Card, H4, Paragraph, SizableText, YStack, useTheme } from "tamagui";
 import type { LinkScrap } from "@scrapdeck/core";
 
 type LinkScrapCardProps = {
@@ -6,6 +6,7 @@ type LinkScrapCardProps = {
 };
 
 export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
+  const theme = useTheme();
   const hasPreview = Boolean(scrap.previewImage);
 
   return (
@@ -23,7 +24,7 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
             height: "48%",
             objectFit: "cover",
             display: "block",
-            borderBottom: "1px solid #d7c7ad",
+            borderBottom: `1px solid ${theme.borderSubtle.val}`,
           }}
         />
       ) : null}

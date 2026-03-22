@@ -1,5 +1,6 @@
 import { memo, type MouseEvent } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
+import { useTheme } from "tamagui";
 import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
@@ -23,6 +24,8 @@ function ScrapNodeComponent({
   positionAbsoluteX,
   positionAbsoluteY,
 }: NodeProps<ScrapFlowNode>) {
+  const theme = useTheme();
+
   const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     data.onDelete(data.scrap.id);
@@ -47,10 +50,10 @@ function ScrapNodeComponent({
           top: 10,
           right: 10,
           zIndex: 10,
-          border: "1px solid rgba(255, 255, 255, 0.2)",
+          border: `1px solid ${theme.borderSubtle.val}`,
           borderRadius: 999,
-          background: "rgba(7, 12, 18, 0.86)",
-          color: "rgba(245, 234, 221, 0.92)",
+          backgroundColor: theme.overlay.val,
+          color: theme.textPrimary.val,
           fontSize: 12,
           lineHeight: 1,
           padding: "0.3rem 0.45rem",

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
+import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import {
   createScrapId,
   resolveScrapDefaults,
@@ -21,6 +21,7 @@ type BoardViewProps = {
 };
 
 export function BoardView({ board }: BoardViewProps) {
+  const theme = useTheme();
   const addScrap = useAppStore((state) => state.addScrap);
   const updateBoard = useAppStore((state) => state.updateBoard);
   const [isAddingLink, setIsAddingLink] = useState(false);
@@ -260,9 +261,9 @@ export function BoardView({ board }: BoardViewProps) {
                 minHeight: 72,
                 resize: "vertical",
                 borderRadius: 12,
-                border: "1px solid rgba(255,255,255,0.12)",
-                background: "rgba(255,255,255,0.04)",
-                color: "inherit",
+                border: `1px solid ${theme.borderDefault.val}`,
+                backgroundColor: theme.surfaceHover.val,
+                color: theme.textPrimary.val,
                 font: "inherit",
                 lineHeight: 1.5,
                 padding: "0.75rem 0.85rem",

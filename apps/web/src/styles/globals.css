@@ -1,6 +1,6 @@
 :root {
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
-  color: #f5efe2;
+  color: #d8d4cb;
   line-height: 1.5;
   font-weight: 400;
   color-scheme: dark;
@@ -22,9 +22,7 @@ body,
 
 body {
   min-width: 320px;
-  background:
-    radial-gradient(circle at top, rgba(242, 196, 114, 0.16), transparent 30%),
-    linear-gradient(135deg, #1a2431 0%, #0f1319 50%, #091017 100%);
+  background: #16150f;
 }
 
 button,
@@ -66,18 +64,18 @@ a {
 }
 
 .scrapdeck-flow .react-flow__controls {
-  background: rgba(9, 16, 23, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #1f1d16;
+  border: 1px solid #3a3830;
 }
 
 .scrapdeck-flow .react-flow__controls-button {
   background: transparent;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: #f5efe2;
+  border-bottom: 1px solid #2a2820;
+  color: #d8d4cb;
 }
 
 .scrapdeck-flow .react-flow__controls-button:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: #272520;
 }
 
 .scrapdeck-flow .react-flow__controls-button svg {
