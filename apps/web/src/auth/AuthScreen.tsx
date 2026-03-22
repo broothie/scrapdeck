@@ -3,6 +3,7 @@ import { Button, Card, H2, Input, Paragraph, Spinner, Text, YStack } from "tamag
 import { useAuth } from "./AuthProvider";
 
 export function AuthScreen() {
+  const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const { signInWithMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -45,6 +46,16 @@ export function AuthScreen() {
       <Card width="100%" maxWidth={460} style={{ borderWidth: 1 }}>
         <Card.Header style={{ padding: "1.25rem" }}>
           <YStack gap="$3">
+            <img
+              src={brandLogoUrl}
+              alt="Plumboard logo"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                objectFit: "cover",
+              }}
+            />
             <Text style={{ fontSize: 13, opacity: 0.7, textTransform: "uppercase", letterSpacing: 2 }}>
               Plumboard
             </Text>

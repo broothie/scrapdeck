@@ -9,6 +9,7 @@ type ThemePreference = "system" | "light" | "dark";
 type BoardSidebarProps = {
   boards: Board[];
   activeBoardId: string;
+  brandLogoUrl?: string;
   onSelectBoard: (boardId: string) => void;
   onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
@@ -22,6 +23,7 @@ type BoardSidebarProps = {
 export function BoardSidebar({
   boards,
   activeBoardId,
+  brandLogoUrl,
   onSelectBoard,
   onDeleteBoard,
   onCreateBoard,
@@ -45,7 +47,7 @@ export function BoardSidebar({
         backdropFilter: "blur(24px)",
       }}
     >
-      <SidebarBrand title="Boards" subtitle="Plumboard" />
+      <SidebarBrand title="Boards" subtitle="Plumboard" logoUrl={brandLogoUrl} />
       <SidebarBoardList
         boards={boards}
         activeBoardId={activeBoardId}

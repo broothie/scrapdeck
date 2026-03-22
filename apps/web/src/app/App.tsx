@@ -59,6 +59,7 @@ function resolveStoredThemePreference(): ThemePreference {
 
 function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const theme = useTheme();
+  const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const boards = useAppStore((state) => state.boards);
   const activeBoardId = useAppStore((state) => state.activeBoardId);
   const addBoard = useAppStore((state) => state.addBoard);
@@ -240,6 +241,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       }}
     >
       <BoardSidebar
+        brandLogoUrl={brandLogoUrl}
         activeBoardId={activeBoard?.id ?? ""}
         boards={boards}
         onCreateBoard={handleCreateBoard}
