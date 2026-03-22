@@ -1,4 +1,4 @@
-import { Card, Paragraph, YStack } from "tamagui";
+import { Card, Paragraph, YStack, useTheme } from "tamagui";
 import type { ImageScrap } from "@scrapdeck/core";
 
 type ImageScrapCardProps = {
@@ -6,11 +6,13 @@ type ImageScrapCardProps = {
 };
 
 export function ImageScrapCard({ scrap }: ImageScrapCardProps) {
+  const theme = useTheme();
+
   return (
     <Card
       height="100%"
       overflow="hidden"
-      style={{ borderRadius: 18, borderWidth: 1 }}
+      style={{ borderRadius: 18, borderWidth: 1, borderColor: theme.borderSubtle.val }}
     >
       <YStack height="100%">
         <img

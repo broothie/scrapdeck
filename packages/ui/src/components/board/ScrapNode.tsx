@@ -89,7 +89,7 @@ function ScrapNodeComponent({
           height: "100%",
           borderRadius: 18,
           boxShadow: selected
-            ? "0 0 0 1px rgba(127, 140, 255, 0.42), 0 10px 22px rgba(5, 8, 14, 0.12)"
+            ? "0 10px 22px rgba(5, 8, 14, 0.12)"
             : "0 4px 10px rgba(5, 8, 14, 0.08)",
         }}
       >

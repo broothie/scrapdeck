@@ -13,7 +13,7 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
     <Card
       height="100%"
       overflow="hidden"
-      style={{ borderRadius: 18, borderWidth: 1 }}
+      style={{ borderRadius: 18, borderWidth: 1, borderColor: theme.borderSubtle.val }}
     >
       {hasPreview ? (
         <img
@@ -24,7 +24,6 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
             height: "48%",
             objectFit: "cover",
             display: "block",
-            borderBottom: `1px solid ${theme.borderSubtle.val}`,
           }}
         />
       ) : null}

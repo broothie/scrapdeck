@@ -11,7 +11,10 @@ export function NoteScrapCard({ boardId, scrap }: NoteScrapCardProps) {
   const updateNoteScrap = useAppStore((state) => state.updateNoteScrap);
 
   return (
-    <Card height="100%" style={{ borderRadius: 18, borderWidth: 1 }}>
+    <Card
+      height="100%"
+      style={{ borderRadius: 18, borderWidth: 1, borderColor: theme.borderSubtle.val }}
+    >
       <YStack
         gap="$2"
         height="100%"
