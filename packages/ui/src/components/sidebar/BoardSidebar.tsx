@@ -41,9 +41,6 @@ export function BoardSidebar({
         <H2 style={{ margin: 0 }}>
           Boards
         </H2>
-        <Paragraph style={{ margin: 0 }}>
-          Spatial collections for notes, images, and saved links.
-        </Paragraph>
       </YStack>
 
       <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
@@ -110,9 +107,6 @@ export function BoardSidebar({
           }}
         >
           <YStack style={{ gap: "0.25rem" }}>
-            <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
-              Signed in
-            </Text>
             {accountUsername ? (
               <Text style={{ fontSize: 16, fontWeight: 700 }}>
                 @{accountUsername}

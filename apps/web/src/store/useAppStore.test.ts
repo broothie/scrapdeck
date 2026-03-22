@@ -37,6 +37,27 @@ describe("useAppStore", () => {
     expect(useAppStore.getState().activeBoardId).toBe("");
   });
 
+  it("updates board metadata", () => {
+    const board: Board = {
+      id: "board-1",
+      title: "Original",
+      description: "Original description",
+      scraps: [],
+    };
+
+    useAppStore.getState().addBoard(board);
+    useAppStore.getState().updateBoard("board-1", {
+      title: "Renamed board",
+      description: "Updated description",
+    });
+
+    expect(useAppStore.getState().boards[0]).toMatchObject({
+      id: "board-1",
+      title: "Renamed board",
+      description: "Updated description",
+    });
+  });
+
   it("updates note contents, layout, and supports scrap deletion", () => {
     const board: Board = {
       id: "board-1",

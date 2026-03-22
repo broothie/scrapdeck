@@ -3,12 +3,14 @@ import type { Board, NoteScrap, Scrap } from "../types";
 
 type ScrapLayoutPatch = Partial<Pick<Scrap, "x" | "y" | "width" | "height">>;
 type NoteScrapPatch = Partial<Pick<NoteScrap, "title" | "body">>;
+type BoardPatch = Partial<Pick<Board, "title" | "description">>;
 
 type AppState = {
   boards: Board[];
   activeBoardId: string;
   setBoards: (boards: Board[]) => void;
   addBoard: (board: Board) => void;
+  updateBoard: (boardId: string, patch: BoardPatch) => void;
   deleteBoard: (boardId: string) => void;
   setActiveBoard: (boardId: string) => void;
   addScrap: (boardId: string, scrap: Scrap) => void;
@@ -48,6 +50,12 @@ export const useAppStore = create<AppState>((set) => ({
     set((state) => ({
       boards: [...state.boards, board],
       activeBoardId: state.activeBoardId || board.id,
+    })),
+  updateBoard: (boardId, patch) =>
+    set((state) => ({
+      boards: state.boards.map((board) =>
+        board.id === boardId ? { ...board, ...patch } : board,
+      ),
     })),
   deleteBoard: (boardId) =>
     set((state) => {

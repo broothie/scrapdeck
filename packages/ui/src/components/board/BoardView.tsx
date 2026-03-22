@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
 import {
   createScrapId,
@@ -22,10 +22,15 @@ type BoardViewProps = {
 
 export function BoardView({ board }: BoardViewProps) {
   const addScrap = useAppStore((state) => state.addScrap);
+  const updateBoard = useAppStore((state) => state.updateBoard);
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkError, setLinkError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
+  const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
+  const [isEditingBoardDescription, setIsEditingBoardDescription] = useState(false);
+  const [boardTitleDraft, setBoardTitleDraft] = useState(board.title);
+  const [boardDescriptionDraft, setBoardDescriptionDraft] = useState(board.description);
 
   const closeLinkComposer = () => {
     setIsAddingLink(false);
@@ -51,6 +56,18 @@ export function BoardView({ board }: BoardViewProps) {
       window.removeEventListener("keydown", handleEscape);
     };
   }, [closeLinkComposer, isAddingLink, placementIntent]);
+
+  useEffect(() => {
+    if (!isEditingBoardTitle) {
+      setBoardTitleDraft(board.title);
+    }
+  }, [board.title, isEditingBoardTitle]);
+
+  useEffect(() => {
+    if (!isEditingBoardDescription) {
+      setBoardDescriptionDraft(board.description);
+    }
+  }, [board.description, isEditingBoardDescription]);
 
   const addNoteIntent = useMemo<PlacementIntent>(() => {
     const { width, height } = resolveScrapDefaults("note");
@@ -159,17 +176,107 @@ export function BoardView({ board }: BoardViewProps) {
     setPlacementIntent(null);
   };
 
+  const handleSaveBoardTitle = () => {
+    const nextTitle = boardTitleDraft.trim() || "Untitled board";
+    updateBoard(board.id, { title: nextTitle });
+    setIsEditingBoardTitle(false);
+  };
+
+  const handleCancelBoardTitle = () => {
+    setBoardTitleDraft(board.title);
+    setIsEditingBoardTitle(false);
+  };
+
+  const handleSaveBoardDescription = () => {
+    updateBoard(board.id, { description: boardDescriptionDraft.trim() });
+    setIsEditingBoardDescription(false);
+  };
+
+  const handleCancelBoardDescription = () => {
+    setBoardDescriptionDraft(board.description);
+    setIsEditingBoardDescription(false);
+  };
+
+  const handleBoardTitleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSaveBoardTitle();
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      handleCancelBoardTitle();
+    }
+  };
+
+  const handleBoardDescriptionKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      handleCancelBoardDescription();
+      return;
+    }
+
+    if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      handleSaveBoardDescription();
+    }
+  };
+
   return (
     <YStack gap="$4" height="100%">
       <XStack style={{ alignItems: "flex-end", justifyContent: "space-between", gap: "1rem" }}>
         <YStack style={{ gap: "0.25rem" }}>
-          <Text style={{ opacity: 0.7, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
-            Active board
-          </Text>
-          <H2 style={{ margin: 0 }}>{board.title}</H2>
-          <Paragraph style={{ margin: 0, maxWidth: 480 }}>
-            {board.description}
-          </Paragraph>
+          {isEditingBoardTitle ? (
+            <Input
+              autoFocus
+              aria-label="Board title"
+              value={boardTitleDraft}
+              onChange={(event) => setBoardTitleDraft(event.currentTarget.value)}
+              onBlur={handleSaveBoardTitle}
+              onKeyDown={handleBoardTitleKeyDown}
+              style={{ maxWidth: 480 }}
+            />
+          ) : (
+            <H2
+              style={{ margin: 0, cursor: "text" }}
+              onDoubleClick={() => setIsEditingBoardTitle(true)}
+            >
+              {board.title}
+            </H2>
+          )}
+          {isEditingBoardDescription ? (
+            <textarea
+              autoFocus
+              aria-label="Board description"
+              value={boardDescriptionDraft}
+              onChange={(event) => setBoardDescriptionDraft(event.currentTarget.value)}
+              onBlur={handleSaveBoardDescription}
+              onKeyDown={handleBoardDescriptionKeyDown}
+              style={{
+                margin: 0,
+                maxWidth: 480,
+                minWidth: 320,
+                minHeight: 72,
+                resize: "vertical",
+                borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "rgba(255,255,255,0.04)",
+                color: "inherit",
+                font: "inherit",
+                lineHeight: 1.5,
+                padding: "0.75rem 0.85rem",
+                outline: "none",
+              }}
+            />
+          ) : (
+            <Paragraph
+              style={{ margin: 0, maxWidth: 480, cursor: "text" }}
+              onDoubleClick={() => setIsEditingBoardDescription(true)}
+            >
+              {board.description}
+            </Paragraph>
+          )}
         </YStack>
         <XStack style={{ gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <Button onPress={handleAddNote}>
