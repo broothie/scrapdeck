@@ -1,10 +1,12 @@
 import { useState, type CSSProperties } from "react";
 import { useTheme } from "tamagui";
+import type { Scrap } from "@scrapdeck/core";
 
 export type ScrapContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 
 type ScrapActionMenuProps = {
   onAction: (action: ScrapContextMenuAction) => void;
+  actions?: ScrapContextMenuAction[];
 };
 
 const menuItems: Array<{
@@ -19,9 +21,20 @@ const menuItems: Array<{
   { action: "delete", label: "Delete", isDanger: true },
 ];
 
-export function ScrapActionMenu({ onAction }: ScrapActionMenuProps) {
+const defaultScrapMenuActions = menuItems.map((item) => item.action);
+
+export function resolveScrapMenuActions(scrapType: Scrap["type"]): ScrapContextMenuAction[] {
+  if (scrapType === "note") {
+    return defaultScrapMenuActions.filter((action) => action !== "edit");
+  }
+
+  return defaultScrapMenuActions;
+}
+
+export function ScrapActionMenu({ onAction, actions = defaultScrapMenuActions }: ScrapActionMenuProps) {
   const theme = useTheme();
   const [hoveredAction, setHoveredAction] = useState<ScrapContextMenuAction | null>(null);
+  const filteredMenuItems = menuItems.filter((item) => actions.includes(item.action));
 
   return (
     <div
@@ -41,7 +54,7 @@ export function ScrapActionMenu({ onAction }: ScrapActionMenuProps) {
         gap: 0,
       }}
     >
-      {menuItems.map((item, index) => {
+      {filteredMenuItems.map((item, index) => {
         const isHovered = hoveredAction === item.action;
 
         return (

@@ -31,11 +31,8 @@ beforeEach(() => {
 });
 
 describe("useScrapMenuActions", () => {
-  it("supports injectable prompt adapter for edit actions", () => {
-    const prompt = vi
-      .fn()
-      .mockReturnValueOnce("New title")
-      .mockReturnValueOnce("New body");
+  it("uses inline-note editing flow for notes", () => {
+    const prompt = vi.fn();
     const alert = vi.fn();
     const { result } = renderHook(() =>
       useScrapMenuActions(baseBoard, {
@@ -47,18 +44,8 @@ describe("useScrapMenuActions", () => {
       result.current.runScrapMenuAction("note-1", "edit");
     });
 
-    const updatedNote = useAppStore
-      .getState()
-      .boards[0]
-      .scraps.find((scrap) => scrap.id === "note-1");
-
-    expect(updatedNote).toMatchObject({
-      id: "note-1",
-      type: "note",
-      title: "New title",
-      body: "New body",
-    });
-    expect(alert).not.toHaveBeenCalled();
+    expect(prompt).not.toHaveBeenCalled();
+    expect(alert).toHaveBeenCalledWith("Notes are edited directly on the canvas.");
   });
 
   it("notifies completion for send-back action", () => {

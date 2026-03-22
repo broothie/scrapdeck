@@ -62,7 +62,7 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [x] Delete boards
 - [x] Edit existing note scraps
 - [ ] Fix notes scraps UX to feel more natural
-- [ ] Add rich text support to notes
+- [x] Add rich text support to notes
 - [ ] Remove "Edit" from notes context menu
 - [ ] Edit existing link scraps
 - [ ] Edit existing image scraps

@@ -62,8 +62,7 @@ export function useScrapComposer({
         y,
         width,
         height,
-        title: "Fresh note",
-        body: "Drop quick thoughts here and drag them into place.",
+        body: "<p>Drop quick thoughts here and drag them into place.</p>",
       }),
     };
   }, []);

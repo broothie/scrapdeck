@@ -4,13 +4,18 @@ import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
 import { NoteScrapCard } from "./scraps/NoteScrap";
-import { ScrapActionMenu, type ScrapContextMenuAction } from "./ScrapActionMenu";
+import {
+  resolveScrapMenuActions,
+  ScrapActionMenu,
+  type ScrapContextMenuAction,
+} from "./ScrapActionMenu";
 
 export type ScrapNodeData = {
   scrap: Scrap;
   boardId: string;
   showPinnedMenu: boolean;
   onMenuAction: (scrapId: string, action: ScrapContextMenuAction) => void;
+  onAutoGrowHeight: (scrapId: string, nextHeight: number) => void;
   onResizeEnd: (
     scrapId: string,
     nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -40,6 +45,7 @@ function ScrapNodeComponent({
         offset={10}
       >
         <ScrapActionMenu
+          actions={resolveScrapMenuActions(data.scrap.type)}
           onAction={(action) => data.onMenuAction(data.scrap.id, action)}
         />
       </NodeToolbar>
@@ -75,7 +81,11 @@ function ScrapNodeComponent({
         }}
       >
         {data.scrap.type === "note" ? (
-          <NoteScrapCard boardId={data.boardId} scrap={data.scrap} />
+          <NoteScrapCard
+            boardId={data.boardId}
+            scrap={data.scrap}
+            onAutoGrowHeight={(nextHeight) => data.onAutoGrowHeight(data.scrap.id, nextHeight)}
+          />
         ) : null}
         {data.scrap.type === "image" ? <ImageScrapCard scrap={data.scrap} /> : null}
         {data.scrap.type === "link" ? <LinkScrapCard scrap={data.scrap} /> : null}

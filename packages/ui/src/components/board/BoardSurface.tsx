@@ -14,7 +14,11 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
 import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { PlacementPreviewNode } from "./PlacementPreviewNode";
-import { ScrapActionMenu, type ScrapContextMenuAction } from "./ScrapActionMenu";
+import {
+  resolveScrapMenuActions,
+  ScrapActionMenu,
+  type ScrapContextMenuAction,
+} from "./ScrapActionMenu";
 import { ScrapCreateFab } from "./ScrapCreateFab";
 import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
 import {
@@ -108,6 +112,13 @@ export function BoardSurface({
           scrap,
           showPinnedMenu: !scrapContextMenu,
           onMenuAction: runScrapMenuAction,
+          onAutoGrowHeight: (scrapId: string, nextHeight: number) => {
+            if (nextHeight <= scrap.height + 1) {
+              return;
+            }
+
+            updateScrapLayout(board.id, scrapId, { height: nextHeight });
+          },
           onResizeEnd: (
             scrapId: string,
             nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -292,6 +303,9 @@ export function BoardSurface({
 
     return [...nodes, buildPlacementPreviewNode(placementPreview, placementPosition)];
   }, [nodes, placementPreview, placementPosition]);
+  const contextMenuScrap = scrapContextMenu
+    ? board.scraps.find((scrap) => scrap.id === scrapContextMenu.scrapId)
+    : null;
 
   return (
     <div
@@ -371,7 +385,10 @@ export function BoardSurface({
             zIndex: 30,
           }}
         >
-          <ScrapActionMenu onAction={runScrapContextMenuAction} />
+          <ScrapActionMenu
+            actions={contextMenuScrap ? resolveScrapMenuActions(contextMenuScrap.type) : undefined}
+            onAction={runScrapContextMenuAction}
+          />
         </div>
       ) : null}
       <ScrapCreateFab

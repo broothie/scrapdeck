@@ -15,7 +15,6 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
   const duplicateScrap = useAppStore((state) => state.duplicateScrap);
   const moveScrapToFront = useAppStore((state) => state.moveScrapToFront);
   const moveScrapToBack = useAppStore((state) => state.moveScrapToBack);
-  const updateNoteScrap = useAppStore((state) => state.updateNoteScrap);
   const updateImageScrap = useAppStore((state) => state.updateImageScrap);
   const updateLinkScrap = useAppStore((state) => state.updateLinkScrap);
 
@@ -27,22 +26,7 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
     }
 
     if (scrap.type === "note") {
-      const nextTitle = editAdapter.prompt("Edit note title", scrap.title ?? "");
-
-      if (nextTitle === null) {
-        return;
-      }
-
-      const nextBody = editAdapter.prompt("Edit note text", scrap.body);
-
-      if (nextBody === null) {
-        return;
-      }
-
-      updateNoteScrap(board.id, scrap.id, {
-        title: nextTitle.trim() || undefined,
-        body: nextBody,
-      });
+      editAdapter.alert("Notes are edited directly on the canvas.");
       return;
     }
 
@@ -102,7 +86,6 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
     board.scraps,
     updateImageScrap,
     updateLinkScrap,
-    updateNoteScrap,
     editAdapter,
   ]);
 
