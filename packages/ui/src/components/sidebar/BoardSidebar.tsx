@@ -72,13 +72,14 @@ export function BoardSidebar({
           <Button
             onPress={onCreateBoard}
             style={{
-              backgroundColor: theme.accentDefault.val,
+              backgroundColor: theme.accentStrong.val,
               borderColor: theme.accentStrong.val,
               borderWidth: 1,
-              color: theme.accentText.val,
             }}
           >
-            New board
+            <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
+              New board
+            </Text>
           </Button>
         ) : null}
 
