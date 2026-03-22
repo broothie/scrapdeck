@@ -122,7 +122,7 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
     setPlacementIntent(addNoteIntent);
   };
 
-  const handleAddImage = () => {
+  const handleAddFile = () => {
     if (!imageInputRef.current) {
       return;
     }
@@ -245,7 +245,7 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
     }
 
     if (!onUploadImage) {
-      setImageUploadError("Image upload is not configured.");
+      setImageUploadError("File upload is not configured.");
       return;
     }
 
@@ -268,12 +268,12 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
           width,
           height,
           src: uploadedImage.src,
-          alt: uploadedImage.alt ?? file.name ?? "Uploaded image",
+          alt: uploadedImage.alt ?? file.name ?? "Uploaded file",
           caption: uploadedImage.caption ?? file.name ?? undefined,
         }),
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not upload image.";
+      const message = error instanceof Error ? error.message : "Could not upload file.";
       setImageUploadError(message);
     } finally {
       setIsUploadingImage(false);
@@ -397,17 +397,6 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
             </Paragraph>
           )}
           </YStack>
-          <XStack style={{ gap: "0.75rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <Button onPress={handleAddNote}>
-              Add note
-            </Button>
-            <Button onPress={handleAddImage} disabled={isUploadingImage}>
-              {isUploadingImage ? "Uploading..." : "Add image"}
-            </Button>
-            <Button onPress={handleAddLink}>
-              Add link
-            </Button>
-          </XStack>
         </XStack>
 
         {isAddingLink ? (
@@ -460,6 +449,10 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
 
       <BoardSurface
         board={board}
+        isUploadingFile={isUploadingImage}
+        onCreateNote={handleAddNote}
+        onCreateFile={handleAddFile}
+        onCreateLink={handleAddLink}
         placementPreview={
           placementIntent
             ? {

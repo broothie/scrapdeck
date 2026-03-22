@@ -11,7 +11,8 @@ import {
   type ReactFlowInstance,
   useNodesState,
 } from "@xyflow/react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import { Plus } from "lucide-react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
 import { placementColors, useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
@@ -36,6 +37,10 @@ type PlacementNodeData = {
 
 type BoardSurfaceProps = {
   board: Board;
+  isUploadingFile?: boolean;
+  onCreateNote?: () => void;
+  onCreateFile?: () => void;
+  onCreateLink?: () => void;
   placementPreview?: PlacementPreview | null;
   onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
@@ -104,6 +109,10 @@ function withAlpha(hexColor: string, alpha: number) {
 
 export function BoardSurface({
   board,
+  isUploadingFile,
+  onCreateNote,
+  onCreateFile,
+  onCreateLink,
   placementPreview,
   onPlaceScrap,
   }: BoardSurfaceProps) {
@@ -124,6 +133,7 @@ export function BoardSurface({
     y: number;
   } | null>(null);
   const [scrapContextMenu, setScrapContextMenu] = useState<ScrapContextMenuState | null>(null);
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
 
   useEffect(() => {
     setNodes((previousNodes) => {
@@ -162,20 +172,23 @@ export function BoardSurface({
 
   useEffect(() => {
     setScrapContextMenu(null);
+    setIsFabMenuOpen(false);
   }, [board.id]);
 
   useEffect(() => {
-    if (!scrapContextMenu) {
+    if (!scrapContextMenu && !isFabMenuOpen) {
       return;
     }
 
     const handleGlobalPointerDown = () => {
       setScrapContextMenu(null);
+      setIsFabMenuOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setScrapContextMenu(null);
+        setIsFabMenuOpen(false);
       }
     };
 
@@ -186,7 +199,7 @@ export function BoardSurface({
       window.removeEventListener("pointerdown", handleGlobalPointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [scrapContextMenu]);
+  }, [isFabMenuOpen, scrapContextMenu]);
 
   const handleNodeDragStop = (_event: unknown, node: Node) => {
     if (node.type !== "scrap") {
@@ -229,7 +242,7 @@ export function BoardSurface({
     }
 
     if (scrap.type === "image") {
-      const nextCaption = window.prompt("Edit image caption", scrap.caption ?? "");
+      const nextCaption = window.prompt("Edit file caption", scrap.caption ?? "");
 
       if (nextCaption === null) {
         return;
@@ -366,6 +379,7 @@ export function BoardSurface({
 
   const handlePaneClick = (_event: ReactMouseEvent) => {
     setScrapContextMenu(null);
+    setIsFabMenuOpen(false);
 
     if (!placementPreview || !onPlaceScrap) {
       return;
@@ -419,6 +433,24 @@ export function BoardSurface({
       x,
       y,
     });
+    setIsFabMenuOpen(false);
+  };
+
+  const handleFabAction = (action: "note" | "file" | "link") => {
+    if (action === "note") {
+      onCreateNote?.();
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    if (action === "file") {
+      onCreateFile?.();
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    onCreateLink?.();
+    setIsFabMenuOpen(false);
   };
 
   const flowNodes = useMemo<Node[]>(() => {
@@ -483,6 +515,7 @@ export function BoardSurface({
         <Background
           color={theme.borderSubtle.val}
           gap={28}
+          size={1.25}
           variant={BackgroundVariant.Dots}
         />
         <MiniMap
@@ -536,12 +569,109 @@ export function BoardSurface({
           <ScrapActionMenu onAction={runScrapContextMenuAction} />
         </div>
       ) : null}
+      <div
+        onPointerDown={(event) => event.stopPropagation()}
+        style={{
+          position: "absolute",
+          right: 16,
+          top: 16,
+          zIndex: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-end",
+          gap: "0.45rem",
+        }}
+      >
+        <button
+          type="button"
+          className="nodrag nopan"
+          onClick={() => setIsFabMenuOpen((current) => !current)}
+          aria-label="Create scrap"
+          style={{
+            width: "fit-content",
+            height: 44,
+            padding: "0 0.7rem",
+            borderRadius: 12,
+            border: `1px solid ${theme.accentStrong.val}`,
+            backgroundColor: theme.accentStrong.val,
+            color: theme.accentSubtle.val,
+            boxShadow: "0 2px 7px rgba(5, 8, 14, 0.14)",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            textAlign: "center",
+            justifyContent: "center",
+            gap: "0.34rem",
+            fontSize: 15,
+            lineHeight: 1.1,
+            fontWeight: 700,
+          }}
+        >
+          Add
+          <Plus
+            size={13}
+            strokeWidth={2.25}
+            style={{
+              transform: isFabMenuOpen ? "rotate(45deg)" : "rotate(0deg)",
+              transition: "transform 160ms ease",
+            }}
+          />
+        </button>
+        {isFabMenuOpen ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: "0.38rem",
+            }}
+          >
+            <button
+              type="button"
+              className="nodrag nopan"
+              style={fabFloatingButtonStyle({
+                background: theme.surface.val,
+                border: theme.borderDefault.val,
+                text: theme.textPrimary.val,
+              })}
+              onClick={() => handleFabAction("note")}
+            >
+              Add note
+            </button>
+            <button
+              type="button"
+              className="nodrag nopan"
+              style={fabFloatingButtonStyle({
+                background: theme.surface.val,
+                border: theme.borderDefault.val,
+                text: theme.textPrimary.val,
+              })}
+              onClick={() => handleFabAction("file")}
+              disabled={isUploadingFile}
+            >
+              {isUploadingFile ? "Uploading file..." : "Add file"}
+            </button>
+            <button
+              type="button"
+              className="nodrag nopan"
+              style={fabFloatingButtonStyle({
+                background: theme.surface.val,
+                border: theme.borderDefault.val,
+                text: theme.textPrimary.val,
+              })}
+              onClick={() => handleFabAction("link")}
+            >
+              Add link
+            </button>
+          </div>
+        ) : null}
+      </div>
       {placementPreview ? (
         <View
           style={{
             position: "absolute",
             top: 16,
-            right: 16,
+            left: 16,
             zIndex: 6,
             padding: "0.45rem 0.8rem",
             border: `1px solid ${theme.borderSubtle.val}`,
@@ -558,4 +688,24 @@ export function BoardSurface({
       ) : null}
     </div>
   );
+}
+
+function fabFloatingButtonStyle(options: {
+  background: string;
+  border: string;
+  text: string;
+}): CSSProperties {
+  return {
+    minWidth: 112,
+    border: `1px solid ${options.border}`,
+    borderRadius: 10,
+    backgroundColor: options.background,
+    color: options.text,
+    textAlign: "left",
+    padding: "0.42rem 0.72rem",
+    fontSize: 13,
+    fontWeight: 500,
+    boxShadow: "0 2px 6px rgba(5, 8, 14, 0.1)",
+    cursor: "pointer",
+  };
 }

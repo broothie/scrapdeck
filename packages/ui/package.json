@@ -11,6 +11,7 @@
     "@scrapdeck/core": "*",
     "@tamagui/config": "^2.0.0-rc.29",
     "@xyflow/react": "^12.6.2",
+    "lucide-react": "^0.577.0",
     "react": "^19.2.4",
     "tamagui": "^2.0.0-rc.29"
   }

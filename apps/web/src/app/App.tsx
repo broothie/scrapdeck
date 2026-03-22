@@ -150,7 +150,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     addBoard({
       id: boardId,
       title: "Untitled board",
-      description: "A blank board ready for notes, images, and links.",
+      description: "A blank board ready for notes, files, and links.",
       scraps: [],
     });
 
@@ -177,7 +177,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
   const handleUploadImage = async (file: File) => {
     if (!supabase || !user) {
-      throw new Error("You must be signed in to upload images.");
+      throw new Error("You must be signed in to upload files.");
     }
 
     const extension = file.name.split(".").pop()?.toLowerCase() || "bin";
@@ -204,7 +204,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
     return {
       src: data.publicUrl,
-      alt: file.name || "Uploaded image",
+      alt: file.name || "Uploaded file",
       caption: file.name || undefined,
     };
   };
