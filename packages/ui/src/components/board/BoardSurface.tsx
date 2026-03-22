@@ -204,8 +204,6 @@ export function BoardSurface({
     return [...nodes, previewNode];
   }, [nodes, placementPreview, placementPosition]);
 
-  const placementLabel = placementPreview ? `Place ${placementPreview.type}` : "Drag, pan, zoom, and resize scraps.";
-
   return (
     <View
       style={{
@@ -272,24 +270,26 @@ export function BoardSurface({
         />
         <Controls showInteractive={false} />
       </ReactFlow>
-      <View
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          zIndex: 6,
-          padding: "0.45rem 0.8rem",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: 999,
-          background: "rgba(9,16,23,0.72)",
-          backdropFilter: "blur(12px)",
-          pointerEvents: "none",
-        }}
-      >
-        <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
-          {placementLabel}
-        </Text>
-      </View>
+      {placementPreview ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            zIndex: 6,
+            padding: "0.45rem 0.8rem",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 999,
+            background: "rgba(9,16,23,0.72)",
+            backdropFilter: "blur(12px)",
+            pointerEvents: "none",
+          }}
+        >
+          <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
+            {`Place ${placementPreview.type}`}
+          </Text>
+        </View>
+      ) : null}
     </View>
   );
 }
