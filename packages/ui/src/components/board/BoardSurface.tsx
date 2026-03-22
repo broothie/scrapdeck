@@ -6,33 +6,36 @@ import {
   MiniMap,
   ReactFlow,
   type Node,
-  type NodeProps,
   type NodeTypes,
   type ReactFlowInstance,
   useNodesState,
 } from "@xyflow/react";
-import { Plus } from "lucide-react";
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
-import { placementColors, useAppStore, type Board, type Scrap } from "@scrapdeck/core";
-import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
+import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
+import { PlacementPreviewNode } from "./PlacementPreviewNode";
 import { ScrapActionMenu, type ScrapContextMenuAction } from "./ScrapActionMenu";
+import { ScrapCreateFab } from "./ScrapCreateFab";
+import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
+import {
+  CONTEXT_MENU_CLAMP_WIDTH,
+  CONTEXT_MENU_HEIGHT,
+  CONTEXT_MENU_INSET,
+  CONTROLS_PANEL_GAP,
+  MINIMAP_SIZE,
+} from "./boardSurface.constants";
+import type { FabAction, PlacementPreview, ScrapContextMenuState } from "./boardSurface.types";
+import {
+  buildPlacementPreviewNode,
+  clampContextMenuPosition,
+  getMiniMapNodeColor,
+  withAlpha,
+} from "./boardSurface.utils";
+import { useScrapMenuActions } from "./useScrapMenuActions";
 
 const nodeTypes: NodeTypes = {
   scrap: ScrapNode,
   "placement-preview": PlacementPreviewNode,
-};
-
-type PlacementPreview = {
-  type: Scrap["type"];
-  width: number;
-  height: number;
-};
-
-type PlacementNodeData = {
-  width: number;
-  height: number;
-  borderColor: string;
 };
 
 type BoardSurfaceProps = {
@@ -45,68 +48,6 @@ type BoardSurfaceProps = {
   onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
 
-type ScrapContextMenuState = {
-  scrapId: string;
-  x: number;
-  y: number;
-};
-
-const minimapSize = {
-  width: 180,
-  height: 120,
-} as const;
-const panelGap = 12;
-const contextMenuClampWidth = 172;
-const contextMenuHeight = 212;
-const contextMenuInset = 12;
-
-function PlacementPreviewNode(props: NodeProps) {
-  const theme = useTheme();
-  const data = props.data as PlacementNodeData;
-
-  return (
-    <View
-      style={{
-        width: data.width,
-        height: data.height,
-        borderWidth: 2,
-        borderStyle: "dashed",
-        borderColor: data.borderColor,
-        backgroundColor: theme.accentSubtle.val,
-        borderRadius: 16,
-        pointerEvents: "none",
-      }}
-    />
-  );
-}
-
-function getPlacementColor(scrapType: Scrap["type"]): string {
-  if (scrapType === "note" || scrapType === "image" || scrapType === "link") {
-    return placementColors[scrapType];
-  }
-
-  return "#82a7ff";
-}
-
-function withAlpha(hexColor: string, alpha: number) {
-  const normalized = hexColor.replace("#", "");
-  const hasValidLength = normalized.length === 3 || normalized.length === 6;
-
-  if (!hasValidLength) {
-    return hexColor;
-  }
-
-  const expanded = normalized.length === 3
-    ? normalized.split("").map((value) => `${value}${value}`).join("")
-    : normalized;
-
-  const red = Number.parseInt(expanded.slice(0, 2), 16);
-  const green = Number.parseInt(expanded.slice(2, 4), 16);
-  const blue = Number.parseInt(expanded.slice(4, 6), 16);
-
-  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-}
-
 export function BoardSurface({
   board,
   isUploadingFile,
@@ -115,15 +56,8 @@ export function BoardSurface({
   onCreateLink,
   placementPreview,
   onPlaceScrap,
-  }: BoardSurfaceProps) {
+}: BoardSurfaceProps) {
   const theme = useTheme();
-  const deleteScrap = useAppStore((state) => state.deleteScrap);
-  const duplicateScrap = useAppStore((state) => state.duplicateScrap);
-  const moveScrapToFront = useAppStore((state) => state.moveScrapToFront);
-  const moveScrapToBack = useAppStore((state) => state.moveScrapToBack);
-  const updateNoteScrap = useAppStore((state) => state.updateNoteScrap);
-  const updateImageScrap = useAppStore((state) => state.updateImageScrap);
-  const updateLinkScrap = useAppStore((state) => state.updateLinkScrap);
   const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
   const boardSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
@@ -134,6 +68,21 @@ export function BoardSurface({
   } | null>(null);
   const [scrapContextMenu, setScrapContextMenu] = useState<ScrapContextMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const handleScrapActionComplete = useCallback((scrapId: string, action: ScrapContextMenuAction) => {
+    if (action !== "send-back") {
+      return;
+    }
+
+    setNodes((previousNodes) =>
+      previousNodes.map((node) =>
+        node.id === scrapId
+          ? { ...node, selected: false }
+          : node,
+      ));
+  }, [setNodes]);
+  const { runScrapMenuAction } = useScrapMenuActions(board, {
+    onActionComplete: handleScrapActionComplete,
+  });
 
   useEffect(() => {
     setNodes((previousNodes) => {
@@ -168,7 +117,7 @@ export function BoardSurface({
         },
       }));
     });
-  }, [board, scrapContextMenu, setNodes, updateScrapLayout]);
+  }, [board, runScrapMenuAction, scrapContextMenu, setNodes, updateScrapLayout]);
 
   useEffect(() => {
     setScrapContextMenu(null);
@@ -214,123 +163,6 @@ export function BoardSurface({
     });
   };
 
-  const handleEditScrap = useCallback((scrapId: string) => {
-    const scrap = board.scraps.find((candidate) => candidate.id === scrapId);
-
-    if (!scrap) {
-      return;
-    }
-
-    if (scrap.type === "note") {
-      const nextTitle = window.prompt("Edit note title", scrap.title ?? "");
-
-      if (nextTitle === null) {
-        return;
-      }
-
-      const nextBody = window.prompt("Edit note text", scrap.body);
-
-      if (nextBody === null) {
-        return;
-      }
-
-      updateNoteScrap(board.id, scrap.id, {
-        title: nextTitle.trim() || undefined,
-        body: nextBody,
-      });
-      return;
-    }
-
-    if (scrap.type === "image") {
-      const nextCaption = window.prompt("Edit file caption", scrap.caption ?? "");
-
-      if (nextCaption === null) {
-        return;
-      }
-
-      updateImageScrap(board.id, scrap.id, {
-        caption: nextCaption.trim() || undefined,
-      });
-      return;
-    }
-
-    const nextUrlInput = window.prompt("Edit link URL", scrap.url);
-
-    if (nextUrlInput === null) {
-      return;
-    }
-
-    const trimmedUrl = nextUrlInput.trim();
-    let normalizedUrl = scrap.url;
-
-    if (trimmedUrl) {
-      try {
-        normalizedUrl = new URL(trimmedUrl).toString();
-      } catch {
-        window.alert("Enter a valid URL, including https://");
-        return;
-      }
-    }
-
-    const nextTitle = window.prompt("Edit link label", scrap.title);
-
-    if (nextTitle === null) {
-      return;
-    }
-
-    let nextSiteName = scrap.siteName;
-
-    try {
-      nextSiteName = new URL(normalizedUrl).hostname.replace(/^www\./, "") || nextSiteName;
-    } catch {
-      nextSiteName = scrap.siteName;
-    }
-
-    updateLinkScrap(board.id, scrap.id, {
-      url: normalizedUrl,
-      siteName: nextSiteName,
-      title: nextTitle.trim() || scrap.title,
-      previewImage: normalizedUrl === scrap.url ? scrap.previewImage : undefined,
-    });
-  }, [
-    board.id,
-    board.scraps,
-    updateImageScrap,
-    updateLinkScrap,
-    updateNoteScrap,
-  ]);
-
-  const runScrapMenuAction = useCallback((scrapId: string, action: ScrapContextMenuAction) => {
-    if (action === "edit") {
-      handleEditScrap(scrapId);
-      return;
-    }
-
-    if (action === "duplicate") {
-      duplicateScrap(board.id, scrapId);
-      return;
-    }
-
-    if (action === "bring-front") {
-      moveScrapToFront(board.id, scrapId);
-      return;
-    }
-
-    if (action === "send-back") {
-      moveScrapToBack(board.id, scrapId);
-      return;
-    }
-
-    deleteScrap(board.id, scrapId);
-  }, [
-    board.id,
-    deleteScrap,
-    duplicateScrap,
-    handleEditScrap,
-    moveScrapToBack,
-    moveScrapToFront,
-  ]);
-
   const runScrapContextMenuAction = (action: ScrapContextMenuAction) => {
     if (!scrapContextMenu) {
       return;
@@ -355,12 +187,12 @@ export function BoardSurface({
     });
   };
 
-  const handlePaneMouseMove = (_event: ReactMouseEvent) => {
+  const handlePaneMouseMove = (event: ReactMouseEvent) => {
     if (!placementPreview) {
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(_event);
+    const resolvedPosition = getFlowPositionFromEvent(event);
 
     if (!resolvedPosition) {
       return;
@@ -377,7 +209,7 @@ export function BoardSurface({
     setPlacementPosition(null);
   };
 
-  const handlePaneClick = (_event: ReactMouseEvent) => {
+  const handlePaneClick = (event: ReactMouseEvent) => {
     setScrapContextMenu(null);
     setIsFabMenuOpen(false);
 
@@ -385,7 +217,7 @@ export function BoardSurface({
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(_event);
+    const resolvedPosition = getFlowPositionFromEvent(event);
 
     if (!resolvedPosition) {
       return;
@@ -418,15 +250,15 @@ export function BoardSurface({
 
     const rawX = event.clientX - paneBounds.left;
     const rawY = event.clientY - paneBounds.top;
-
-    const x = Math.max(
-      contextMenuInset,
-      Math.min(rawX, paneBounds.width - contextMenuClampWidth - contextMenuInset),
-    );
-    const y = Math.max(
-      contextMenuInset,
-      Math.min(rawY, paneBounds.height - contextMenuHeight - contextMenuInset),
-    );
+    const { x, y } = clampContextMenuPosition({
+      rawX,
+      rawY,
+      paneWidth: paneBounds.width,
+      paneHeight: paneBounds.height,
+      clampWidth: CONTEXT_MENU_CLAMP_WIDTH,
+      menuHeight: CONTEXT_MENU_HEIGHT,
+      inset: CONTEXT_MENU_INSET,
+    });
 
     setScrapContextMenu({
       scrapId: node.id,
@@ -436,7 +268,7 @@ export function BoardSurface({
     setIsFabMenuOpen(false);
   };
 
-  const handleFabAction = (action: "note" | "file" | "link") => {
+  const handleFabAction = (action: FabAction) => {
     if (action === "note") {
       onCreateNote?.();
       setIsFabMenuOpen(false);
@@ -458,23 +290,7 @@ export function BoardSurface({
       return nodes;
     }
 
-    const previewNode: Node = {
-      id: "__placement-preview__",
-      type: "placement-preview",
-      position: placementPosition,
-      width: placementPreview.width,
-      height: placementPreview.height,
-      data: {
-        width: placementPreview.width,
-        height: placementPreview.height,
-        borderColor: getPlacementColor(placementPreview.type),
-      },
-      selectable: false,
-      draggable: false,
-      deletable: false,
-    };
-
-    return [...nodes, previewNode];
+    return [...nodes, buildPlacementPreviewNode(placementPreview, placementPosition)];
   }, [nodes, placementPreview, placementPosition]);
 
   return (
@@ -521,8 +337,8 @@ export function BoardSurface({
         <MiniMap
           position="bottom-right"
           style={{
-            width: minimapSize.width,
-            height: minimapSize.height,
+            width: MINIMAP_SIZE.width,
+            height: MINIMAP_SIZE.height,
           }}
           pannable
           zoomable
@@ -531,29 +347,18 @@ export function BoardSurface({
           maskStrokeColor={theme.borderStrong.val}
           maskStrokeWidth={1.5}
           nodeStrokeColor={theme.borderStrong.val}
-          nodeColor={(node) => {
-            const scrap = node.data?.scrap as Scrap | undefined;
-
-            if (!scrap) {
-              return theme.textMuted.val;
-            }
-
-            if (scrap.type === "note") {
-              return theme.accentLight.val;
-            }
-
-            if (scrap.type === "image") {
-              return theme.accentDefault.val;
-            }
-
-            return theme.accentStrong.val;
-          }}
+          nodeColor={(node) => getMiniMapNodeColor(node, {
+            textMuted: theme.textMuted.val,
+            accentLight: theme.accentLight.val,
+            accentDefault: theme.accentDefault.val,
+            accentStrong: theme.accentStrong.val,
+          })}
         />
         <Controls
           showInteractive={false}
           position="bottom-right"
           style={{
-            right: minimapSize.width + panelGap,
+            right: MINIMAP_SIZE.width + CONTROLS_PANEL_GAP,
           }}
         />
       </ReactFlow>
@@ -569,103 +374,12 @@ export function BoardSurface({
           <ScrapActionMenu onAction={runScrapContextMenuAction} />
         </div>
       ) : null}
-      <div
-        onPointerDown={(event) => event.stopPropagation()}
-        style={{
-          position: "absolute",
-          right: 16,
-          top: 16,
-          zIndex: 24,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: "0.45rem",
-        }}
-      >
-        <button
-          type="button"
-          className="nodrag nopan"
-          onClick={() => setIsFabMenuOpen((current) => !current)}
-          aria-label="Create scrap"
-          style={{
-            width: "fit-content",
-            height: 44,
-            padding: "0 0.7rem",
-            borderRadius: 12,
-            border: `1px solid ${theme.accentStrong.val}`,
-            backgroundColor: theme.accentStrong.val,
-            color: theme.accentSubtle.val,
-            boxShadow: "0 2px 7px rgba(5, 8, 14, 0.14)",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            textAlign: "center",
-            justifyContent: "center",
-            gap: "0.34rem",
-            fontSize: 15,
-            lineHeight: 1.1,
-            fontWeight: 700,
-          }}
-        >
-          Add
-          <Plus
-            size={13}
-            strokeWidth={2.25}
-            style={{
-              transform: isFabMenuOpen ? "rotate(45deg)" : "rotate(0deg)",
-              transition: "transform 160ms ease",
-            }}
-          />
-        </button>
-        {isFabMenuOpen ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: "0.38rem",
-            }}
-          >
-            <button
-              type="button"
-              className="nodrag nopan"
-              style={fabFloatingButtonStyle({
-                background: theme.surface.val,
-                border: theme.borderDefault.val,
-                text: theme.textPrimary.val,
-              })}
-              onClick={() => handleFabAction("note")}
-            >
-              Add note
-            </button>
-            <button
-              type="button"
-              className="nodrag nopan"
-              style={fabFloatingButtonStyle({
-                background: theme.surface.val,
-                border: theme.borderDefault.val,
-                text: theme.textPrimary.val,
-              })}
-              onClick={() => handleFabAction("file")}
-              disabled={isUploadingFile}
-            >
-              {isUploadingFile ? "Uploading file..." : "Add file"}
-            </button>
-            <button
-              type="button"
-              className="nodrag nopan"
-              style={fabFloatingButtonStyle({
-                background: theme.surface.val,
-                border: theme.borderDefault.val,
-                text: theme.textPrimary.val,
-              })}
-              onClick={() => handleFabAction("link")}
-            >
-              Add link
-            </button>
-          </div>
-        ) : null}
-      </div>
+      <ScrapCreateFab
+        isOpen={isFabMenuOpen}
+        isUploadingFile={isUploadingFile}
+        onToggle={() => setIsFabMenuOpen((current) => !current)}
+        onAction={handleFabAction}
+      />
       {placementPreview ? (
         <View
           style={{
@@ -688,24 +402,4 @@ export function BoardSurface({
       ) : null}
     </div>
   );
-}
-
-function fabFloatingButtonStyle(options: {
-  background: string;
-  border: string;
-  text: string;
-}): CSSProperties {
-  return {
-    minWidth: 112,
-    border: `1px solid ${options.border}`,
-    borderRadius: 10,
-    backgroundColor: options.background,
-    color: options.text,
-    textAlign: "left",
-    padding: "0.42rem 0.72rem",
-    fontSize: 13,
-    fontWeight: 500,
-    boxShadow: "0 2px 6px rgba(5, 8, 14, 0.1)",
-    cursor: "pointer",
-  };
 }

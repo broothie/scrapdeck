@@ -88,7 +88,7 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [x] Make zoom-controls colors adapt to light/dark theme
 - [ ] Make deck title/description editing feel more natural
 - [x] Add tests
-- [ ] Refactor into smaller, more modular/testable files
+- [x] Refactor into smaller, more modular/testable files
 - [ ] Reduce bundle size with code-splitting/perf cleanup
 - [ ] Move usernames from auth metadata into a profiles table if we need uniqueness/discovery/richer profiles
 - [ ] Replace whole-board debounced upserts with more granular persistence if needed
