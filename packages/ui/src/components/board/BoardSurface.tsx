@@ -79,6 +79,7 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
         minZoom={0.4}
         maxZoom={1.8}
         panOnScroll
+        proOptions={{ hideAttribution: true }}
         deleteKeyCode={null}
         nodesConnectable={false}
         nodesFocusable
