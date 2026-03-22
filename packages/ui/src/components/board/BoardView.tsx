@@ -1,7 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
-import { useAppStore, type Board } from "@scrapdeck/core";
+import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { BoardSurface } from "./BoardSurface";
+
+type PlacementIntent = {
+  type: Scrap["type"];
+  width: number;
+  height: number;
+  create: (position: { x: number; y: number }) => Scrap;
+};
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -16,6 +23,24 @@ export function BoardView({ board }: BoardViewProps) {
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkError, setLinkError] = useState("");
+  const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
+
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPlacementIntent(null);
+        setIsAddingLink(false);
+        setLinkUrl("");
+        setLinkError("");
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   const closeLinkComposer = () => {
     setIsAddingLink(false);
@@ -23,43 +48,40 @@ export function BoardView({ board }: BoardViewProps) {
     setLinkError("");
   };
 
-  const nextPlacement = () => {
-    const offset = board.scraps.length * 22;
-
-    return {
-      x: 72 + (offset % 220),
-      y: 88 + (offset % 180),
-    };
-  };
-
   const handleAddNote = () => {
-    const { x, y } = nextPlacement();
-
-    addScrap(board.id, {
-      id: createId("note"),
+    setPlacementIntent({
       type: "note",
-      x,
-      y,
       width: 260,
       height: 190,
-      title: "Fresh note",
-      body: "Drop quick thoughts here and drag them into place.",
+      create: ({ x, y }) => ({
+        id: createId("note"),
+        type: "note",
+        x,
+        y,
+        width: 260,
+        height: 190,
+        title: "Fresh note",
+        body: "Drop quick thoughts here and drag them into place.",
+      }),
     });
   };
 
   const handleAddImage = () => {
-    const { x, y } = nextPlacement();
-
-    addScrap(board.id, {
-      id: createId("image"),
+    setPlacementIntent({
       type: "image",
-      x,
-      y,
       width: 320,
       height: 250,
-      src: "/demo-assets/studio-board.svg",
-      alt: "Demo image scrap",
-      caption: "Placeholder image for the prototype.",
+      create: ({ x, y }) => ({
+        id: createId("image"),
+        type: "image",
+        x,
+        y,
+        width: 320,
+        height: 250,
+        src: "/demo-assets/studio-board.svg",
+        alt: "Demo image scrap",
+        caption: "Placeholder image for the prototype.",
+      }),
     });
   };
 
@@ -85,25 +107,38 @@ export function BoardView({ board }: BoardViewProps) {
       return;
     }
 
-    const { x, y } = nextPlacement();
     const hostname = parsedUrl.hostname.replace(/^www\./, "");
     const path = parsedUrl.pathname === "/" ? "" : parsedUrl.pathname;
     const summary = [hostname, path].filter(Boolean).join("");
 
-    addScrap(board.id, {
-      id: createId("link"),
+    setPlacementIntent({
       type: "link",
-      x,
-      y,
       width: 360,
       height: 208,
-      url: parsedUrl.toString(),
-      siteName: hostname || "Saved Link",
-      title: summary || parsedUrl.toString(),
-      description: "Saved from a pasted URL.",
+      create: ({ x, y }) => ({
+        id: createId("link"),
+        type: "link",
+        x,
+        y,
+        width: 360,
+        height: 208,
+        url: parsedUrl.toString(),
+        siteName: hostname || "Saved Link",
+        title: summary || parsedUrl.toString(),
+        description: "Saved from a pasted URL.",
+      }),
     });
 
     closeLinkComposer();
+  };
+
+  const handlePlaceScrap = (position: { x: number; y: number }) => {
+    if (!placementIntent) {
+      return;
+    }
+
+    addScrap(board.id, placementIntent.create(position));
+    setPlacementIntent(null);
   };
 
   return (
@@ -172,7 +207,19 @@ export function BoardView({ board }: BoardViewProps) {
         </Card>
       ) : null}
 
-      <BoardSurface board={board} />
+      <BoardSurface
+        board={board}
+        placementPreview={
+          placementIntent
+            ? {
+                type: placementIntent.type,
+                width: placementIntent.width,
+                height: placementIntent.height,
+              }
+            : null
+        }
+        onPlaceScrap={handlePlaceScrap}
+      />
     </YStack>
   );
 }

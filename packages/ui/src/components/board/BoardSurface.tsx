@@ -1,10 +1,15 @@
-import { useEffect, type MouseEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
   Controls,
   MiniMap,
   ReactFlow,
+  type Node,
+  type NodeProps,
+  type OnInit,
+  type ReactFlowInstance,
+  type XYPosition,
   useNodesState,
 } from "@xyflow/react";
 import { Text, View } from "tamagui";
@@ -13,15 +18,72 @@ import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
 
 const nodeTypes = {
   scrap: ScrapNode,
+  "placement-preview": PlacementPreviewNode,
 };
+
+type PlacementPreview = {
+  type: Scrap["type"];
+  width: number;
+  height: number;
+};
+
+type PlacementNodeData = {
+  width: number;
+  height: number;
+  borderColor: string;
+};
+
+type PlacementNode = Node<PlacementNodeData, "placement-preview">;
+
+type BoardNode = ScrapFlowNode | PlacementNode;
 
 type BoardSurfaceProps = {
   board: Board;
+  placementPreview?: PlacementPreview | null;
+  onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
 
-export function BoardSurface({ board }: BoardSurfaceProps) {
+function PlacementPreviewNode({ data }: NodeProps<PlacementNodeData>) {
+  return (
+    <View
+      style={{
+        width: data.width,
+        height: data.height,
+        borderWidth: 2,
+        borderStyle: "dashed",
+        borderColor: data.borderColor,
+        backgroundColor: "rgba(241, 198, 111, 0.12)",
+        borderRadius: 16,
+        pointerEvents: "none",
+      }}
+    />
+  );
+}
+
+function getPlacementColor(scrapType: Scrap["type"]): string {
+  if (scrapType === "note") {
+    return "#f1c66f";
+  }
+
+  if (scrapType === "image") {
+    return "#7fd3b5";
+  }
+
+  return "#82a7ff";
+}
+
+export function BoardSurface({
+  board,
+  placementPreview,
+  onPlaceScrap,
+}: BoardSurfaceProps) {
   const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
-  const [nodes, setNodes, onNodesChange] = useNodesState<ScrapFlowNode>([]);
+  const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState<BoardNode>([]);
+  const [placementPosition, setPlacementPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     setNodes(
@@ -45,12 +107,111 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
     );
   }, [board, setNodes, updateScrapLayout]);
 
-  const handleNodeDragStop = (_event: MouseEvent, node: ScrapFlowNode) => {
+  const handleNodeDragStop = (_event: unknown, node: BoardNode) => {
+    if (node.type !== "scrap") {
+      return;
+    }
+
     updateScrapLayout(board.id, node.id, {
       x: node.position.x,
       y: node.position.y,
     });
   };
+
+  const getFlowPositionFromEvent = (event: unknown, flowPosition?: XYPosition) => {
+    if (flowPosition) {
+      return flowPosition;
+    }
+
+    if (typeof event !== "object" || event === null) {
+      return null;
+    }
+
+    const nextEvent = event as { clientX?: number; clientY?: number };
+
+    if (typeof nextEvent.clientX !== "number" || typeof nextEvent.clientY !== "number") {
+      return null;
+    }
+
+    if (!flowInstance) {
+      return null;
+    }
+
+    return flowInstance.screenToFlowPosition({
+      x: nextEvent.clientX,
+      y: nextEvent.clientY,
+    });
+  };
+
+  const handlePaneMouseMove = (_event: unknown, flowPosition?: XYPosition) => {
+    if (!placementPreview) {
+      return;
+    }
+
+    const resolvedPosition = getFlowPositionFromEvent(_event, flowPosition);
+
+    if (!resolvedPosition) {
+      return;
+    }
+
+    setPlacementPosition(resolvedPosition);
+  };
+
+  const handlePaneMouseLeave = () => {
+    if (!placementPreview) {
+      return;
+    }
+
+    setPlacementPosition(null);
+  };
+
+  const handlePaneClick = (_event: unknown, flowPosition?: XYPosition) => {
+    if (!placementPreview || !onPlaceScrap) {
+      return;
+    }
+
+    const resolvedPosition = getFlowPositionFromEvent(_event, flowPosition);
+
+    if (!resolvedPosition) {
+      return;
+    }
+
+    onPlaceScrap({
+      x: resolvedPosition.x,
+      y: resolvedPosition.y,
+    });
+    setPlacementPosition(null);
+  };
+
+  const handleInit: OnInit = (instance) => {
+    setFlowInstance(instance);
+  };
+
+  const flowNodes = useMemo<BoardNode[]>(() => {
+    if (!placementPreview || !placementPosition) {
+      return nodes;
+    }
+
+    const previewNode: PlacementNode = {
+      id: "__placement-preview__",
+      type: "placement-preview",
+      position: placementPosition,
+      width: placementPreview.width,
+      height: placementPreview.height,
+      data: {
+        width: placementPreview.width,
+        height: placementPreview.height,
+        borderColor: getPlacementColor(placementPreview.type),
+      },
+      selectable: false,
+      draggable: false,
+      deletable: false,
+    };
+
+    return [...nodes, previewNode];
+  }, [nodes, placementPreview, placementPosition]);
+
+  const placementLabel = placementPreview ? `Place ${placementPreview.type}` : "Drag, pan, zoom, and resize scraps.";
 
   return (
     <View
@@ -69,17 +230,22 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
       <ReactFlow
         key={board.id}
         className="scrapdeck-flow"
-        nodes={nodes}
+        nodes={flowNodes}
         edges={[]}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDragStop={handleNodeDragStop}
+        onPaneMouseMove={handlePaneMouseMove}
+        onPaneMouseLeave={handlePaneMouseLeave}
+        onPaneClick={handlePaneClick}
         fitView
         fitViewOptions={{ padding: 0.18 }}
         minZoom={0.4}
         maxZoom={1.8}
+        panOnDrag={!placementPreview}
         panOnScroll
         proOptions={{ hideAttribution: true }}
+        onInit={handleInit}
         deleteKeyCode={null}
         nodesConnectable={false}
         nodesFocusable
@@ -128,7 +294,7 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
         }}
       >
         <Text style={{ color: "rgba(245,239,226,0.78)", fontSize: 13 }}>
-          Drag, pan, zoom, and resize scraps.
+          {placementLabel}
         </Text>
       </View>
     </View>
