@@ -14,13 +14,41 @@ function createId(prefix: string) {
 }
 
 type AppThemeMode = "light" | "dark";
+type ThemePreference = "system" | AppThemeMode;
 
 type AppShellProps = {
-  themeMode: AppThemeMode;
-  onToggleTheme: () => void;
+  themePreference: ThemePreference;
+  onThemePreferenceChange: (nextPreference: ThemePreference) => void;
 };
 
-function AppShell({ themeMode, onToggleTheme }: AppShellProps) {
+function resolveSystemThemeMode(): AppThemeMode {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return "dark";
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function resolveStoredThemePreference(): ThemePreference {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+
+  const savedPreference = window.localStorage.getItem("scrapdeck-theme-preference");
+
+  if (savedPreference === "system" || savedPreference === "light" || savedPreference === "dark") {
+    return savedPreference;
+  }
+
+  const legacyTheme = window.localStorage.getItem("scrapdeck-theme");
+  if (legacyTheme === "light" || legacyTheme === "dark") {
+    return legacyTheme;
+  }
+
+  return "system";
+}
+
+function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const theme = useTheme();
   const boards = useAppStore((state) => state.boards);
   const activeBoardId = useAppStore((state) => state.activeBoardId);
@@ -152,8 +180,8 @@ function AppShell({ themeMode, onToggleTheme }: AppShellProps) {
         onSelectBoard={setActiveBoard}
         onDeleteBoard={handleDeleteBoard}
         accountUsername={username}
-        themeMode={themeMode}
-        onToggleTheme={onToggleTheme}
+        themePreference={themePreference}
+        onThemePreferenceChange={onThemePreferenceChange}
         isSigningOut={isSigningOut}
         onSignOut={handleSignOut}
       />
@@ -169,28 +197,43 @@ function AppShell({ themeMode, onToggleTheme }: AppShellProps) {
 }
 
 export function App() {
-  const [themeMode, setThemeMode] = useState<AppThemeMode>(() => {
-    if (typeof window === "undefined") {
-      return "dark";
-    }
-
-    const savedTheme = window.localStorage.getItem("scrapdeck-theme");
-    return savedTheme === "light" || savedTheme === "dark" ? savedTheme : "dark";
-  });
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() =>
+    resolveStoredThemePreference(),
+  );
+  const [systemThemeMode, setSystemThemeMode] = useState<AppThemeMode>(() => resolveSystemThemeMode());
+  const themeMode = themePreference === "system" ? systemThemeMode : themePreference;
 
   useEffect(() => {
-    window.localStorage.setItem("scrapdeck-theme", themeMode);
-    document.documentElement.style.colorScheme = themeMode;
-  }, [themeMode]);
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
 
-  const handleToggleTheme = () => {
-    setThemeMode((previousTheme) => (previousTheme === "dark" ? "light" : "dark"));
-  };
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleMediaQueryChange = () => {
+      setSystemThemeMode(mediaQuery.matches ? "dark" : "light");
+    };
+
+    handleMediaQueryChange();
+    mediaQuery.addEventListener("change", handleMediaQueryChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaQueryChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("scrapdeck-theme-preference", themePreference);
+    window.localStorage.removeItem("scrapdeck-theme");
+    document.documentElement.style.colorScheme = themeMode;
+  }, [themeMode, themePreference]);
 
   return (
     <Theme name={themeMode}>
       <AuthProvider>
-        <AppShell themeMode={themeMode} onToggleTheme={handleToggleTheme} />
+        <AppShell
+          themePreference={themePreference}
+          onThemePreferenceChange={setThemePreference}
+        />
       </AuthProvider>
     </Theme>
   );

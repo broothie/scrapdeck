@@ -1,5 +1,16 @@
-import { Button, H2, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import {
+  Button,
+  H2,
+  Paragraph,
+  Text,
+  ToggleGroup,
+  XStack,
+  YStack,
+  useTheme,
+} from "tamagui";
 import type { Board } from "@scrapdeck/core";
+
+type ThemePreference = "system" | "light" | "dark";
 
 type BoardSidebarProps = {
   boards: Board[];
@@ -8,8 +19,8 @@ type BoardSidebarProps = {
   onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
-  themeMode?: "light" | "dark";
-  onToggleTheme?: () => void;
+  themePreference?: ThemePreference;
+  onThemePreferenceChange?: (nextPreference: ThemePreference) => void;
   onSignOut?: () => void;
   isSigningOut?: boolean;
 };
@@ -21,8 +32,8 @@ export function BoardSidebar({
   onDeleteBoard,
   onCreateBoard,
   accountUsername,
-  themeMode,
-  onToggleTheme,
+  themePreference = "system",
+  onThemePreferenceChange,
   onSignOut,
   isSigningOut = false,
 }: BoardSidebarProps) {
@@ -147,10 +158,81 @@ export function BoardSidebar({
               </Text>
             ) : null}
           </YStack>
-          {onToggleTheme ? (
-            <Button onPress={onToggleTheme} variant="outlined">
-              {themeMode === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            </Button>
+          {onThemePreferenceChange ? (
+            <YStack gap="$2">
+              <Text style={{ color: theme.textSecondary.val, fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase" }}>
+                Theme
+              </Text>
+              <ToggleGroup
+                type="single"
+                orientation="horizontal"
+                value={themePreference}
+                onValueChange={(nextValue) => {
+                  if (nextValue === "system" || nextValue === "dark" || nextValue === "light") {
+                    onThemePreferenceChange(nextValue);
+                  }
+                }}
+                disableDeactivation
+                style={{
+                  width: "100%",
+                  flexDirection: "row",
+                  borderRadius: 10,
+                  overflow: "hidden",
+                  borderWidth: 1,
+                  borderColor: theme.borderDefault.val,
+                  backgroundColor: theme.surfaceHover.val,
+                }}
+              >
+                <ToggleGroup.Item
+                  value="system"
+                  aria-label="Follow system theme"
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    borderRadius: 0,
+                    backgroundColor:
+                      themePreference === "system" ? theme.accentSubtle.val : "transparent",
+                    color: themePreference === "system" ? theme.textPrimary.val : theme.textSecondary.val,
+                    fontWeight: themePreference === "system" ? 600 : 500,
+                  }}
+                >
+                  OS
+                </ToggleGroup.Item>
+                <ToggleGroup.Item
+                  value="dark"
+                  aria-label="Use dark theme"
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    borderRadius: 0,
+                    borderLeftWidth: 1,
+                    borderRightWidth: 1,
+                    borderColor: theme.borderDefault.val,
+                    backgroundColor:
+                      themePreference === "dark" ? theme.accentSubtle.val : "transparent",
+                    color: themePreference === "dark" ? theme.textPrimary.val : theme.textSecondary.val,
+                    fontWeight: themePreference === "dark" ? 600 : 500,
+                  }}
+                >
+                  Dark
+                </ToggleGroup.Item>
+                <ToggleGroup.Item
+                  value="light"
+                  aria-label="Use light theme"
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    borderRadius: 0,
+                    backgroundColor:
+                      themePreference === "light" ? theme.accentSubtle.val : "transparent",
+                    color: themePreference === "light" ? theme.textPrimary.val : theme.textSecondary.val,
+                    fontWeight: themePreference === "light" ? 600 : 500,
+                  }}
+                >
+                  Light
+                </ToggleGroup.Item>
+              </ToggleGroup>
+            </YStack>
           ) : null}
           {onSignOut ? (
             <Button
