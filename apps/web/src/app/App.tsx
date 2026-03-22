@@ -260,6 +260,7 @@ export function App() {
     window.localStorage.setItem("scrapdeck-theme-preference", themePreference);
     window.localStorage.removeItem("scrapdeck-theme");
     document.documentElement.style.colorScheme = themeMode;
+    document.documentElement.dataset.themeMode = themeMode;
   }, [themeMode, themePreference]);
 
   return (

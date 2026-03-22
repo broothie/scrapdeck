@@ -67,6 +67,25 @@ function getPlacementColor(scrapType: Scrap["type"]): string {
   return "#82a7ff";
 }
 
+function withAlpha(hexColor: string, alpha: number) {
+  const normalized = hexColor.replace("#", "");
+  const hasValidLength = normalized.length === 3 || normalized.length === 6;
+
+  if (!hasValidLength) {
+    return hexColor;
+  }
+
+  const expanded = normalized.length === 3
+    ? normalized.split("").map((value) => `${value}${value}`).join("")
+    : normalized;
+
+  const red = Number.parseInt(expanded.slice(0, 2), 16);
+  const green = Number.parseInt(expanded.slice(2, 4), 16);
+  const blue = Number.parseInt(expanded.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+}
+
 export function BoardSurface({
   board,
   placementPreview,
@@ -247,7 +266,11 @@ export function BoardSurface({
         <MiniMap
           pannable
           zoomable
-          maskColor={theme.overlay.val}
+          bgColor={theme.surfaceHover.val}
+          maskColor={withAlpha(theme.overlay.val, 0.68)}
+          maskStrokeColor={theme.borderStrong.val}
+          maskStrokeWidth={1.5}
+          nodeStrokeColor={theme.borderStrong.val}
           nodeColor={(node) => {
             const scrap = node.data?.scrap as Scrap | undefined;
 
@@ -256,14 +279,14 @@ export function BoardSurface({
             }
 
             if (scrap.type === "note") {
-              return "#f1c66f";
+              return theme.accentLight.val;
             }
 
             if (scrap.type === "image") {
-              return "#7fd3b5";
+              return theme.accentDefault.val;
             }
 
-            return "#82a7ff";
+            return theme.accentStrong.val;
           }}
         />
         <Controls showInteractive={false} />

@@ -7,6 +7,21 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --flow-controls-bg: #ffffff;
+  --flow-controls-border: #d5d1c8;
+  --flow-controls-button-border: #e8e5de;
+  --flow-controls-button-color: #2c2a25;
+  --flow-controls-button-hover: #f3f1ec;
+  --flow-panel-shadow: 0 4px 10px rgba(24, 23, 15, 0.09);
+}
+
+:root[data-theme-mode="dark"] {
+  --flow-controls-bg: #383540;
+  --flow-controls-border: #524f5c;
+  --flow-controls-button-border: #3e3b44;
+  --flow-controls-button-color: #d8d0dc;
+  --flow-controls-button-hover: #423f4a;
+  --flow-panel-shadow: 0 4px 12px rgba(8, 7, 10, 0.2);
 }
 
 * {
@@ -60,22 +75,22 @@ a {
 .scrapdeck-flow .react-flow__minimap {
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 12px 28px rgba(5, 8, 14, 0.22);
+  box-shadow: var(--flow-panel-shadow);
 }
 
 .scrapdeck-flow .react-flow__controls {
-  background: #1f1d16;
-  border: 1px solid #3a3830;
+  background: var(--flow-controls-bg);
+  border: 1px solid var(--flow-controls-border);
 }
 
 .scrapdeck-flow .react-flow__controls-button {
   background: transparent;
-  border-bottom: 1px solid #2a2820;
-  color: #d8d4cb;
+  border-bottom: 1px solid var(--flow-controls-button-border);
+  color: var(--flow-controls-button-color);
 }
 
 .scrapdeck-flow .react-flow__controls-button:hover {
-  background: #272520;
+  background: var(--flow-controls-button-hover);
 }
 
 .scrapdeck-flow .react-flow__controls-button svg {

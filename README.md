@@ -57,8 +57,8 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [ ] Show richer save/loading/error state in the UI
 - [ ] Improve empty-state onboarding
 - [ ] Add mobile interaction polish
-- [ ] Dial down the minimap and zoom-controls shadow
-- [ ] Make zoom-controls colors adapt to light/dark theme
+- [x] Dial down the minimap and zoom-controls shadow
+- [x] Make zoom-controls colors adapt to light/dark theme
 - [x] Add tests
 - [ ] Reduce bundle size with code-splitting/perf cleanup
 - [ ] Move usernames from auth metadata into a profiles table if we need uniqueness/discovery/richer profiles
