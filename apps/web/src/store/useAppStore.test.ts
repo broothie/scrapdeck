@@ -116,4 +116,86 @@ describe("useAppStore", () => {
     });
     expect(activeBoard.scraps).toHaveLength(1);
   });
+
+  it("duplicates, reorders, and edits link/image scraps", () => {
+    const board: Board = {
+      id: "board-1",
+      title: "Board",
+      description: "Working",
+      scraps: [
+        {
+          id: "note-1",
+          type: "note",
+          x: 10,
+          y: 20,
+          width: 260,
+          height: 190,
+          title: "Old",
+          body: "Body",
+        },
+        {
+          id: "image-1",
+          type: "image",
+          x: 300,
+          y: 20,
+          width: 320,
+          height: 250,
+          src: "/image.png",
+          alt: "Image",
+          caption: undefined,
+        },
+        {
+          id: "link-1",
+          type: "link",
+          x: 500,
+          y: 30,
+          width: 360,
+          height: 208,
+          url: "https://example.com",
+          siteName: "example.com",
+          title: "Example",
+          description: "Sample",
+          previewImage: undefined,
+        },
+      ],
+    };
+
+    useAppStore.getState().addBoard(board);
+
+    useAppStore.getState().duplicateScrap("board-1", "link-1");
+    const duplicatedBoard = useAppStore.getState().boards[0];
+    expect(duplicatedBoard.scraps).toHaveLength(4);
+    expect(duplicatedBoard.scraps[3].type).toBe("link");
+
+    useAppStore.getState().moveScrapToBack("board-1", "link-1");
+    expect(useAppStore.getState().boards[0].scraps[0].id).toBe("link-1");
+
+    useAppStore.getState().moveScrapToFront("board-1", "note-1");
+    const scrapsAfterReorder = useAppStore.getState().boards[0].scraps;
+    expect(scrapsAfterReorder[scrapsAfterReorder.length - 1].id).toBe("note-1");
+
+    useAppStore.getState().updateImageScrap("board-1", "image-1", {
+      caption: "Updated caption",
+    });
+    useAppStore.getState().updateLinkScrap("board-1", "link-1", {
+      title: "Updated link",
+      url: "https://example.com/new",
+    });
+
+    const updatedScraps = useAppStore.getState().boards[0].scraps;
+    const updatedImage = updatedScraps.find((scrap) => scrap.id === "image-1");
+    const updatedLink = updatedScraps.find((scrap) => scrap.id === "link-1");
+
+    expect(updatedImage).toMatchObject({
+      id: "image-1",
+      type: "image",
+      caption: "Updated caption",
+    });
+    expect(updatedLink).toMatchObject({
+      id: "link-1",
+      type: "link",
+      title: "Updated link",
+      url: "https://example.com/new",
+    });
+  });
 });

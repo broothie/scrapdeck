@@ -1,6 +1,5 @@
-import { memo, type MouseEvent } from "react";
+import { memo } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
-import { useTheme } from "tamagui";
 import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
@@ -9,7 +8,6 @@ import { NoteScrapCard } from "./scraps/NoteScrap";
 export type ScrapNodeData = {
   scrap: Scrap;
   boardId: string;
-  onDelete: (scrapId: string) => void;
   onResizeEnd: (
     scrapId: string,
     nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -24,13 +22,6 @@ function ScrapNodeComponent({
   positionAbsoluteX,
   positionAbsoluteY,
 }: NodeProps<ScrapFlowNode>) {
-  const theme = useTheme();
-
-  const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    data.onDelete(data.scrap.id);
-  };
-
   return (
     <div
       style={{
@@ -39,29 +30,6 @@ function ScrapNodeComponent({
         position: "relative",
       }}
     >
-      <button
-        type="button"
-        aria-label={`Delete ${data.scrap.type} scrap`}
-        className="nodrag nopan"
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={handleDelete}
-        style={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          zIndex: 10,
-          border: `1px solid ${theme.borderSubtle.val}`,
-          borderRadius: 999,
-          backgroundColor: theme.overlay.val,
-          color: theme.textPrimary.val,
-          fontSize: 12,
-          lineHeight: 1,
-          padding: "0.3rem 0.45rem",
-          cursor: "pointer",
-        }}
-      >
-        Del
-      </button>
       <NodeResizer
         isVisible={selected}
         minWidth={220}
