@@ -89,8 +89,8 @@ function ScrapNodeComponent({
           height: "100%",
           borderRadius: 18,
           boxShadow: selected
-            ? "0 0 0 2px rgba(127, 140, 255, 0.55), 0 18px 48px rgba(5, 8, 14, 0.24)"
-            : "0 14px 34px rgba(5, 8, 14, 0.18)",
+            ? "0 0 0 1px rgba(127, 140, 255, 0.42), 0 10px 22px rgba(5, 8, 14, 0.12)"
+            : "0 4px 10px rgba(5, 8, 14, 0.08)",
         }}
       >
         {data.scrap.type === "note" ? (

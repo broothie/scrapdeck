@@ -47,7 +47,7 @@ export function BoardSidebar({
         minWidth: 250,
         padding: "1.5rem",
         borderRight: `1px solid ${theme.borderSubtle.val}`,
-        backgroundColor: theme.surface.val,
+        backgroundColor: theme.canvas.val,
         backdropFilter: "blur(24px)",
       }}
     >
@@ -197,7 +197,7 @@ export function BoardSidebar({
                     fontWeight: themePreference === "system" ? 600 : 500,
                   }}
                 >
-                  OS
+                  <Text>OS</Text>
                 </ToggleGroup.Item>
                 <ToggleGroup.Item
                   value="dark"
@@ -215,7 +215,7 @@ export function BoardSidebar({
                     fontWeight: themePreference === "dark" ? 600 : 500,
                   }}
                 >
-                  Dark
+                  <Text>Dark</Text>
                 </ToggleGroup.Item>
                 <ToggleGroup.Item
                   value="light"
@@ -230,7 +230,7 @@ export function BoardSidebar({
                     fontWeight: themePreference === "light" ? 600 : 500,
                   }}
                 >
-                  Light
+                  <Text>Light</Text>
                 </ToggleGroup.Item>
               </ToggleGroup>
             </YStack>

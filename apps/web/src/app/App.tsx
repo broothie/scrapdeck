@@ -169,7 +169,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   return (
     <XStack
       style={{
-        minHeight: "100vh",
+        height: "100vh",
         backgroundColor: theme.canvas.val,
       }}
     >
@@ -185,7 +185,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
         isSigningOut={isSigningOut}
         onSignOut={handleSignOut}
       />
-      <View style={{ flex: 1, padding: "1.5rem" }}>
+      <View style={{ flex: 1, minHeight: 0 }}>
         {activeBoard ? (
           <BoardView board={activeBoard} />
         ) : (

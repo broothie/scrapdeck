@@ -211,12 +211,9 @@ export function BoardSurface({
       style={{
         position: "relative",
         flex: 1,
+        minHeight: 0,
         overflow: "hidden",
-        border: `1px solid ${theme.borderSubtle.val}`,
-        borderRadius: 28,
         backgroundColor: theme.surface.val,
-        boxShadow:
-          "inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 28px 60px rgba(0, 0, 0, 0.18)",
       }}
     >
       <ReactFlow
