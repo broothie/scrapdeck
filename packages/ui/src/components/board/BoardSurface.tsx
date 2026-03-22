@@ -35,6 +35,7 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
         width: scrap.width,
         height: scrap.height,
         data: {
+          boardId: board.id,
           scrap,
           onResizeEnd: (scrapId, nextLayout) => {
             updateScrapLayout(board.id, scrapId, nextLayout);
@@ -46,8 +47,8 @@ export function BoardSurface({ board }: BoardSurfaceProps) {
 
   const handleNodeDragStop = (_event: MouseEvent, node: ScrapFlowNode) => {
     updateScrapLayout(board.id, node.id, {
-      x: Math.max(24, node.position.x),
-      y: Math.max(24, node.position.y),
+      x: node.position.x,
+      y: node.position.y,
     });
   };
 

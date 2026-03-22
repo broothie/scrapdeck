@@ -7,6 +7,7 @@ import { NoteScrapCard } from "./scraps/NoteScrap";
 
 export type ScrapNodeData = {
   scrap: Scrap;
+  boardId: string;
   onResizeEnd: (
     scrapId: string,
     nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -59,7 +60,9 @@ function ScrapNodeComponent({
             : "0 14px 34px rgba(5, 8, 14, 0.18)",
         }}
       >
-        {data.scrap.type === "note" ? <NoteScrapCard scrap={data.scrap} /> : null}
+        {data.scrap.type === "note" ? (
+          <NoteScrapCard boardId={data.boardId} scrap={data.scrap} />
+        ) : null}
         {data.scrap.type === "image" ? <ImageScrapCard scrap={data.scrap} /> : null}
         {data.scrap.type === "link" ? <LinkScrapCard scrap={data.scrap} /> : null}
       </div>

@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import type { Board, Scrap } from "../types";
+import type { Board, NoteScrap, Scrap } from "../types";
 
 type ScrapLayoutPatch = Partial<Pick<Scrap, "x" | "y" | "width" | "height">>;
+type NoteScrapPatch = Partial<Pick<NoteScrap, "title" | "body">>;
 
 type AppState = {
   boards: Board[];
@@ -10,6 +11,11 @@ type AppState = {
   addBoard: (board: Board) => void;
   setActiveBoard: (boardId: string) => void;
   addScrap: (boardId: string, scrap: Scrap) => void;
+  updateNoteScrap: (
+    boardId: string,
+    scrapId: string,
+    patch: NoteScrapPatch,
+  ) => void;
   updateScrapLayout: (
     boardId: string,
     scrapId: string,
@@ -39,6 +45,21 @@ export const useAppStore = create<AppState>((set) => ({
       boards: state.boards.map((board) =>
         board.id === boardId
           ? { ...board, scraps: [...board.scraps, scrap] }
+          : board,
+      ),
+    })),
+  updateNoteScrap: (boardId, scrapId, patch) =>
+    set((state) => ({
+      boards: state.boards.map((board) =>
+        board.id === boardId
+          ? {
+              ...board,
+              scraps: board.scraps.map((scrap) =>
+                scrap.id === scrapId && scrap.type === "note"
+                  ? { ...scrap, ...patch }
+                  : scrap,
+              ),
+            }
           : board,
       ),
     })),
