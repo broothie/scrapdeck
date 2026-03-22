@@ -10,7 +10,8 @@ export function useBoardSync(userId: string | undefined) {
   const boards = useAppStore((state) => state.boards);
   const setBoards = useAppStore((state) => state.setBoards);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const isHydratingRef = useRef(false);
   const hydratedUserIdRef = useRef<string | null>(null);
   const lastSavedSnapshotRef = useRef<string>("");
@@ -23,13 +24,15 @@ export function useBoardSync(userId: string | undefined) {
       lastSavedSnapshotRef.current = "";
       setBoards([]);
       setIsLoading(false);
+      setLoadError(null);
+      setSaveError(null);
       return;
     }
 
     let isCancelled = false;
     isHydratingRef.current = true;
     setIsLoading(true);
-    setError(null);
+    setLoadError(null);
 
     fetchBoards(userId)
       .then((nextBoards) => {
@@ -47,7 +50,7 @@ export function useBoardSync(userId: string | undefined) {
           return;
         }
 
-        setError(nextError.message);
+        setLoadError(nextError.message);
         setIsLoading(false);
       })
       .finally(() => {
@@ -78,9 +81,10 @@ export function useBoardSync(userId: string | undefined) {
       saveBoards(userId, boards)
         .then(() => {
           lastSavedSnapshotRef.current = boardSnapshot;
+          setSaveError(null);
         })
         .catch((nextError: Error) => {
-          setError(nextError.message);
+          setSaveError(nextError.message);
         });
     }, 250);
 
@@ -93,6 +97,7 @@ export function useBoardSync(userId: string | undefined) {
 
   return {
     isLoading,
-    error,
+    loadError,
+    saveError,
   };
 }

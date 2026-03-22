@@ -68,7 +68,8 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const {
     isLoading: isBoardLoading,
-    error: boardError,
+    loadError: boardLoadError,
+    saveError: boardSaveError,
   } = useBoardSync(user?.id);
 
   const activeBoard =
@@ -102,7 +103,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     );
   }
 
-  if (boardError) {
+  if (boardLoadError) {
     return (
       <YStack
         style={{
@@ -120,7 +121,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
                 Supabase auth is working, but the app could not load boards from the database.
               </Paragraph>
               <Paragraph style={{ margin: 0 }}>
-                {boardError}
+                {boardLoadError}
               </Paragraph>
               <Paragraph style={{ margin: 0 }}>
                 Apply the SQL migrations in
@@ -250,17 +251,34 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
         isSigningOut={isSigningOut}
         onSignOut={handleSignOut}
       />
-      <View style={{ flex: 1, minHeight: 0 }}>
-        {activeBoard ? (
-          <BoardView
-            board={activeBoard}
-            onUploadImage={handleUploadImage}
-            onResolveLinkPreview={handleResolveLinkPreview}
-          />
-        ) : (
-          <EmptyBoardsState onCreateBoard={handleCreateBoard} />
-        )}
-      </View>
+      <YStack style={{ flex: 1, minHeight: 0 }}>
+        {boardSaveError ? (
+          <Card
+            style={{
+              borderWidth: 1,
+              borderColor: theme.danger.val,
+              borderRadius: 0,
+            }}
+          >
+            <Card.Header style={{ padding: "0.7rem 1rem" }}>
+              <Paragraph style={{ margin: 0 }}>
+                {`Could not save latest board changes: ${boardSaveError}`}
+              </Paragraph>
+            </Card.Header>
+          </Card>
+        ) : null}
+        <View style={{ flex: 1, minHeight: 0 }}>
+          {activeBoard ? (
+            <BoardView
+              board={activeBoard}
+              onUploadImage={handleUploadImage}
+              onResolveLinkPreview={handleResolveLinkPreview}
+            />
+          ) : (
+            <EmptyBoardsState onCreateBoard={handleCreateBoard} />
+          )}
+        </View>
+      </YStack>
     </XStack>
   );
 }

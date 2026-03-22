@@ -54,6 +54,38 @@ function resolveActiveBoardId(
   );
 }
 
+function mapBoardById(
+  boards: Board[],
+  boardId: string,
+  updateBoard: (board: Board) => Board,
+) {
+  return boards.map((board) => (board.id === boardId ? updateBoard(board) : board));
+}
+
+function mapBoardScrapsById(
+  boards: Board[],
+  boardId: string,
+  updateScraps: (scraps: Scrap[]) => Scrap[],
+) {
+  return mapBoardById(boards, boardId, (board) => ({
+    ...board,
+    scraps: updateScraps(board.scraps),
+  }));
+}
+
+function patchScrapByType<TPatch>(
+  scraps: Scrap[],
+  scrapId: string,
+  scrapType: Scrap["type"],
+  patch: TPatch,
+) {
+  return scraps.map((scrap) =>
+    scrap.id === scrapId && scrap.type === scrapType
+      ? { ...scrap, ...patch }
+      : scrap,
+  );
+}
+
 export const useAppStore = create<AppState>((set) => ({
   boards: [],
   activeBoardId: "",
@@ -69,9 +101,7 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   updateBoard: (boardId, patch) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId ? { ...board, ...patch } : board,
-      ),
+      boards: mapBoardById(state.boards, boardId, (board) => ({ ...board, ...patch })),
     })),
   deleteBoard: (boardId) =>
     set((state) => {
@@ -85,88 +115,51 @@ export const useAppStore = create<AppState>((set) => ({
   setActiveBoard: (boardId) => set({ activeBoardId: boardId }),
   addScrap: (boardId, scrap) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? { ...board, scraps: [...board.scraps, scrap] }
-          : board,
-      ),
+      boards: mapBoardScrapsById(state.boards, boardId, (scraps) => [...scraps, scrap]),
     })),
   deleteScrap: (boardId, scrapId) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? {
-              ...board,
-              scraps: board.scraps.filter((scrap) => scrap.id !== scrapId),
-            }
-          : board,
+      boards: mapBoardScrapsById(
+        state.boards,
+        boardId,
+        (scraps) => scraps.filter((scrap) => scrap.id !== scrapId),
       ),
     })),
   updateNoteScrap: (boardId, scrapId, patch) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? {
-              ...board,
-              scraps: board.scraps.map((scrap) =>
-                scrap.id === scrapId && scrap.type === "note"
-                  ? { ...scrap, ...patch }
-                  : scrap,
-              ),
-            }
-          : board,
+      boards: mapBoardScrapsById(
+        state.boards,
+        boardId,
+        (scraps) => patchScrapByType(scraps, scrapId, "note", patch),
       ),
     })),
   updateImageScrap: (boardId, scrapId, patch) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? {
-              ...board,
-              scraps: board.scraps.map((scrap) =>
-                scrap.id === scrapId && scrap.type === "image"
-                  ? { ...scrap, ...patch }
-                  : scrap,
-              ),
-            }
-          : board,
+      boards: mapBoardScrapsById(
+        state.boards,
+        boardId,
+        (scraps) => patchScrapByType(scraps, scrapId, "image", patch),
       ),
     })),
   updateLinkScrap: (boardId, scrapId, patch) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? {
-              ...board,
-              scraps: board.scraps.map((scrap) =>
-                scrap.id === scrapId && scrap.type === "link"
-                  ? { ...scrap, ...patch }
-                  : scrap,
-              ),
-            }
-          : board,
+      boards: mapBoardScrapsById(
+        state.boards,
+        boardId,
+        (scraps) => patchScrapByType(scraps, scrapId, "link", patch),
       ),
     })),
   updateScrapLayout: (boardId, scrapId, patch) =>
     set((state) => ({
-      boards: state.boards.map((board) =>
-        board.id === boardId
-          ? {
-              ...board,
-              scraps: board.scraps.map((scrap) =>
-                scrap.id === scrapId ? { ...scrap, ...patch } : scrap,
-              ),
-            }
-          : board,
+      boards: mapBoardScrapsById(
+        state.boards,
+        boardId,
+        (scraps) => scraps.map((scrap) => (scrap.id === scrapId ? { ...scrap, ...patch } : scrap)),
       ),
     })),
   duplicateScrap: (boardId, scrapId) =>
     set((state) => ({
-      boards: state.boards.map((board) => {
-        if (board.id !== boardId) {
-          return board;
-        }
-
+      boards: mapBoardById(state.boards, boardId, (board) => {
         const sourceScrap = board.scraps.find((scrap) => scrap.id === scrapId);
         if (!sourceScrap) {
           return board;
@@ -187,11 +180,7 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   moveScrapToFront: (boardId, scrapId) =>
     set((state) => ({
-      boards: state.boards.map((board) => {
-        if (board.id !== boardId) {
-          return board;
-        }
-
+      boards: mapBoardById(state.boards, boardId, (board) => {
         const targetScrap = board.scraps.find((scrap) => scrap.id === scrapId);
         if (!targetScrap) {
           return board;
@@ -208,11 +197,7 @@ export const useAppStore = create<AppState>((set) => ({
     })),
   moveScrapToBack: (boardId, scrapId) =>
     set((state) => ({
-      boards: state.boards.map((board) => {
-        if (board.id !== boardId) {
-          return board;
-        }
-
+      boards: mapBoardById(state.boards, boardId, (board) => {
         const targetScrap = board.scraps.find((scrap) => scrap.id === scrapId);
         if (!targetScrap) {
           return board;

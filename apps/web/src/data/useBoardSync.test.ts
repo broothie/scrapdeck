@@ -38,7 +38,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
 });
 
-  afterEach(() => {
+afterEach(() => {
   vi.restoreAllMocks();
 });
 
@@ -95,5 +95,31 @@ describe("useBoardSync", () => {
     expect(saveSpy).toHaveBeenCalledWith("user-1", useAppStore.getState().boards);
 
     unmount();
+  });
+
+  it("captures save errors without turning hydration into a load failure", async () => {
+    vi.spyOn(boardService, "fetchBoards").mockResolvedValue(boardsFixture);
+    vi.spyOn(boardService, "saveBoards").mockRejectedValue(new Error("save failed"));
+
+    const { result } = renderHook(() => useBoardSync("user-1"));
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+
+    expect(result.current.loadError).toBeNull();
+
+    act(() => {
+      useAppStore.getState().addBoard({
+        id: "board-2",
+        title: "Needs save",
+        description: "x",
+        scraps: [],
+      });
+    });
+
+    await waitFor(() => {
+      expect(result.current.saveError).toBe("save failed");
+    });
   });
 });

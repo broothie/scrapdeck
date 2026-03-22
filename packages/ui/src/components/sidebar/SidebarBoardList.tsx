@@ -1,0 +1,97 @@
+import { Button, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import type { Board } from "@scrapdeck/core";
+
+type SidebarBoardListProps = {
+  boards: Board[];
+  activeBoardId: string;
+  onSelectBoard: (boardId: string) => void;
+  onDeleteBoard?: (boardId: string) => void;
+  onCreateBoard?: () => void;
+};
+
+export function SidebarBoardList({
+  boards,
+  activeBoardId,
+  onSelectBoard,
+  onDeleteBoard,
+  onCreateBoard,
+}: SidebarBoardListProps) {
+  const theme = useTheme();
+
+  return (
+    <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
+      {onCreateBoard ? (
+        <Button
+          onPress={onCreateBoard}
+          style={{
+            backgroundColor: theme.accentStrong.val,
+            borderColor: theme.accentStrong.val,
+            borderWidth: 1,
+          }}
+        >
+          <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
+            New board
+          </Text>
+        </Button>
+      ) : null}
+
+      {boards.map((board) => {
+        const isActive = board.id === activeBoardId;
+
+        return (
+          <XStack key={board.id} style={{ width: "100%", gap: "0.5rem", alignItems: "stretch" }}>
+            <Button
+              onPress={() => onSelectBoard(board.id)}
+              variant={isActive ? undefined : "outlined"}
+              style={{
+                flex: 1,
+                justifyContent: "flex-start",
+                height: "auto",
+                minHeight: 76,
+                backgroundColor: isActive ? theme.accentSubtle.val : theme.surface.val,
+                borderColor: isActive ? theme.accentDefault.val : theme.borderDefault.val,
+                borderWidth: 1,
+              }}
+            >
+              <YStack style={{ gap: "0.25rem" }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontWeight: 700,
+                    color: isActive ? theme.accentText.val : theme.textPrimary.val,
+                  }}
+                >
+                  {board.title}
+                </Text>
+                <Text
+                  style={{
+                    color: isActive ? theme.accentStrong.val : theme.textSecondary.val,
+                    fontSize: 14,
+                  }}
+                >
+                  {board.scraps.length} scraps
+                </Text>
+              </YStack>
+            </Button>
+            {onDeleteBoard ? (
+              <Button
+                aria-label={`Delete board ${board.title}`}
+                onPress={() => onDeleteBoard(board.id)}
+                variant="outlined"
+                style={{ width: 42, minWidth: 42, paddingHorizontal: 0 }}
+              >
+                Del
+              </Button>
+            ) : null}
+          </XStack>
+        );
+      })}
+
+      {boards.length === 0 ? (
+        <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
+          No boards yet. Create your first one to start arranging scraps.
+        </Paragraph>
+      ) : null}
+    </YStack>
+  );
+}

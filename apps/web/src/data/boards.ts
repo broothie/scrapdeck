@@ -158,81 +158,37 @@ export async function saveBoards(userId: string, boards: Board[]) {
     board.scraps.map((scrap) => mapScrapToRow(userId, board.id, scrap)),
   );
 
-  const [{ data: existingBoards, error: existingBoardsError }, { data: existingScraps, error: existingScrapsError }] =
-    await Promise.all([
-      supabase
-        .from("boards")
-        .select("id, deleted_at")
-        .eq("user_id", userId),
-      supabase
-        .from("scraps")
-        .select("id, board_id, deleted_at")
-        .eq("user_id", userId),
-    ]);
+  const boardSnapshotRows = boardRows.map((board) => ({
+    id: board.id,
+    title: board.title,
+    description: board.description,
+  }));
+  const scrapSnapshotRows = scrapRows.map((scrap) => ({
+    id: scrap.id,
+    board_id: scrap.board_id,
+    type: scrap.type,
+    x: scrap.x,
+    y: scrap.y,
+    width: scrap.width,
+    height: scrap.height,
+    title: scrap.title,
+    body: scrap.body,
+    src: scrap.src,
+    alt: scrap.alt,
+    caption: scrap.caption,
+    url: scrap.url,
+    site_name: scrap.site_name,
+    description: scrap.description,
+    preview_image: scrap.preview_image,
+  }));
 
-  if (existingBoardsError) {
-    throw existingBoardsError;
-  }
+  const { error } = await supabase.rpc("save_boards_snapshot", {
+    p_user_id: userId,
+    p_boards: boardSnapshotRows,
+    p_scraps: scrapSnapshotRows,
+  });
 
-  if (existingScrapsError) {
-    throw existingScrapsError;
-  }
-
-  const boardIds = new Set(boards.map((board) => board.id));
-  const scrapIds = new Set(scrapRows.map((scrap) => scrap.id));
-  const softDeletedAt = new Date().toISOString();
-
-  const boardIdsToSoftDelete = (existingBoards ?? [])
-    .filter((board) => !board.deleted_at && !boardIds.has(board.id))
-    .map((board) => board.id);
-
-  const scrapIdsToSoftDelete = resolveScrapIdsToSoftDelete(
-    existingScraps ?? [],
-    boardIds,
-    scrapIds,
-  );
-
-  if (boardIdsToSoftDelete.length > 0) {
-    const { error } = await supabase
-      .from("boards")
-      .update({ deleted_at: softDeletedAt })
-      .eq("user_id", userId)
-      .in("id", boardIdsToSoftDelete);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  if (scrapIdsToSoftDelete.length > 0) {
-    const { error } = await supabase
-      .from("scraps")
-      .update({ deleted_at: softDeletedAt })
-      .eq("user_id", userId)
-      .in("id", scrapIdsToSoftDelete);
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  if (boardRows.length > 0) {
-    const { error } = await supabase
-      .from("boards")
-      .upsert(boardRows, { onConflict: "id" });
-
-    if (error) {
-      throw error;
-    }
-  }
-
-  if (scrapRows.length > 0) {
-    const { error } = await supabase
-      .from("scraps")
-      .upsert(scrapRows, { onConflict: "id" });
-
-    if (error) {
-      throw error;
-    }
+  if (error) {
+    throw error;
   }
 }

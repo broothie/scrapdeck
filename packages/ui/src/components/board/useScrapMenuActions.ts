@@ -1,13 +1,16 @@
 import { useCallback } from "react";
 import { useAppStore, type Board } from "@scrapdeck/core";
 import type { ScrapContextMenuAction } from "./ScrapActionMenu";
+import { browserScrapEditAdapter, type ScrapEditAdapter } from "./scrapEditAdapter";
 
 type UseScrapMenuActionsOptions = {
   onActionComplete?: (scrapId: string, action: ScrapContextMenuAction) => void;
+  editAdapter?: ScrapEditAdapter;
 };
 
 export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOptions = {}) {
   const onActionComplete = options.onActionComplete;
+  const editAdapter = options.editAdapter ?? browserScrapEditAdapter;
   const deleteScrap = useAppStore((state) => state.deleteScrap);
   const duplicateScrap = useAppStore((state) => state.duplicateScrap);
   const moveScrapToFront = useAppStore((state) => state.moveScrapToFront);
@@ -24,13 +27,13 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
     }
 
     if (scrap.type === "note") {
-      const nextTitle = window.prompt("Edit note title", scrap.title ?? "");
+      const nextTitle = editAdapter.prompt("Edit note title", scrap.title ?? "");
 
       if (nextTitle === null) {
         return;
       }
 
-      const nextBody = window.prompt("Edit note text", scrap.body);
+      const nextBody = editAdapter.prompt("Edit note text", scrap.body);
 
       if (nextBody === null) {
         return;
@@ -44,7 +47,7 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
     }
 
     if (scrap.type === "image") {
-      const nextCaption = window.prompt("Edit file caption", scrap.caption ?? "");
+      const nextCaption = editAdapter.prompt("Edit file caption", scrap.caption ?? "");
 
       if (nextCaption === null) {
         return;
@@ -56,7 +59,7 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
       return;
     }
 
-    const nextUrlInput = window.prompt("Edit link URL", scrap.url);
+    const nextUrlInput = editAdapter.prompt("Edit link URL", scrap.url);
 
     if (nextUrlInput === null) {
       return;
@@ -69,12 +72,12 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
       try {
         normalizedUrl = new URL(trimmedUrl).toString();
       } catch {
-        window.alert("Enter a valid URL, including https://");
+        editAdapter.alert("Enter a valid URL, including https://");
         return;
       }
     }
 
-    const nextTitle = window.prompt("Edit link label", scrap.title);
+    const nextTitle = editAdapter.prompt("Edit link label", scrap.title);
 
     if (nextTitle === null) {
       return;
@@ -100,6 +103,7 @@ export function useScrapMenuActions(board: Board, options: UseScrapMenuActionsOp
     updateImageScrap,
     updateLinkScrap,
     updateNoteScrap,
+    editAdapter,
   ]);
 
   const runScrapMenuAction = useCallback((scrapId: string, action: ScrapContextMenuAction) => {
