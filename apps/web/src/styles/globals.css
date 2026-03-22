@@ -78,6 +78,10 @@ a {
   box-shadow: var(--flow-panel-shadow);
 }
 
+.scrapdeck-flow .react-flow__minimap {
+  border-radius: 0;
+}
+
 .scrapdeck-flow .react-flow__controls {
   background: var(--flow-controls-bg);
   border: 1px solid var(--flow-controls-border);

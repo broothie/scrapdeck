@@ -39,6 +39,12 @@ type BoardSurfaceProps = {
   onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
 
+const minimapSize = {
+  width: 180,
+  height: 120,
+} as const;
+const panelGap = 12;
+
 function PlacementPreviewNode(props: NodeProps) {
   const theme = useTheme();
   const data = props.data as PlacementNodeData;
@@ -264,6 +270,11 @@ export function BoardSurface({
           variant={BackgroundVariant.Dots}
         />
         <MiniMap
+          position="bottom-right"
+          style={{
+            width: minimapSize.width,
+            height: minimapSize.height,
+          }}
           pannable
           zoomable
           bgColor={theme.surfaceHover.val}
@@ -289,7 +300,13 @@ export function BoardSurface({
             return theme.accentStrong.val;
           }}
         />
-        <Controls showInteractive={false} />
+        <Controls
+          showInteractive={false}
+          position="bottom-right"
+          style={{
+            right: minimapSize.width + panelGap,
+          }}
+        />
       </ReactFlow>
       {placementPreview ? (
         <View
