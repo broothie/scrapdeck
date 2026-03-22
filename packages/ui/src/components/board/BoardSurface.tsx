@@ -71,6 +71,7 @@ export function BoardSurface({
   placementPreview,
   onPlaceScrap,
   }: BoardSurfaceProps) {
+  const deleteScrap = useAppStore((state) => state.deleteScrap);
   const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -93,6 +94,9 @@ export function BoardSurface({
         data: {
           boardId: board.id,
           scrap,
+          onDelete: (scrapId: string) => {
+            deleteScrap(board.id, scrapId);
+          },
           onResizeEnd: (
             scrapId: string,
             nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -102,7 +106,7 @@ export function BoardSurface({
         },
       })),
     );
-  }, [board, setNodes, updateScrapLayout]);
+  }, [board, deleteScrap, setNodes, updateScrapLayout]);
 
   const handleNodeDragStop = (_event: unknown, node: Node) => {
     if (node.type !== "scrap") {

@@ -9,8 +9,10 @@ type AppState = {
   activeBoardId: string;
   setBoards: (boards: Board[]) => void;
   addBoard: (board: Board) => void;
+  deleteBoard: (boardId: string) => void;
   setActiveBoard: (boardId: string) => void;
   addScrap: (boardId: string, scrap: Scrap) => void;
+  deleteScrap: (boardId: string, scrapId: string) => void;
   updateNoteScrap: (
     boardId: string,
     scrapId: string,
@@ -23,28 +25,56 @@ type AppState = {
   ) => void;
 };
 
+function resolveActiveBoardId(
+  nextBoards: Board[],
+  previousActiveBoardId: string,
+): string {
+  return (
+    nextBoards.find((board) => board.id === previousActiveBoardId)?.id ??
+    nextBoards[0]?.id ??
+    ""
+  );
+}
+
 export const useAppStore = create<AppState>((set) => ({
   boards: [],
   activeBoardId: "",
   setBoards: (boards) =>
     set((state) => ({
       boards,
-      activeBoardId:
-        boards.find((board) => board.id === state.activeBoardId)?.id ??
-        boards[0]?.id ??
-        "",
+      activeBoardId: resolveActiveBoardId(boards, state.activeBoardId),
     })),
   addBoard: (board) =>
     set((state) => ({
       boards: [...state.boards, board],
       activeBoardId: state.activeBoardId || board.id,
     })),
+  deleteBoard: (boardId) =>
+    set((state) => {
+      const nextBoards = state.boards.filter((board) => board.id !== boardId);
+
+      return {
+        boards: nextBoards,
+        activeBoardId: resolveActiveBoardId(nextBoards, state.activeBoardId),
+      };
+    }),
   setActiveBoard: (boardId) => set({ activeBoardId: boardId }),
   addScrap: (boardId, scrap) =>
     set((state) => ({
       boards: state.boards.map((board) =>
         board.id === boardId
           ? { ...board, scraps: [...board.scraps, scrap] }
+          : board,
+      ),
+    })),
+  deleteScrap: (boardId, scrapId) =>
+    set((state) => ({
+      boards: state.boards.map((board) =>
+        board.id === boardId
+          ? {
+              ...board,
+              scraps: board.scraps.filter((scrap) => scrap.id !== scrapId),
+            }
           : board,
       ),
     })),

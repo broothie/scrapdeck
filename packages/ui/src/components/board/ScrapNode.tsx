@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, type MouseEvent } from "react";
 import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
 import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
@@ -8,6 +8,7 @@ import { NoteScrapCard } from "./scraps/NoteScrap";
 export type ScrapNodeData = {
   scrap: Scrap;
   boardId: string;
+  onDelete: (scrapId: string) => void;
   onResizeEnd: (
     scrapId: string,
     nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -22,13 +23,42 @@ function ScrapNodeComponent({
   positionAbsoluteX,
   positionAbsoluteY,
 }: NodeProps<ScrapFlowNode>) {
+  const handleDelete = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    data.onDelete(data.scrap.id);
+  };
+
   return (
     <div
       style={{
         width: "100%",
         height: "100%",
+        position: "relative",
       }}
     >
+      <button
+        type="button"
+        aria-label={`Delete ${data.scrap.type} scrap`}
+        className="nodrag nopan"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={handleDelete}
+        style={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          zIndex: 10,
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: 999,
+          background: "rgba(7, 12, 18, 0.86)",
+          color: "rgba(245, 234, 221, 0.92)",
+          fontSize: 12,
+          lineHeight: 1,
+          padding: "0.3rem 0.45rem",
+          cursor: "pointer",
+        }}
+      >
+        Del
+      </button>
       <NodeResizer
         isVisible={selected}
         minWidth={220}

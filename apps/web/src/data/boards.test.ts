@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useAppStore, type Board } from "@scrapdeck/core";
-import { assembleBoards, mapScrapRowToScrap, mapScrapToRow, mapBoardToRow } from "./boards";
+import {
+  assembleBoards,
+  mapScrapRowToScrap,
+  mapScrapToRow,
+  mapBoardToRow,
+  resolveScrapIdsToSoftDelete,
+} from "./boards";
 
 type SampleScrapRow = {
   id: string;
@@ -22,6 +28,7 @@ type SampleScrapRow = {
   preview_image: string | null;
   created_at: string;
   updated_at: string;
+  deleted_at: string | null;
 };
 
 const noteScrapRow: SampleScrapRow = {
@@ -44,6 +51,7 @@ const noteScrapRow: SampleScrapRow = {
   preview_image: null,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
+  deleted_at: null,
 };
 
 beforeEach(() => {
@@ -87,6 +95,7 @@ describe("board row helpers", () => {
         user_id: "user-1",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
+        deleted_at: null,
       },
       {
         id: "board-2",
@@ -95,6 +104,7 @@ describe("board row helpers", () => {
         user_id: "user-1",
         created_at: "2026-01-01T00:00:00.000Z",
         updated_at: "2026-01-01T00:00:00.000Z",
+        deleted_at: null,
       },
     ];
 
@@ -201,6 +211,7 @@ describe("save mapping helpers", () => {
       user_id: "user-1",
       title: "Workspace",
       description: "Focus area",
+      deleted_at: null,
     });
 
     expect(mapScrapToRow("user-1", board.id, board.scraps[0])).toEqual({
@@ -221,6 +232,26 @@ describe("save mapping helpers", () => {
       site_name: null,
       description: null,
       preview_image: null,
+      deleted_at: null,
     });
+  });
+});
+
+describe("resolveScrapIdsToSoftDelete", () => {
+  it("skips scraps that belong to soft-deleted boards", () => {
+    const existingScraps = [
+      { id: "scrap-on-active-board", board_id: "board-1", deleted_at: null },
+      { id: "scrap-on-removed-board", board_id: "board-2", deleted_at: null },
+      { id: "already-deleted", board_id: "board-1", deleted_at: "2026-01-01T00:00:00.000Z" },
+      { id: "still-present", board_id: "board-1", deleted_at: null },
+    ];
+
+    const scrapIdsToSoftDelete = resolveScrapIdsToSoftDelete(
+      existingScraps,
+      new Set(["board-1"]),
+      new Set(["still-present"]),
+    );
+
+    expect(scrapIdsToSoftDelete).toEqual(["scrap-on-active-board"]);
   });
 });

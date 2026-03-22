@@ -17,6 +17,7 @@ function AppShell() {
   const boards = useAppStore((state) => state.boards);
   const activeBoardId = useAppStore((state) => state.activeBoardId);
   const addBoard = useAppStore((state) => state.addBoard);
+  const deleteBoard = useAppStore((state) => state.deleteBoard);
   const setActiveBoard = useAppStore((state) => state.setActiveBoard);
   const { isConfigured, isLoading, user, username, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -77,13 +78,13 @@ function AppShell() {
                 {boardError}
               </Paragraph>
               <Paragraph style={{ margin: 0 }}>
-                Apply the SQL migration in
+                Apply the SQL migrations in
                 {" "}
                 <Text style={{ fontFamily: "monospace" }}>
-                  supabase/migrations/20260320183000_create_boards_and_scraps.sql
+                  supabase/migrations
                 </Text>
                 {" "}
-                to create the tables and RLS policies.
+                to create/update the schema and RLS policies.
               </Paragraph>
             </YStack>
           </Card.Header>
@@ -111,6 +112,24 @@ function AppShell() {
     setActiveBoard(boardId);
   };
 
+  const handleDeleteBoard = (boardId: string) => {
+    const board = boards.find((candidate) => candidate.id === boardId);
+
+    if (!board) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete "${board.title}"? The board will be hidden, and its scraps will be preserved for potential restore.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    deleteBoard(boardId);
+  };
+
   return (
     <XStack
       style={{
@@ -125,6 +144,7 @@ function AppShell() {
         boards={boards}
         onCreateBoard={handleCreateBoard}
         onSelectBoard={setActiveBoard}
+        onDeleteBoard={handleDeleteBoard}
         accountUsername={username}
         isSigningOut={isSigningOut}
         onSignOut={handleSignOut}

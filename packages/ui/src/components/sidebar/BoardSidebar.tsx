@@ -1,10 +1,11 @@
-import { Button, H2, Paragraph, Text, YStack } from "tamagui";
+import { Button, H2, Paragraph, Text, XStack, YStack } from "tamagui";
 import type { Board } from "@scrapdeck/core";
 
 type BoardSidebarProps = {
   boards: Board[];
   activeBoardId: string;
   onSelectBoard: (boardId: string) => void;
+  onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
   onSignOut?: () => void;
@@ -15,6 +16,7 @@ export function BoardSidebar({
   boards,
   activeBoardId,
   onSelectBoard,
+  onDeleteBoard,
   onCreateBoard,
   accountUsername,
   onSignOut,
@@ -55,27 +57,38 @@ export function BoardSidebar({
           const isActive = board.id === activeBoardId;
 
           return (
-            <Button
-              key={board.id}
-              onPress={() => onSelectBoard(board.id)}
-              theme={isActive ? "blue" : undefined}
-              variant={isActive ? undefined : "outlined"}
-              style={{
-                width: "100%",
-                justifyContent: "flex-start",
-                height: "auto",
-                minHeight: 76,
-              }}
-            >
-              <YStack style={{ gap: "0.25rem" }}>
-                <Text style={{ fontSize: 16, fontWeight: 700 }}>
-                  {board.title}
-                </Text>
-                <Text style={{ opacity: 0.7, fontSize: 14 }}>
-                  {board.scraps.length} scraps
-                </Text>
-              </YStack>
-            </Button>
+            <XStack key={board.id} style={{ width: "100%", gap: "0.5rem", alignItems: "stretch" }}>
+              <Button
+                onPress={() => onSelectBoard(board.id)}
+                theme={isActive ? "blue" : undefined}
+                variant={isActive ? undefined : "outlined"}
+                style={{
+                  flex: 1,
+                  justifyContent: "flex-start",
+                  height: "auto",
+                  minHeight: 76,
+                }}
+              >
+                <YStack style={{ gap: "0.25rem" }}>
+                  <Text style={{ fontSize: 16, fontWeight: 700 }}>
+                    {board.title}
+                  </Text>
+                  <Text style={{ opacity: 0.7, fontSize: 14 }}>
+                    {board.scraps.length} scraps
+                  </Text>
+                </YStack>
+              </Button>
+              {onDeleteBoard ? (
+                <Button
+                  aria-label={`Delete board ${board.title}`}
+                  onPress={() => onDeleteBoard(board.id)}
+                  variant="outlined"
+                  style={{ width: 42, minWidth: 42, paddingHorizontal: 0 }}
+                >
+                  Del
+                </Button>
+              ) : null}
+            </XStack>
           );
         })}
 

@@ -17,6 +17,7 @@ export type Database = {
       boards: {
         Row: {
           created_at: string
+          deleted_at: string | null
           description: string
           id: string
           title: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deleted_at?: string | null
           description?: string
           id: string
           title: string
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deleted_at?: string | null
           description?: string
           id?: string
           title?: string
@@ -48,6 +51,7 @@ export type Database = {
           body: string | null
           caption: string | null
           created_at: string
+          deleted_at: string | null
           description: string | null
           height: number
           id: string
@@ -69,6 +73,7 @@ export type Database = {
           body?: string | null
           caption?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           height: number
           id: string
@@ -90,6 +95,7 @@ export type Database = {
           body?: string | null
           caption?: string | null
           created_at?: string
+          deleted_at?: string | null
           description?: string | null
           height?: number
           id?: string

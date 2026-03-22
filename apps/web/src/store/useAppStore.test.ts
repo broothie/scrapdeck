@@ -9,7 +9,7 @@ beforeEach(() => {
 });
 
 describe("useAppStore", () => {
-  it("adds boards and keeps active board fallback behavior", () => {
+  it("adds and deletes boards while keeping active board fallback behavior", () => {
     const firstBoard: Board = {
       id: "board-1",
       title: "Active",
@@ -31,9 +31,13 @@ describe("useAppStore", () => {
 
     useAppStore.getState().setBoards([secondBoard]);
     expect(useAppStore.getState().activeBoardId).toBe("board-2");
+
+    useAppStore.getState().deleteBoard("board-2");
+    expect(useAppStore.getState().boards).toEqual([]);
+    expect(useAppStore.getState().activeBoardId).toBe("");
   });
 
-  it("updates note contents and scrap layout", () => {
+  it("updates note contents, layout, and supports scrap deletion", () => {
     const board: Board = {
       id: "board-1",
       title: "Board",
@@ -70,15 +74,16 @@ describe("useAppStore", () => {
       .getState()
       .updateScrapLayout("board-1", "image-1", { x: 400, y: 80, width: 280, height: 240 });
 
-    const activeBoard = useAppStore.getState().boards[0];
-    const note = activeBoard.scraps[0];
-    const image = activeBoard.scraps[1];
-
-    expect(note).toMatchObject({
+    expect(useAppStore.getState().boards[0].scraps[0]).toMatchObject({
       id: "note-1",
       type: "note",
       title: "Fresh",
     });
+
+    useAppStore.getState().deleteScrap("board-1", "note-1");
+
+    const activeBoard = useAppStore.getState().boards[0];
+    const image = activeBoard.scraps[0];
 
     expect(image).toMatchObject({
       id: "image-1",
@@ -88,5 +93,6 @@ describe("useAppStore", () => {
       width: 280,
       height: 240,
     });
+    expect(activeBoard.scraps).toHaveLength(1);
   });
 });
