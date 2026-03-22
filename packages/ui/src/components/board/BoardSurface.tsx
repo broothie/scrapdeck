@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -11,10 +11,11 @@ import {
   type ReactFlowInstance,
   useNodesState,
 } from "@xyflow/react";
-import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
 import { placementColors, useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
+import { ScrapActionMenu, type ScrapContextMenuAction } from "./ScrapActionMenu";
 
 const nodeTypes: NodeTypes = {
   scrap: ScrapNode,
@@ -38,8 +39,6 @@ type BoardSurfaceProps = {
   placementPreview?: PlacementPreview | null;
   onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
-
-type ScrapContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 
 type ScrapContextMenuState = {
   scrapId: string;
@@ -125,14 +124,19 @@ export function BoardSurface({
     y: number;
   } | null>(null);
   const [scrapContextMenu, setScrapContextMenu] = useState<ScrapContextMenuState | null>(null);
-  const [hoveredContextMenuAction, setHoveredContextMenuAction] =
-    useState<ScrapContextMenuAction | null>(null);
 
   useEffect(() => {
-    setNodes(
-      board.scraps.map((scrap, index) => ({
+    setNodes((previousNodes) => {
+      const selectedNodeIds = new Set(
+        previousNodes
+          .filter((node) => node.selected)
+          .map((node) => node.id),
+      );
+
+      return board.scraps.map((scrap, index) => ({
         id: scrap.id,
         type: "scrap",
+        selected: selectedNodeIds.has(scrap.id),
         position: {
           x: scrap.x,
           y: scrap.y,
@@ -143,6 +147,8 @@ export function BoardSurface({
         data: {
           boardId: board.id,
           scrap,
+          showPinnedMenu: !scrapContextMenu,
+          onMenuAction: runScrapMenuAction,
           onResizeEnd: (
             scrapId: string,
             nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -150,9 +156,9 @@ export function BoardSurface({
             updateScrapLayout(board.id, scrapId, nextLayout);
           },
         },
-      })),
-    );
-  }, [board, setNodes, updateScrapLayout]);
+      }));
+    });
+  }, [board, scrapContextMenu, setNodes, updateScrapLayout]);
 
   useEffect(() => {
     setScrapContextMenu(null);
@@ -160,19 +166,16 @@ export function BoardSurface({
 
   useEffect(() => {
     if (!scrapContextMenu) {
-      setHoveredContextMenuAction(null);
       return;
     }
 
     const handleGlobalPointerDown = () => {
       setScrapContextMenu(null);
-      setHoveredContextMenuAction(null);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setScrapContextMenu(null);
-        setHoveredContextMenuAction(null);
       }
     };
 
@@ -198,7 +201,7 @@ export function BoardSurface({
     });
   };
 
-  const handleEditScrap = (scrapId: string) => {
+  const handleEditScrap = useCallback((scrapId: string) => {
     const scrap = board.scraps.find((candidate) => candidate.id === scrapId);
 
     if (!scrap) {
@@ -276,46 +279,52 @@ export function BoardSurface({
       title: nextTitle.trim() || scrap.title,
       previewImage: normalizedUrl === scrap.url ? scrap.previewImage : undefined,
     });
-  };
+  }, [
+    board.id,
+    board.scraps,
+    updateImageScrap,
+    updateLinkScrap,
+    updateNoteScrap,
+  ]);
+
+  const runScrapMenuAction = useCallback((scrapId: string, action: ScrapContextMenuAction) => {
+    if (action === "edit") {
+      handleEditScrap(scrapId);
+      return;
+    }
+
+    if (action === "duplicate") {
+      duplicateScrap(board.id, scrapId);
+      return;
+    }
+
+    if (action === "bring-front") {
+      moveScrapToFront(board.id, scrapId);
+      return;
+    }
+
+    if (action === "send-back") {
+      moveScrapToBack(board.id, scrapId);
+      return;
+    }
+
+    deleteScrap(board.id, scrapId);
+  }, [
+    board.id,
+    deleteScrap,
+    duplicateScrap,
+    handleEditScrap,
+    moveScrapToBack,
+    moveScrapToFront,
+  ]);
 
   const runScrapContextMenuAction = (action: ScrapContextMenuAction) => {
     if (!scrapContextMenu) {
       return;
     }
 
-    const { scrapId } = scrapContextMenu;
-
-    if (action === "edit") {
-      handleEditScrap(scrapId);
-      setScrapContextMenu(null);
-      setHoveredContextMenuAction(null);
-      return;
-    }
-
-    if (action === "duplicate") {
-      duplicateScrap(board.id, scrapId);
-      setScrapContextMenu(null);
-      setHoveredContextMenuAction(null);
-      return;
-    }
-
-    if (action === "bring-front") {
-      moveScrapToFront(board.id, scrapId);
-      setScrapContextMenu(null);
-      setHoveredContextMenuAction(null);
-      return;
-    }
-
-    if (action === "send-back") {
-      moveScrapToBack(board.id, scrapId);
-      setScrapContextMenu(null);
-      setHoveredContextMenuAction(null);
-      return;
-    }
-
-    deleteScrap(board.id, scrapId);
+    runScrapMenuAction(scrapContextMenu.scrapId, action);
     setScrapContextMenu(null);
-    setHoveredContextMenuAction(null);
   };
 
   const getFlowPositionFromEvent = (event: ReactMouseEvent) => {
@@ -357,7 +366,6 @@ export function BoardSurface({
 
   const handlePaneClick = (_event: ReactMouseEvent) => {
     setScrapContextMenu(null);
-    setHoveredContextMenuAction(null);
 
     if (!placementPreview || !onPlaceScrap) {
       return;
@@ -411,20 +419,7 @@ export function BoardSurface({
       x,
       y,
     });
-    setHoveredContextMenuAction(null);
   };
-
-  const contextMenuActions: Array<{
-    action: ScrapContextMenuAction;
-    label: string;
-    isDanger?: boolean;
-  }> = [
-    { action: "edit", label: "Edit" },
-    { action: "duplicate", label: "Duplicate" },
-    { action: "bring-front", label: "Bring To Front" },
-    { action: "send-back", label: "Send To Back" },
-    { action: "delete", label: "Delete", isDanger: true },
-  ];
 
   const flowNodes = useMemo<Node[]>(() => {
     if (!placementPreview || !placementPosition) {
@@ -531,58 +526,14 @@ export function BoardSurface({
       </ReactFlow>
       {scrapContextMenu ? (
         <div
-          onPointerDown={(event) => event.stopPropagation()}
-          onContextMenu={(event) => event.preventDefault()}
           style={{
             position: "absolute",
             left: scrapContextMenu.x,
             top: scrapContextMenu.y,
-            width: "fit-content",
             zIndex: 30,
-            borderRadius: 3,
-            border: `1px solid ${theme.borderDefault.val}`,
-            backgroundColor: theme.surface.val,
-            boxShadow: "0 10px 30px rgba(5, 8, 14, 0.18)",
-            padding: "0.25rem",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "stretch",
-            gap: 0,
           }}
         >
-          {contextMenuActions.map((item, index) => {
-            const isHovered = hoveredContextMenuAction === item.action;
-
-            return (
-              <div key={item.action} style={{ width: "100%" }}>
-                {index > 0 ? (
-                  <div
-                    aria-hidden="true"
-                    style={{
-                      height: 1,
-                      backgroundColor: theme.borderSubtle.val,
-                      margin: "0.08rem 0.35rem",
-                    }}
-                  />
-                ) : null}
-                <button
-                  type="button"
-                  className="nodrag nopan"
-                  style={contextMenuButtonStyle({
-                    color: item.isDanger ? theme.danger.val : theme.textPrimary.val,
-                    isDanger: Boolean(item.isDanger),
-                    isHovered,
-                    hoverColor: theme.surfaceHover.val,
-                  })}
-                  onMouseEnter={() => setHoveredContextMenuAction(item.action)}
-                  onMouseLeave={() => setHoveredContextMenuAction(null)}
-                  onClick={() => runScrapContextMenuAction(item.action)}
-                >
-                  {item.label}
-                </button>
-              </div>
-            );
-          })}
+          <ScrapActionMenu onAction={runScrapContextMenuAction} />
         </div>
       ) : null}
       {placementPreview ? (
@@ -607,26 +558,4 @@ export function BoardSurface({
       ) : null}
     </div>
   );
-}
-
-function contextMenuButtonStyle(options: {
-  color: string;
-  isDanger: boolean;
-  isHovered: boolean;
-  hoverColor: string;
-}): CSSProperties {
-  return {
-    width: "100%",
-    border: 0,
-    borderRadius: 4,
-    whiteSpace: "nowrap",
-    display: "block",
-    backgroundColor: options.isHovered ? options.hoverColor : "transparent",
-    color: options.color,
-    textAlign: "left",
-    padding: "0.32rem 0.55rem",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: options.isDanger ? 700 : 500,
-  };
 }

@@ -1,13 +1,16 @@
 import { memo } from "react";
-import { NodeResizer, type Node, type NodeProps } from "@xyflow/react";
+import { NodeResizer, NodeToolbar, Position, type Node, type NodeProps } from "@xyflow/react";
 import type { Scrap } from "@scrapdeck/core";
 import { ImageScrapCard } from "./scraps/ImageScrap";
 import { LinkScrapCard } from "./scraps/LinkScrap";
 import { NoteScrapCard } from "./scraps/NoteScrap";
+import { ScrapActionMenu, type ScrapContextMenuAction } from "./ScrapActionMenu";
 
 export type ScrapNodeData = {
   scrap: Scrap;
   boardId: string;
+  showPinnedMenu: boolean;
+  onMenuAction: (scrapId: string, action: ScrapContextMenuAction) => void;
   onResizeEnd: (
     scrapId: string,
     nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
@@ -30,6 +33,16 @@ function ScrapNodeComponent({
         position: "relative",
       }}
     >
+      <NodeToolbar
+        isVisible={selected && data.showPinnedMenu}
+        position={Position.Right}
+        align="start"
+        offset={10}
+      >
+        <ScrapActionMenu
+          onAction={(action) => data.onMenuAction(data.scrap.id, action)}
+        />
+      </NodeToolbar>
       <NodeResizer
         isVisible={selected}
         minWidth={220}
