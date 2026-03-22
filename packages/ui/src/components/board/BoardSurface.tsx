@@ -7,16 +7,16 @@ import {
   ReactFlow,
   type Node,
   type NodeProps,
-  type OnInit,
+  type NodeTypes,
   type ReactFlowInstance,
-  type XYPosition,
   useNodesState,
 } from "@xyflow/react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View } from "tamagui";
-import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
+import { placementColors, useAppStore, type Board, type Scrap } from "@scrapdeck/core";
 import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
 
-const nodeTypes = {
+const nodeTypes: NodeTypes = {
   scrap: ScrapNode,
   "placement-preview": PlacementPreviewNode,
 };
@@ -33,17 +33,15 @@ type PlacementNodeData = {
   borderColor: string;
 };
 
-type PlacementNode = Node<PlacementNodeData, "placement-preview">;
-
-type BoardNode = ScrapFlowNode | PlacementNode;
-
 type BoardSurfaceProps = {
   board: Board;
   placementPreview?: PlacementPreview | null;
   onPlaceScrap?: (position: { x: number; y: number }) => void;
 };
 
-function PlacementPreviewNode({ data }: NodeProps<PlacementNodeData>) {
+function PlacementPreviewNode(props: NodeProps) {
+  const data = props.data as PlacementNodeData;
+
   return (
     <View
       style={{
@@ -61,12 +59,8 @@ function PlacementPreviewNode({ data }: NodeProps<PlacementNodeData>) {
 }
 
 function getPlacementColor(scrapType: Scrap["type"]): string {
-  if (scrapType === "note") {
-    return "#f1c66f";
-  }
-
-  if (scrapType === "image") {
-    return "#7fd3b5";
+  if (scrapType === "note" || scrapType === "image" || scrapType === "link") {
+    return placementColors[scrapType];
   }
 
   return "#82a7ff";
@@ -76,10 +70,10 @@ export function BoardSurface({
   board,
   placementPreview,
   onPlaceScrap,
-}: BoardSurfaceProps) {
+  }: BoardSurfaceProps) {
   const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState<BoardNode>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [placementPosition, setPlacementPosition] = useState<{
     x: number;
     y: number;
@@ -99,7 +93,10 @@ export function BoardSurface({
         data: {
           boardId: board.id,
           scrap,
-          onResizeEnd: (scrapId, nextLayout) => {
+          onResizeEnd: (
+            scrapId: string,
+            nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
+          ) => {
             updateScrapLayout(board.id, scrapId, nextLayout);
           },
         },
@@ -107,48 +104,40 @@ export function BoardSurface({
     );
   }, [board, setNodes, updateScrapLayout]);
 
-  const handleNodeDragStop = (_event: unknown, node: BoardNode) => {
+  const handleNodeDragStop = (_event: unknown, node: Node) => {
     if (node.type !== "scrap") {
       return;
     }
 
+    const scrapNode = node as ScrapFlowNode;
+
     updateScrapLayout(board.id, node.id, {
-      x: node.position.x,
-      y: node.position.y,
+      x: scrapNode.position.x,
+      y: scrapNode.position.y,
     });
   };
 
-  const getFlowPositionFromEvent = (event: unknown, flowPosition?: XYPosition) => {
-    if (flowPosition) {
-      return flowPosition;
-    }
-
-    if (typeof event !== "object" || event === null) {
-      return null;
-    }
-
-    const nextEvent = event as { clientX?: number; clientY?: number };
-
-    if (typeof nextEvent.clientX !== "number" || typeof nextEvent.clientY !== "number") {
-      return null;
-    }
-
+  const getFlowPositionFromEvent = (event: ReactMouseEvent) => {
     if (!flowInstance) {
       return null;
     }
 
+    if (typeof event.clientX !== "number" || typeof event.clientY !== "number") {
+      return null;
+    }
+
     return flowInstance.screenToFlowPosition({
-      x: nextEvent.clientX,
-      y: nextEvent.clientY,
+      x: event.clientX,
+      y: event.clientY,
     });
   };
 
-  const handlePaneMouseMove = (_event: unknown, flowPosition?: XYPosition) => {
+  const handlePaneMouseMove = (_event: ReactMouseEvent) => {
     if (!placementPreview) {
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(_event, flowPosition);
+    const resolvedPosition = getFlowPositionFromEvent(_event);
 
     if (!resolvedPosition) {
       return;
@@ -165,12 +154,12 @@ export function BoardSurface({
     setPlacementPosition(null);
   };
 
-  const handlePaneClick = (_event: unknown, flowPosition?: XYPosition) => {
+  const handlePaneClick = (_event: ReactMouseEvent) => {
     if (!placementPreview || !onPlaceScrap) {
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(_event, flowPosition);
+    const resolvedPosition = getFlowPositionFromEvent(_event);
 
     if (!resolvedPosition) {
       return;
@@ -183,16 +172,16 @@ export function BoardSurface({
     setPlacementPosition(null);
   };
 
-  const handleInit: OnInit = (instance) => {
+  const handleInit = (instance: ReactFlowInstance<Node>) => {
     setFlowInstance(instance);
   };
 
-  const flowNodes = useMemo<BoardNode[]>(() => {
+  const flowNodes = useMemo<Node[]>(() => {
     if (!placementPreview || !placementPosition) {
       return nodes;
     }
 
-    const previewNode: PlacementNode = {
+    const previewNode: Node = {
       id: "__placement-preview__",
       type: "placement-preview",
       position: placementPosition,

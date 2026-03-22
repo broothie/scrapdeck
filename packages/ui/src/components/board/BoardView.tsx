@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack } from "tamagui";
-import { useAppStore, type Board, type Scrap } from "@scrapdeck/core";
+import {
+  createScrapId,
+  resolveScrapDefaults,
+  useAppStore,
+  type Board,
+  type Scrap,
+} from "@scrapdeck/core";
 import { BoardSurface } from "./BoardSurface";
 
 type PlacementIntent = {
@@ -9,10 +15,6 @@ type PlacementIntent = {
   height: number;
   create: (position: { x: number; y: number }) => Scrap;
 };
-
-function createId(prefix: string) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
-}
 
 type BoardViewProps = {
   board: Board;
@@ -25,13 +27,21 @@ export function BoardView({ board }: BoardViewProps) {
   const [linkError, setLinkError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
 
+  const closeLinkComposer = () => {
+    setIsAddingLink(false);
+    setLinkUrl("");
+    setLinkError("");
+  };
+
   useEffect(() => {
+    if (!placementIntent && !isAddingLink) {
+      return;
+    }
+
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setPlacementIntent(null);
-        setIsAddingLink(false);
-        setLinkUrl("");
-        setLinkError("");
+        closeLinkComposer();
       }
     };
 
@@ -40,49 +50,55 @@ export function BoardView({ board }: BoardViewProps) {
     return () => {
       window.removeEventListener("keydown", handleEscape);
     };
-  }, []);
+  }, [closeLinkComposer, isAddingLink, placementIntent]);
 
-  const closeLinkComposer = () => {
-    setIsAddingLink(false);
-    setLinkUrl("");
-    setLinkError("");
-  };
+  const addNoteIntent = useMemo<PlacementIntent>(() => {
+    const { width, height } = resolveScrapDefaults("note");
 
-  const handleAddNote = () => {
-    setPlacementIntent({
+    return {
       type: "note",
-      width: 260,
-      height: 190,
-      create: ({ x, y }) => ({
-        id: createId("note"),
+      width,
+      height,
+      create: ({ x, y }: { x: number; y: number }) => ({
+        id: createScrapId("note"),
         type: "note",
         x,
         y,
-        width: 260,
-        height: 190,
+        width,
+        height,
         title: "Fresh note",
         body: "Drop quick thoughts here and drag them into place.",
       }),
-    });
-  };
+    };
+  }, []);
 
-  const handleAddImage = () => {
-    setPlacementIntent({
+  const addImageIntent = useMemo<PlacementIntent>(() => {
+    const { width, height } = resolveScrapDefaults("image");
+
+    return {
       type: "image",
-      width: 320,
-      height: 250,
-      create: ({ x, y }) => ({
-        id: createId("image"),
+      width,
+      height,
+      create: ({ x, y }: { x: number; y: number }) => ({
+        id: createScrapId("image"),
         type: "image",
         x,
         y,
-        width: 320,
-        height: 250,
+        width,
+        height,
         src: "/demo-assets/studio-board.svg",
         alt: "Demo image scrap",
         caption: "Placeholder image for the prototype.",
       }),
-    });
+    };
+  }, []);
+
+  const handleAddNote = () => {
+    setPlacementIntent(addNoteIntent);
+  };
+
+  const handleAddImage = () => {
+    setPlacementIntent(addImageIntent);
   };
 
   const handleAddLink = () => {
@@ -111,17 +127,19 @@ export function BoardView({ board }: BoardViewProps) {
     const path = parsedUrl.pathname === "/" ? "" : parsedUrl.pathname;
     const summary = [hostname, path].filter(Boolean).join("");
 
+    const { width, height } = resolveScrapDefaults("link");
+
     setPlacementIntent({
       type: "link",
-      width: 360,
-      height: 208,
+      width,
+      height,
       create: ({ x, y }) => ({
-        id: createId("link"),
+        id: createScrapId("link"),
         type: "link",
         x,
         y,
-        width: 360,
-        height: 208,
+        width,
+        height,
         url: parsedUrl.toString(),
         siteName: hostname || "Saved Link",
         title: summary || parsedUrl.toString(),

@@ -6,7 +6,11 @@ type BoardInsert = Database["public"]["Tables"]["boards"]["Insert"];
 type ScrapRow = Database["public"]["Tables"]["scraps"]["Row"];
 type ScrapInsert = Database["public"]["Tables"]["scraps"]["Insert"];
 
-function mapScrapRowToScrap(row: ScrapRow): Scrap {
+function assertUnreachable(value: never): never {
+  throw new Error(`Unsupported scrap row type: ${value}`);
+}
+
+export function mapScrapRowToScrap(row: ScrapRow): Scrap {
   if (row.type === "note") {
     return {
       id: row.id,
@@ -34,22 +38,26 @@ function mapScrapRowToScrap(row: ScrapRow): Scrap {
     };
   }
 
-  return {
-    id: row.id,
-    type: "link",
-    x: row.x,
-    y: row.y,
-    width: row.width,
-    height: row.height,
-    url: row.url ?? "",
-    siteName: row.site_name ?? "",
-    title: row.title ?? "",
-    description: row.description ?? undefined,
-    previewImage: row.preview_image ?? undefined,
-  };
+  if (row.type === "link") {
+    return {
+      id: row.id,
+      type: "link",
+      x: row.x,
+      y: row.y,
+      width: row.width,
+      height: row.height,
+      url: row.url ?? "",
+      siteName: row.site_name ?? "",
+      title: row.title ?? "",
+      description: row.description ?? undefined,
+      previewImage: row.preview_image ?? undefined,
+    };
+  }
+
+  return assertUnreachable(row.type as never);
 }
 
-function mapScrapToRow(userId: string, boardId: string, scrap: Scrap): ScrapInsert {
+export function mapScrapToRow(userId: string, boardId: string, scrap: Scrap): ScrapInsert {
   return {
     id: scrap.id,
     board_id: boardId,
@@ -71,7 +79,7 @@ function mapScrapToRow(userId: string, boardId: string, scrap: Scrap): ScrapInse
   };
 }
 
-function mapBoardToRow(userId: string, board: Board): BoardInsert {
+export function mapBoardToRow(userId: string, board: Board): BoardInsert {
   return {
     id: board.id,
     user_id: userId,
@@ -80,7 +88,7 @@ function mapBoardToRow(userId: string, board: Board): BoardInsert {
   };
 }
 
-function assembleBoards(boardRows: BoardRow[], scrapRows: ScrapRow[]): Board[] {
+export function assembleBoards(boardRows: BoardRow[], scrapRows: ScrapRow[]): Board[] {
   return boardRows.map((board) => ({
     id: board.id,
     title: board.title,
@@ -132,6 +140,24 @@ export async function saveBoards(userId: string, boards: Board[]) {
   const scrapRows = boards.flatMap((board) =>
     board.scraps.map((scrap) => mapScrapToRow(userId, board.id, scrap)),
   );
+
+  const { error: boardDeleteError } = await supabase
+    .from("boards")
+    .delete()
+    .eq("user_id", userId);
+
+  if (boardDeleteError) {
+    throw boardDeleteError;
+  }
+
+  const { error: scrapDeleteError } = await supabase
+    .from("scraps")
+    .delete()
+    .eq("user_id", userId);
+
+  if (scrapDeleteError) {
+    throw scrapDeleteError;
+  }
 
   if (boardRows.length > 0) {
     const { error } = await supabase
