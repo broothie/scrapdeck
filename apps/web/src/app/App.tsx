@@ -3,6 +3,7 @@ import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useThe
 import { useAppStore } from "@scrapdeck/core";
 import { BoardSidebar, BoardView } from "@scrapdeck/ui";
 import { AuthProvider, useAuth } from "../auth/AuthProvider";
+import { supabase } from "../auth/supabase";
 import { EmptyBoardsState } from "./EmptyBoardsState";
 import { AuthScreen } from "../auth/AuthScreen";
 import { MissingSupabaseConfig } from "../auth/MissingSupabaseConfig";
@@ -166,6 +167,40 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     deleteBoard(boardId);
   };
 
+  const handleUploadImage = async (file: File) => {
+    if (!supabase || !user) {
+      throw new Error("You must be signed in to upload images.");
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase() || "bin";
+    const randomId = typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2, 10);
+    const objectPath = `${user.id}/${Date.now()}-${randomId}.${extension}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("scrap-images")
+      .upload(objectPath, file, {
+        upsert: false,
+        contentType: file.type || undefined,
+        cacheControl: "3600",
+      });
+
+    if (uploadError) {
+      throw new Error(uploadError.message);
+    }
+
+    const { data } = supabase.storage
+      .from("scrap-images")
+      .getPublicUrl(objectPath);
+
+    return {
+      src: data.publicUrl,
+      alt: file.name || "Uploaded image",
+      caption: file.name || undefined,
+    };
+  };
+
   return (
     <XStack
       style={{
@@ -187,7 +222,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       />
       <View style={{ flex: 1, minHeight: 0 }}>
         {activeBoard ? (
-          <BoardView board={activeBoard} />
+          <BoardView board={activeBoard} onUploadImage={handleUploadImage} />
         ) : (
           <EmptyBoardsState onCreateBoard={handleCreateBoard} />
         )}

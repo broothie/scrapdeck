@@ -40,24 +40,26 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 
 ## Todo
 
-- [ ] Rename boards
-- [ ] Edit board descriptions
-- [ ] Delete boards
-- [ ] Edit existing note scraps
+- [x] Rename boards
+- [x] Edit board descriptions
+- [x] Delete boards
+- [x] Edit existing note scraps
 - [ ] Edit existing link scraps
 - [ ] Edit existing image scraps
-- [ ] Delete scraps
-- [ ] Upload real images with Supabase Storage
-- [ ] Replace placeholder image scraps with uploaded images
+- [x] Delete scraps
+- [x] Upload real images with Supabase Storage
+- [x] Replace placeholder image scraps with uploaded images
 - [ ] Fetch real link metadata and social preview images
-- [ ] Persist deletions to Supabase
+- [x] Persist deletions to Supabase
 - [ ] Add shared boards / multi-user collaboration
 - [ ] Add realtime sync
 - [ ] Handle multi-session conflicts cleanly
 - [ ] Show richer save/loading/error state in the UI
 - [ ] Improve empty-state onboarding
 - [ ] Add mobile interaction polish
-- [ ] Add tests
+- [ ] Dial down the minimap and zoom-controls shadow
+- [ ] Make zoom-controls colors adapt to light/dark theme
+- [x] Add tests
 - [ ] Reduce bundle size with code-splitting/perf cleanup
 - [ ] Move usernames from auth metadata into a profiles table if we need uniqueness/discovery/richer profiles
 - [ ] Replace whole-board debounced upserts with more granular persistence if needed

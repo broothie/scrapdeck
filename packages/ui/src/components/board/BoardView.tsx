@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import {
   createScrapId,
@@ -18,15 +25,23 @@ type PlacementIntent = {
 
 type BoardViewProps = {
   board: Board;
+  onUploadImage?: (file: File) => Promise<{
+    src: string;
+    alt?: string;
+    caption?: string;
+  }>;
 };
 
-export function BoardView({ board }: BoardViewProps) {
+export function BoardView({ board, onUploadImage }: BoardViewProps) {
   const theme = useTheme();
   const addScrap = useAppStore((state) => state.addScrap);
   const updateBoard = useAppStore((state) => state.updateBoard);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [isAddingLink, setIsAddingLink] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkError, setLinkError] = useState("");
+  const [imageUploadError, setImageUploadError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
   const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
   const [isEditingBoardDescription, setIsEditingBoardDescription] = useState(false);
@@ -90,33 +105,17 @@ export function BoardView({ board }: BoardViewProps) {
     };
   }, []);
 
-  const addImageIntent = useMemo<PlacementIntent>(() => {
-    const { width, height } = resolveScrapDefaults("image");
-
-    return {
-      type: "image",
-      width,
-      height,
-      create: ({ x, y }: { x: number; y: number }) => ({
-        id: createScrapId("image"),
-        type: "image",
-        x,
-        y,
-        width,
-        height,
-        src: "/demo-assets/studio-board.svg",
-        alt: "Demo image scrap",
-        caption: "Placeholder image for the prototype.",
-      }),
-    };
-  }, []);
-
   const handleAddNote = () => {
     setPlacementIntent(addNoteIntent);
   };
 
   const handleAddImage = () => {
-    setPlacementIntent(addImageIntent);
+    if (!imageInputRef.current) {
+      return;
+    }
+
+    setImageUploadError("");
+    imageInputRef.current.click();
   };
 
   const handleAddLink = () => {
@@ -177,6 +176,50 @@ export function BoardView({ board }: BoardViewProps) {
     setPlacementIntent(null);
   };
 
+  const handleImageFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!onUploadImage) {
+      setImageUploadError("Image upload is not configured.");
+      return;
+    }
+
+    setIsUploadingImage(true);
+    setImageUploadError("");
+
+    try {
+      const uploadedImage = await onUploadImage(file);
+      const { width, height } = resolveScrapDefaults("image");
+
+      setPlacementIntent({
+        type: "image",
+        width,
+        height,
+        create: ({ x, y }: { x: number; y: number }) => ({
+          id: createScrapId("image"),
+          type: "image",
+          x,
+          y,
+          width,
+          height,
+          src: uploadedImage.src,
+          alt: uploadedImage.alt ?? file.name ?? "Uploaded image",
+          caption: uploadedImage.caption ?? file.name ?? undefined,
+        }),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not upload image.";
+      setImageUploadError(message);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleSaveBoardTitle = () => {
     const nextTitle = boardTitleDraft.trim() || "Untitled board";
     updateBoard(board.id, { title: nextTitle });
@@ -226,6 +269,13 @@ export function BoardView({ board }: BoardViewProps) {
 
   return (
     <YStack flex={1} style={{ minHeight: 0 }}>
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageFileChange}
+        style={{ display: "none" }}
+      />
       <YStack
         style={{
           padding: "1.25rem 1.5rem 1rem",
@@ -291,8 +341,8 @@ export function BoardView({ board }: BoardViewProps) {
             <Button onPress={handleAddNote}>
               Add note
             </Button>
-            <Button onPress={handleAddImage}>
-              Add image
+            <Button onPress={handleAddImage} disabled={isUploadingImage}>
+              {isUploadingImage ? "Uploading..." : "Add image"}
             </Button>
             <Button onPress={handleAddLink}>
               Add link
@@ -339,6 +389,11 @@ export function BoardView({ board }: BoardViewProps) {
               </XStack>
             </YStack>
           </Card>
+        ) : null}
+        {imageUploadError ? (
+          <Text theme="red" fontSize={14}>
+            {imageUploadError}
+          </Text>
         ) : null}
       </YStack>
 
