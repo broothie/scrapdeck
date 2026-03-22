@@ -57,9 +57,13 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 ## Todo
 
 - [x] Rename boards
+- [ ] Rename boards to decks across UI copy and data model naming
 - [x] Edit board descriptions
 - [x] Delete boards
 - [x] Edit existing note scraps
+- [ ] Fix notes scraps UX to feel more natural
+- [ ] Add rich text support to notes
+- [ ] Remove "Edit" from notes context menu
 - [ ] Edit existing link scraps
 - [ ] Edit existing image scraps
 - [x] Delete scraps
@@ -67,17 +71,24 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [x] Replace placeholder image scraps with uploaded images
 - [ ] Rename "images" to "files" across UI and data labels
 - [x] Fetch real link metadata and social preview images
-- [ ] Fix link-preview scrap footer text clipping/cutoff
+- [ ] Fix link scrap text clipping/cutoff (links unreadable)
+- [ ] Fix file scrap details spacing (filename has too much bottom padding)
 - [x] Persist deletions to Supabase
+- [ ] Fix board/deck trash icon
+- [ ] Fix deck list layout/UX in the sidebar
 - [ ] Add shared boards / multi-user collaboration
 - [ ] Add realtime sync
 - [ ] Handle multi-session conflicts cleanly
 - [ ] Show richer save/loading/error state in the UI
 - [ ] Improve empty-state onboarding
 - [ ] Add mobile interaction polish
+- [ ] Allow right-click context menu on open canvas space
+- [ ] Add lasso selection
 - [x] Dial down the minimap and zoom-controls shadow
 - [x] Make zoom-controls colors adapt to light/dark theme
+- [ ] Make deck title/description editing feel more natural
 - [x] Add tests
+- [ ] Refactor into smaller, more modular/testable files
 - [ ] Reduce bundle size with code-splitting/perf cleanup
 - [ ] Move usernames from auth metadata into a profiles table if we need uniqueness/discovery/richer profiles
 - [ ] Replace whole-board debounced upserts with more granular persistence if needed
