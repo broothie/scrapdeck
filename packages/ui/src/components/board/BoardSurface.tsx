@@ -309,6 +309,13 @@ export function BoardSurface({
   const contextMenuNote = noteContextMenu
     ? board.notes.find((note) => note.id === noteContextMenu.noteId)
     : null;
+  const placementLabel = placementPreview
+    ? ({
+        text: "text note",
+        image: "file note",
+        link: "link note",
+      }[placementPreview.type])
+    : "";
 
   return (
     <div
@@ -416,7 +423,7 @@ export function BoardSurface({
           }}
         >
           <Text style={{ color: theme.textPrimary.val, fontSize: 13 }}>
-            {`Place ${placementPreview.type === "text" ? "text note" : `${placementPreview.type} note`}`}
+            {`Place ${placementLabel}`}
           </Text>
         </View>
       ) : null}

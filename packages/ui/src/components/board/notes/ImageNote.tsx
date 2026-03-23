@@ -20,13 +20,20 @@ export function ImageNoteCard({ note }: ImageNoteCardProps) {
           src={note.src}
           style={{
             width: "100%",
-            height: note.caption ? "calc(100% - 4rem)" : "100%",
+            flex: 1,
+            minHeight: 0,
             objectFit: "cover",
             display: "block",
           }}
         />
         {note.caption ? (
-          <Paragraph style={{ padding: "0.75rem" }}>
+          <Paragraph
+            style={{
+              margin: 0,
+              padding: "0.9rem 0.75rem",
+              lineHeight: 1.3,
+            }}
+          >
             {note.caption}
           </Paragraph>
         ) : null}

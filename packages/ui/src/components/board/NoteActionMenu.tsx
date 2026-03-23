@@ -24,7 +24,7 @@ const menuItems: Array<{
 const defaultNoteMenuActions = menuItems.map((item) => item.action);
 
 export function resolveNoteMenuActions(noteType: Note["type"]): NoteContextMenuAction[] {
-  if (noteType === "text") {
+  if (noteType !== "link") {
     return defaultNoteMenuActions.filter((action) => action !== "edit");
   }
 
