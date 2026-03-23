@@ -1,4 +1,4 @@
-import { Anchor, Card, YStack, useTheme } from "tamagui";
+import { Anchor, Card, Text, YStack, useTheme } from "tamagui";
 import type { LinkNote } from "@plumboard/core";
 
 type LinkNoteCardProps = {
@@ -27,7 +27,9 @@ export function LinkNoteCard({ note }: LinkNoteCardProps) {
   const theme = useTheme();
   const hasPreview = Boolean(note.previewImage);
   const rawTitle = note.title?.trim() || "";
-  const linkLabel = hasMeaningfulLabel(rawTitle) ? rawTitle : getUrlLabel(note.url);
+  const urlLabel = getUrlLabel(note.url);
+  const linkLabel = hasMeaningfulLabel(rawTitle) ? rawTitle : urlLabel;
+  const description = note.description?.trim() || "";
 
   return (
     <Card
@@ -48,7 +50,8 @@ export function LinkNoteCard({ note }: LinkNoteCardProps) {
             src={note.previewImage}
             style={{
               width: "100%",
-              height: "calc(100% - 4.5rem)",
+              flex: "1 1 auto",
+              minHeight: 0,
               objectFit: "cover",
               display: "block",
             }}
@@ -56,34 +59,71 @@ export function LinkNoteCard({ note }: LinkNoteCardProps) {
         ) : null}
         <YStack
           style={{
-            height: hasPreview ? "4.5rem" : "100%",
-            padding: hasPreview ? "0.65rem 1rem" : "1rem",
-            justifyContent: "center",
+            height: hasPreview ? "auto" : "100%",
+            flexShrink: 0,
+            padding: hasPreview ? "0.58rem 0.9rem 0.56rem" : "0.75rem",
+            justifyContent: "flex-start",
+            gap: "0.18rem",
           }}
         >
+        <Text
+          style={{
+            margin: 0,
+            fontSize: hasPreview ? "0.68rem" : "0.76rem",
+            lineHeight: "1.2em",
+            fontWeight: 600,
+            color: theme.textMuted.val,
+            letterSpacing: "0.01em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {urlLabel}
+        </Text>
         <Anchor
           href={note.url}
           target="_blank"
           rel="noreferrer"
           className="nodrag nopan"
           style={{
-            display: "block",
             width: "100%",
+            margin: 0,
             color: theme.textPrimary.val,
-            fontSize: hasPreview ? "1.2rem" : "1.5rem",
-            lineHeight: hasPreview ? 1.3 : 1.25,
+            fontSize: hasPreview ? "1rem" : "1.25rem",
+            lineHeight: hasPreview ? "1.2em" : "1.25em",
             fontWeight: 700,
             textDecorationLine: "underline",
             textDecorationColor: theme.borderStrong.val,
             textUnderlineOffset: "0.2em",
             overflowWrap: "anywhere",
-            maxHeight: hasPreview ? "2.6em" : undefined,
-            overflow: hasPreview ? "hidden" : "visible",
+            display: "-webkit-box",
+            WebkitLineClamp: hasPreview ? 2 : 3,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
           onPointerDown={(event) => event.stopPropagation()}
         >
           {linkLabel}
         </Anchor>
+        {description ? (
+          <Text
+            style={{
+              margin: 0,
+              fontSize: hasPreview ? "0.82rem" : "0.95rem",
+              lineHeight: "1.35em",
+              color: theme.textSecondary.val,
+              display: "-webkit-box",
+              WebkitLineClamp: hasPreview ? 2 : 4,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {description}
+          </Text>
+        ) : null}
         </YStack>
       </YStack>
     </Card>
