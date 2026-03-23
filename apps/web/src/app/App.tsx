@@ -233,7 +233,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     addBoard({
       id: boardId,
       title: "Untitled board",
-      description: "A blank board ready for text notes, files, and links.",
+      description: "",
       notes: [],
     });
 
