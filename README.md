@@ -128,7 +128,8 @@ Required one-time setup:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
 3. (Optional) Override the default Pages base path with `VITE_BASE_PATH`.
-   - Default is `/<repo-name>/` for project pages.
+   - Default is `/` (works for custom/root domains like `plumboard.xyz`).
+   - Set `/<repo-name>/` if you deploy under a project subpath.
    - Use `/` if you deploy from a user/org root domain or a custom domain root.
 4. In Supabase Auth URL config, add your Pages origin and callback URL.
    - Example: `https://<user>.github.io/<repo>/`
