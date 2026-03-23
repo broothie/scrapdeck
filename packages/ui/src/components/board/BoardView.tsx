@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
 import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
 import { BoardSurface } from "./BoardSurface";
@@ -9,9 +8,17 @@ import { AppButton } from "../primitives/AppButton";
 
 type BoardViewProps = {
   board: Board;
+  ownerUsername?: string;
+  presenceParticipants?: Array<{
+    id: string;
+    name: string;
+    avatarUrl?: string;
+    isCurrentUser?: boolean;
+  }>;
   shouldOpenMetadataEditor?: boolean;
   onMetadataEditorOpenHandled?: () => void;
   onDeleteBoard?: (boardId: string) => void;
+  onInviteCollaborator?: (email: string) => Promise<{ error?: string }>;
   onUploadImage?: (file: File) => Promise<{
     src: string;
     alt?: string;
@@ -28,14 +35,22 @@ type BoardViewProps = {
 
 export function BoardView({
   board,
+  ownerUsername = "you",
+  presenceParticipants = [],
   shouldOpenMetadataEditor = false,
   onMetadataEditorOpenHandled,
   onDeleteBoard,
+  onInviteCollaborator,
   onUploadImage,
   onResolveLinkPreview,
 }: BoardViewProps) {
   const theme = useTheme();
   const [activeLightboxImageNoteId, setActiveLightboxImageNoteId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteError, setInviteError] = useState("");
+  const [inviteSuccess, setInviteSuccess] = useState("");
+  const [isInvitingCollaborator, setIsInvitingCollaborator] = useState(false);
+  const extraPresenceCount = Math.max(0, presenceParticipants.length - 4);
   const {
     isEditingBoardMetadata,
     boardTitleDraft,
@@ -94,6 +109,10 @@ export function BoardView({
 
   useEffect(() => {
     setActiveLightboxImageNoteId(null);
+    setInviteEmail("");
+    setInviteError("");
+    setInviteSuccess("");
+    setIsInvitingCollaborator(false);
   }, [board.id]);
 
   useEffect(() => {
@@ -143,6 +162,35 @@ export function BoardView({
     };
   }, [handleCancelBoardMetadata, isEditingBoardMetadata]);
 
+  const handleInviteCollaboratorSave = async () => {
+    if (!onInviteCollaborator || isInvitingCollaborator) {
+      return;
+    }
+
+    const normalizedEmail = inviteEmail.trim().toLowerCase();
+    if (!normalizedEmail) {
+      setInviteError("Enter an email address.");
+      setInviteSuccess("");
+      return;
+    }
+
+    setIsInvitingCollaborator(true);
+    setInviteError("");
+    setInviteSuccess("");
+
+    const result = await onInviteCollaborator(normalizedEmail);
+
+    setIsInvitingCollaborator(false);
+
+    if (result.error) {
+      setInviteError(result.error);
+      return;
+    }
+
+    setInviteEmail("");
+    setInviteSuccess("Collaborator added.");
+  };
+
   const handleEditLinkFromContextMenu = useCallback((noteId: string) => {
     const note = board.notes.find((candidate) => candidate.id === noteId);
 
@@ -186,40 +234,82 @@ export function BoardView({
           borderBottomColor: theme.borderSubtle.val,
         }}
       >
-        <XStack style={{ alignItems: "flex-end", gap: "1rem" }}>
-          <YStack style={{ gap: "0.25rem" }}>
-            <XStack style={{ alignItems: "center", gap: "0.35rem", width: "fit-content" }}>
+        <YStack style={{ gap: "0.25rem" }}>
+          <XStack
+            style={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              width: "100%",
+            }}
+          >
+            <XStack style={{ alignItems: "baseline", gap: "0.35rem", minWidth: 0 }}>
               <H2 style={{ margin: 0 }}>
                 {board.title}
               </H2>
-              <div
-                role="button"
-                tabIndex={0}
-                aria-label="Edit board details"
-                onClick={openBoardMetadataEditor}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    openBoardMetadataEditor();
-                  }
-                }}
+              <Text style={{ fontSize: 12, color: theme.textMuted.val }}>
+                {`Owned by ${ownerUsername}`}
+              </Text>
+            </XStack>
+            {presenceParticipants.length > 0 ? (
+              <XStack
                 style={{
-                  display: "inline-flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  cursor: "pointer",
-                  color: theme.textSecondary.val,
-                  lineHeight: 0,
+                  justifyContent: "flex-end",
+                  flexWrap: "wrap",
+                  gap: "0.4rem",
+                  maxWidth: 340,
                 }}
               >
-                <MoreHorizontal size={18} strokeWidth={2.1} />
-              </div>
-            </XStack>
-            <Paragraph style={{ margin: 0, maxWidth: 480 }}>
-              {board.description}
-            </Paragraph>
-          </YStack>
-        </XStack>
+                {presenceParticipants.slice(0, 4).map((participant) => (
+                  <XStack
+                    key={participant.id}
+                    style={{
+                      alignItems: "center",
+                      borderRadius: 999,
+                      border: `1px solid ${theme.borderDefault.val}`,
+                      backgroundColor: participant.isCurrentUser ? theme.accentLight.val : theme.surfaceHover.val,
+                      padding: "0.2rem 0.45rem 0.2rem 0.3rem",
+                      gap: "0.35rem",
+                    }}
+                  >
+                    {participant.avatarUrl ? (
+                      <img
+                        src={participant.avatarUrl}
+                        alt={`${participant.name} avatar`}
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 999,
+                          border: `1px solid ${theme.borderSubtle.val}`,
+                          objectFit: "cover",
+                          display: "block",
+                        }}
+                      />
+                    ) : null}
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: participant.isCurrentUser ? theme.accentText.val : theme.textSecondary.val,
+                      }}
+                    >
+                      {participant.isCurrentUser ? "You" : participant.name}
+                    </Text>
+                  </XStack>
+                ))}
+                {extraPresenceCount > 0 ? (
+                  <Text style={{ fontSize: 12, color: theme.textMuted.val }}>
+                    {`+${extraPresenceCount}`}
+                  </Text>
+                ) : null}
+              </XStack>
+            ) : null}
+          </XStack>
+          <Paragraph style={{ margin: 0, maxWidth: 720 }}>
+            {board.description}
+          </Paragraph>
+        </YStack>
         {fileUploadError ? (
           <Text theme="red" fontSize={14}>
             {fileUploadError}
@@ -566,6 +656,46 @@ export function BoardView({
                   Press Ctrl/Cmd + Enter to save quickly.
                 </Text>
               </YStack>
+
+              {onInviteCollaborator ? (
+                <YStack gap="$2">
+                  <Text style={{ fontWeight: 600 }}>Collaborators</Text>
+                  <XStack style={{ gap: "0.5rem", alignItems: "center" }}>
+                    <Input
+                      aria-label="Collaborator email"
+                      value={inviteEmail}
+                      onChange={(event) => setInviteEmail(event.currentTarget.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          void handleInviteCollaboratorSave();
+                        }
+                      }}
+                      placeholder="name@example.com"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      disabled={isInvitingCollaborator}
+                      style={{ width: "100%" }}
+                    />
+                    <AppButton
+                      variant="outline"
+                      onPress={() => {
+                        void handleInviteCollaboratorSave();
+                      }}
+                      disabled={isInvitingCollaborator}
+                      loading={isInvitingCollaborator}
+                    >
+                      Add
+                    </AppButton>
+                  </XStack>
+                  {inviteError ? (
+                    <Text style={{ color: theme.danger.val }}>{inviteError}</Text>
+                  ) : null}
+                  {!inviteError && inviteSuccess ? (
+                    <Text style={{ color: theme.accentStrong.val }}>{inviteSuccess}</Text>
+                  ) : null}
+                </YStack>
+              ) : null}
 
               <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
                 {onDeleteBoard ? (

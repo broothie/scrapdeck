@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      board_members: {
+        Row: {
+          board_id: string
+          created_at: string
+          invited_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          board_id: string
+          created_at?: string
+          invited_by?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          board_id?: string
+          created_at?: string
+          invited_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "board_members_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boards: {
         Row: {
           created_at: string
@@ -126,6 +158,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      invite_board_member: {
+        Args: { p_board_id: string; p_invitee_email: string; p_role?: string }
+        Returns: string
+      }
       save_boards_snapshot: {
         Args: { p_boards: Json; p_notes: Json; p_user_id: string }
         Returns: undefined

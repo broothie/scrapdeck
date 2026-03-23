@@ -139,6 +139,7 @@ describe("board row helpers", () => {
         id: "board-1",
         title: "Ideas",
         description: "Board description",
+        ownerUserId: "user-1",
         notes: [
           {
             id: "note-note",
@@ -180,6 +181,7 @@ describe("board row helpers", () => {
         id: "board-2",
         title: "Archive",
         description: "Other",
+        ownerUserId: "user-1",
         notes: [],
       },
     ]);

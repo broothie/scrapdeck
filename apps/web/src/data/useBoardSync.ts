@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAppStore } from "@plumboard/core";
+import { supabase } from "../auth/supabase";
 import { fetchBoards, saveBoards } from "./boards";
 
 function serializeBoards(value: unknown) {
@@ -16,6 +17,7 @@ export function useBoardSync(userId: string | undefined) {
   const hydratedUserIdRef = useRef<string | null>(null);
   const lastSavedSnapshotRef = useRef<string>("");
   const saveTimeoutRef = useRef<number | null>(null);
+  const realtimeRefreshTimeoutRef = useRef<number | null>(null);
   const boardSnapshot = useMemo(() => serializeBoards(boards), [boards]);
 
   useEffect(() => {
@@ -94,6 +96,73 @@ export function useBoardSync(userId: string | undefined) {
       }
     };
   }, [boardSnapshot, boards, userId]);
+
+  useEffect(() => {
+    const realtimeClient = supabase;
+
+    if (!userId || !realtimeClient) {
+      return;
+    }
+
+    let isDisposed = false;
+    const scheduleRealtimeRefresh = () => {
+      if (realtimeRefreshTimeoutRef.current) {
+        window.clearTimeout(realtimeRefreshTimeoutRef.current);
+      }
+
+      realtimeRefreshTimeoutRef.current = window.setTimeout(() => {
+        fetchBoards(userId)
+          .then((nextBoards) => {
+            if (isDisposed) {
+              return;
+            }
+
+            setBoards(nextBoards);
+            hydratedUserIdRef.current = userId;
+            lastSavedSnapshotRef.current = serializeBoards(nextBoards);
+            setLoadError(null);
+            setSaveError(null);
+          })
+          .catch((nextError: Error) => {
+            if (isDisposed) {
+              return;
+            }
+
+            setLoadError(nextError.message);
+          });
+      }, 120);
+    };
+
+    const channel = realtimeClient
+      .channel(`plumboard-sync-${userId}`)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "boards",
+      }, scheduleRealtimeRefresh)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "notes",
+      }, scheduleRealtimeRefresh)
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "board_members",
+        filter: `user_id=eq.${userId}`,
+      }, scheduleRealtimeRefresh)
+      .subscribe();
+
+    return () => {
+      isDisposed = true;
+
+      if (realtimeRefreshTimeoutRef.current) {
+        window.clearTimeout(realtimeRefreshTimeoutRef.current);
+      }
+
+      void realtimeClient.removeChannel(channel);
+    };
+  }, [setBoards, userId]);
 
   return {
     isLoading,

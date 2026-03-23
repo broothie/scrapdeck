@@ -2,6 +2,7 @@ export type Board = {
   id: string;
   title: string;
   description: string;
+  ownerUserId?: string;
   notes: Note[];
 };
 

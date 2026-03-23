@@ -3,6 +3,7 @@ import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useThe
 import { useAppStore } from "@plumboard/core";
 import { BoardSidebar, BoardView } from "@plumboard/ui";
 import { Navigate, Route, Routes, useMatch, useNavigate, useParams } from "react-router-dom";
+import md5 from "blueimp-md5";
 import { AuthProvider, useAuth } from "../auth/AuthProvider";
 import { supabase } from "../auth/supabase";
 import { AccountPage } from "./AccountPage";
@@ -11,6 +12,7 @@ import { EmptyBoardsState } from "./EmptyBoardsState";
 import { AuthScreen } from "../auth/AuthScreen";
 import { MissingSupabaseConfig } from "../auth/MissingSupabaseConfig";
 import { UsernameSetupScreen } from "../auth/UsernameSetupScreen";
+import { useBoardPresence } from "../data/useBoardPresence";
 import { useBoardSync } from "../data/useBoardSync";
 
 function createId(prefix: string) {
@@ -60,12 +62,43 @@ function resolveStoredThemePreference(): ThemePreference {
   return "system";
 }
 
+function normalizeGravatarHash(input: string) {
+  const normalized = input.toLowerCase().replace(/[^a-f0-9]/g, "");
+
+  if (normalized.length >= 32) {
+    return normalized.slice(0, 32);
+  }
+
+  return normalized.padEnd(32, "0");
+}
+
+function resolveGravatarUrl(hash: string) {
+  return `https://www.gravatar.com/avatar/${hash}?s=40&d=identicon&r=pg`;
+}
+
+function resolveEmailHash(email: string | undefined) {
+  if (!email) {
+    return null;
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  return md5(normalizedEmail);
+}
+
 type BoardRoutePageProps = {
   boards: ReturnType<typeof useAppStore.getState>["boards"];
+  currentUserId: string;
+  currentUsername: string;
+  currentUserEmailHash: string | null;
   boardSaveError: string | null;
   boardIdNeedingMetadataEdit: string | null;
   onMetadataEditorOpenHandled: (boardId: string) => void;
   onDeleteBoard: (boardId: string) => void;
+  onInviteCollaborator: (boardId: string, email: string) => Promise<{ error?: string }>;
   onUploadImage: (file: File) => Promise<{
     src: string;
     alt?: string;
@@ -76,16 +109,33 @@ type BoardRoutePageProps = {
 
 function BoardRoutePage({
   boards,
+  currentUserId,
+  currentUsername,
+  currentUserEmailHash,
   boardSaveError,
   boardIdNeedingMetadataEdit,
   onMetadataEditorOpenHandled,
   onDeleteBoard,
+  onInviteCollaborator,
   onUploadImage,
   onResolveLinkPreview,
 }: BoardRoutePageProps) {
   const theme = useTheme();
   const { boardId = "" } = useParams<{ boardId: string }>();
   const board = boards.find((candidate) => candidate.id === boardId) ?? null;
+  const presenceUsers = useBoardPresence({
+    boardId: board?.id ?? null,
+    userId: currentUserId,
+    username: currentUsername,
+    emailHash: currentUserEmailHash,
+  }).map((participant) => ({
+    id: participant.userId,
+    name: participant.username,
+    avatarUrl: resolveGravatarUrl(normalizeGravatarHash(participant.avatarHash ?? participant.userId)),
+    isCurrentUser: participant.userId === currentUserId,
+  }));
+  const isBoardOwner = (board?.ownerUserId ?? currentUserId) === currentUserId;
+  const ownerLabel = isBoardOwner ? currentUsername : "collaborator";
 
   if (!board) {
     return (
@@ -135,11 +185,14 @@ function BoardRoutePage({
       <View style={{ flex: 1, minHeight: 0 }}>
         <BoardView
           board={board}
+          ownerUsername={ownerLabel}
+          presenceParticipants={presenceUsers}
           shouldOpenMetadataEditor={boardIdNeedingMetadataEdit === board.id}
           onMetadataEditorOpenHandled={() => {
             onMetadataEditorOpenHandled(board.id);
           }}
-          onDeleteBoard={onDeleteBoard}
+          onDeleteBoard={isBoardOwner ? onDeleteBoard : undefined}
+          onInviteCollaborator={isBoardOwner ? ((email) => onInviteCollaborator(board.id, email)) : undefined}
           onUploadImage={onUploadImage}
           onResolveLinkPreview={onResolveLinkPreview}
         />
@@ -255,6 +308,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       id: boardId,
       title: "Untitled board",
       description: "",
+      ownerUserId: user.id,
       notes: [],
     });
 
@@ -265,6 +319,12 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
   const handleSelectBoard = (boardId: string) => {
     setActiveBoard(boardId);
+    navigate(`/board/${encodeURIComponent(boardId)}`);
+  };
+
+  const handleOpenBoardSettings = (boardId: string) => {
+    setActiveBoard(boardId);
+    setBoardIdNeedingMetadataEdit(boardId);
     navigate(`/board/${encodeURIComponent(boardId)}`);
   };
 
@@ -289,6 +349,25 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     if (routeBoardId === boardId) {
       navigate("/", { replace: true });
     }
+  };
+
+  const handleInviteCollaborator = async (boardId: string, email: string) => {
+    if (!supabase) {
+      return { error: "Supabase is not configured." };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!normalizedEmail) {
+      return { error: "Enter an email address." };
+    }
+
+    const { error } = await supabase.rpc("invite_board_member", {
+      p_board_id: boardId,
+      p_invitee_email: normalizedEmail,
+      p_role: "editor",
+    });
+
+    return error ? { error: error.message } : {};
   };
 
   const handleUploadImage = async (file: File) => {
@@ -357,10 +436,12 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       <BoardSidebar
         brandLogoUrl={brandLogoUrl}
         activeBoardId={routeBoardId ?? ""}
+        currentUserId={user.id}
         boards={boards}
         onOpenBoards={() => navigate("/")}
         onCreateBoard={handleCreateBoard}
         onSelectBoard={handleSelectBoard}
+        onOpenBoardSettings={handleOpenBoardSettings}
         accountUsername={username}
         onOpenAccount={() => navigate("/account")}
       />
@@ -398,12 +479,16 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
           element={(
             <BoardRoutePage
               boards={boards}
+              currentUserId={user.id}
+              currentUsername={username}
+              currentUserEmailHash={resolveEmailHash(user.email)}
               boardSaveError={boardSaveError}
               boardIdNeedingMetadataEdit={boardIdNeedingMetadataEdit}
               onMetadataEditorOpenHandled={(boardId) => {
                 setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
               }}
               onDeleteBoard={handleDeleteBoard}
+              onInviteCollaborator={handleInviteCollaborator}
               onUploadImage={handleUploadImage}
               onResolveLinkPreview={handleResolveLinkPreview}
             />

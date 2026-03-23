@@ -3,6 +3,7 @@ import { supabase } from "../auth/supabase";
 
 type BoardRow = Database["public"]["Tables"]["boards"]["Row"];
 type BoardInsert = Database["public"]["Tables"]["boards"]["Insert"];
+type BoardMemberRow = Database["public"]["Tables"]["board_members"]["Row"];
 type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
 type NoteInsert = Database["public"]["Tables"]["notes"]["Insert"];
 type NoteSoftDeleteCandidate = Pick<NoteRow, "id" | "board_id" | "deleted_at">;
@@ -96,6 +97,7 @@ export function assembleBoards(boardRows: BoardRow[], noteRows: NoteRow[]): Boar
     id: board.id,
     title: board.title,
     description: board.description,
+    ownerUserId: board.user_id,
     notes: noteRows
       .filter((note) => note.board_id === board.id)
       .map(mapNoteRowToNote),
@@ -119,7 +121,18 @@ export async function fetchBoards(userId: string) {
     throw new Error("Supabase is not configured.");
   }
 
-  const [{ data: boards, error: boardsError }, { data: notes, error: notesError }] =
+  const { data: memberships, error: membershipsError } = await supabase
+    .from("board_members")
+    .select("board_id, user_id, role, invited_by, created_at")
+    .eq("user_id", userId);
+
+  if (membershipsError) {
+    throw membershipsError;
+  }
+
+  const memberBoardIds = [...new Set((memberships ?? []).map((membership: BoardMemberRow) => membership.board_id))];
+
+  const [{ data: ownedBoards, error: ownedBoardsError }, { data: sharedBoards, error: sharedBoardsError }] =
     await Promise.all([
       supabase
         .from("boards")
@@ -127,25 +140,53 @@ export async function fetchBoards(userId: string) {
         .eq("user_id", userId)
         .is("deleted_at", null)
         .order("created_at", { ascending: true }),
-      supabase
-        .from("notes")
-        .select(
-          "id, board_id, user_id, type, x, y, width, height, title, body, src, alt, caption, url, site_name, description, preview_image, created_at, updated_at, deleted_at",
-        )
-        .eq("user_id", userId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true }),
+      memberBoardIds.length > 0
+        ? supabase
+          .from("boards")
+          .select("id, user_id, title, description, created_at, updated_at, deleted_at")
+          .in("id", memberBoardIds)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true })
+        : Promise.resolve({ data: [] as BoardRow[], error: null }),
     ]);
 
-  if (boardsError) {
-    throw boardsError;
+  if (ownedBoardsError) {
+    throw ownedBoardsError;
   }
+
+  if (sharedBoardsError) {
+    throw sharedBoardsError;
+  }
+
+  const boardsById = new Map<string, BoardRow>();
+  for (const board of ownedBoards ?? []) {
+    boardsById.set(board.id, board);
+  }
+  for (const board of sharedBoards ?? []) {
+    boardsById.set(board.id, board);
+  }
+
+  const boards = [...boardsById.values()];
+  const boardIds = boards.map((board) => board.id);
+
+  if (boardIds.length === 0) {
+    return [];
+  }
+
+  const { data: notes, error: notesError } = await supabase
+    .from("notes")
+    .select(
+      "id, board_id, user_id, type, x, y, width, height, title, body, src, alt, caption, url, site_name, description, preview_image, created_at, updated_at, deleted_at",
+    )
+    .in("board_id", boardIds)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true });
 
   if (notesError) {
     throw notesError;
   }
 
-  return assembleBoards(boards ?? [], notes ?? []);
+  return assembleBoards(boards, notes ?? []);
 }
 
 export async function saveBoards(userId: string, boards: Board[]) {

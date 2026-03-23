@@ -1,18 +1,22 @@
-import { Plus } from "lucide-react";
+import { MoreHorizontal, Plus } from "lucide-react";
 import { Button, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
 
 type SidebarBoardListProps = {
   boards: Board[];
   activeBoardId: string;
+  currentUserId?: string;
   onSelectBoard: (boardId: string) => void;
+  onOpenBoardSettings?: (boardId: string) => void;
   onCreateBoard?: () => void;
 };
 
 export function SidebarBoardList({
   boards,
   activeBoardId,
+  currentUserId,
   onSelectBoard,
+  onOpenBoardSettings,
   onCreateBoard,
 }: SidebarBoardListProps) {
   const theme = useTheme();
@@ -82,37 +86,75 @@ export function SidebarBoardList({
 
       {boards.map((board) => {
         const isActive = board.id === activeBoardId;
+        const isBoardOwner = currentUserId ? (board.ownerUserId ?? currentUserId) === currentUserId : false;
+        const showBoardSettings = Boolean(onOpenBoardSettings && isBoardOwner);
 
         return (
-          <XStack key={board.id} style={{ width: "100%", gap: "0.5rem", alignItems: "stretch" }}>
-            <Button
-              onPress={() => onSelectBoard(board.id)}
-              variant={isActive ? undefined : "outlined"}
-              style={{
-                flex: 1,
-                justifyContent: "flex-start",
-                height: "auto",
-                minHeight: 44,
-                paddingVertical: 7,
-                paddingHorizontal: 12,
-                backgroundColor: isActive ? theme.accentSubtle.val : theme.surface.val,
-                borderColor: isActive ? theme.accentDefault.val : theme.borderDefault.val,
-                borderWidth: 1,
-              }}
-            >
-              <YStack style={{ gap: 0 }}>
-                <Text
+          <Button
+            key={board.id}
+            onPress={() => onSelectBoard(board.id)}
+            variant={isActive ? undefined : "outlined"}
+            style={{
+              width: "100%",
+              justifyContent: "flex-start",
+              alignItems: "stretch",
+              height: "auto",
+              minHeight: 44,
+              paddingVertical: 7,
+              paddingLeft: 12,
+              paddingRight: showBoardSettings ? 8 : 12,
+              backgroundColor: isActive ? theme.accentSubtle.val : theme.surface.val,
+              borderColor: isActive ? theme.accentDefault.val : theme.borderDefault.val,
+              borderWidth: 1,
+            }}
+          >
+            <XStack style={{ width: "100%", flex: 1, alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: isActive ? theme.accentText.val : theme.textPrimary.val,
+                  textAlign: "left",
+                  flex: 1,
+                }}
+              >
+                {board.title}
+              </Text>
+              {showBoardSettings ? (
+                <XStack
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Edit ${board.title} settings`}
+                  onPointerDown={(event) => {
+                    event.stopPropagation();
+                  }}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onOpenBoardSettings?.(board.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      onOpenBoardSettings?.(board.id);
+                    }
+                  }}
                   style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: isActive ? theme.accentText.val : theme.textPrimary.val,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: isActive ? theme.accentText.val : theme.textSecondary.val,
+                    lineHeight: 0,
+                    padding: 0,
+                    borderRadius: 6,
                   }}
                 >
-                  {board.title}
-                </Text>
-              </YStack>
-            </Button>
-          </XStack>
+                  <MoreHorizontal size={16} strokeWidth={2} />
+                </XStack>
+              ) : null}
+            </XStack>
+          </Button>
         );
       })}
 
