@@ -21,6 +21,10 @@ export type NoteContextMenuState = {
 export type CanvasAddMenuState = {
   x: number;
   y: number;
+  flowPosition: {
+    x: number;
+    y: number;
+  } | null;
 };
 
 export type FabAction = "text" | "file" | "link";

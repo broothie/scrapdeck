@@ -66,6 +66,8 @@ export function useNoteComposer({
   const [linkError, setLinkError] = useState("");
   const [fileUploadError, setFileUploadError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
+  const [pendingFilePosition, setPendingFilePosition] = useState<{ x: number; y: number } | null>(null);
+  const [pendingLinkPosition, setPendingLinkPosition] = useState<{ x: number; y: number } | null>(null);
 
   const addTextNoteIntent = useMemo<PlacementIntent>(() => {
     const { width, height } = resolveNoteDefaults("text");
@@ -89,6 +91,7 @@ export function useNoteComposer({
   const closeLinkComposer = () => {
     setIsAddingLink(false);
     setEditingLinkNote(null);
+    setPendingLinkPosition(null);
     setLinkUrl("");
     setLinkTitle("");
     setLinkDescription("");
@@ -99,18 +102,47 @@ export function useNoteComposer({
     setPlacementIntent(addTextNoteIntent);
   };
 
+  const handleAddTextNoteAtPosition = (position: { x: number; y: number }) => {
+    addNote(boardId, addTextNoteIntent.create(position));
+    setPlacementIntent(null);
+  };
+
   const handleAddFile = () => {
     if (!imageInputRef.current) {
       return;
     }
 
     setFileUploadError("");
+    setPendingFilePosition(null);
+    imageInputRef.current.click();
+  };
+
+  const handleAddFileAtPosition = (position: { x: number; y: number }) => {
+    if (!imageInputRef.current) {
+      return;
+    }
+
+    setFileUploadError("");
+    setPlacementIntent(null);
+    setPendingFilePosition(position);
     imageInputRef.current.click();
   };
 
   const handleAddLink = () => {
     setIsAddingLink(true);
     setEditingLinkNote(null);
+    setPendingLinkPosition(null);
+    setPlacementIntent(null);
+    setLinkUrl("");
+    setLinkTitle("");
+    setLinkDescription("");
+    setLinkError("");
+  };
+
+  const handleAddLinkAtPosition = (position: { x: number; y: number }) => {
+    setIsAddingLink(true);
+    setEditingLinkNote(null);
+    setPendingLinkPosition(position);
     setPlacementIntent(null);
     setLinkUrl("");
     setLinkTitle("");
@@ -121,6 +153,7 @@ export function useNoteComposer({
   const handleEditLink = (note: LinkNote) => {
     setIsAddingLink(true);
     setEditingLinkNote(note);
+    setPendingLinkPosition(null);
     setPlacementIntent(null);
     setLinkUrl(note.url);
     setLinkTitle(note.title);
@@ -159,6 +192,24 @@ export function useNoteComposer({
 
       const { width, height } = resolveNoteDefaults("link");
       const resolvedHeight = resolvedLink.previewImage ? height : 148;
+
+      if (pendingLinkPosition) {
+        addNote(boardId, {
+          id: createNoteId("link"),
+          type: "link",
+          x: pendingLinkPosition.x,
+          y: pendingLinkPosition.y,
+          width,
+          height: resolvedHeight,
+          url: resolvedLink.url,
+          siteName: resolvedLink.siteName,
+          title: resolvedLink.title,
+          description: resolvedLink.description,
+          previewImage: resolvedLink.previewImage,
+        });
+        closeLinkComposer();
+        return;
+      }
 
       setPlacementIntent({
         type: "link",
@@ -199,14 +250,17 @@ export function useNoteComposer({
 
   const handleImageFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    const dropPosition = pendingFilePosition;
     event.target.value = "";
 
     if (!file) {
+      setPendingFilePosition(null);
       return;
     }
 
     if (!onUploadImage) {
       setFileUploadError("File upload is not configured.");
+      setPendingFilePosition(null);
       return;
     }
 
@@ -216,6 +270,21 @@ export function useNoteComposer({
     try {
       const uploadedImage = await onUploadImage(file);
       const { width, height } = resolveNoteDefaults("image");
+
+      if (dropPosition) {
+        addNote(boardId, {
+          id: createNoteId("image"),
+          type: "image",
+          x: dropPosition.x,
+          y: dropPosition.y,
+          width,
+          height,
+          src: uploadedImage.src,
+          alt: uploadedImage.alt ?? file.name ?? "Uploaded file",
+          caption: uploadedImage.caption ?? file.name ?? undefined,
+        });
+        return;
+      }
 
       setPlacementIntent({
         type: "image",
@@ -238,6 +307,7 @@ export function useNoteComposer({
       setFileUploadError(message);
     } finally {
       setIsUploadingFile(false);
+      setPendingFilePosition(null);
     }
   };
 
@@ -416,8 +486,11 @@ export function useNoteComposer({
     setLinkDescription,
     closeLinkComposer,
     handleAddTextNote,
+    handleAddTextNoteAtPosition,
     handleAddFile,
+    handleAddFileAtPosition,
     handleAddLink,
+    handleAddLinkAtPosition,
     handleEditLink,
     handleSaveLink,
     handleImageFileChange,

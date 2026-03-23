@@ -61,6 +61,9 @@ type BoardSurfaceProps = {
   onEditLinkNote?: (noteId: string) => boolean;
   placementPreview?: PlacementPreview | null;
   onPlaceNote?: (position: { x: number; y: number }) => void;
+  onCreateTextNoteAtPosition?: (position: { x: number; y: number }) => void;
+  onCreateFileAtPosition?: (position: { x: number; y: number }) => void;
+  onCreateLinkAtPosition?: (position: { x: number; y: number }) => void;
   onDropFileAtPosition?: (file: File, position: { x: number; y: number }) => void | Promise<void>;
   onDropLinkAtPosition?: (url: string, position: { x: number; y: number }) => void | Promise<void>;
 };
@@ -74,6 +77,9 @@ export function BoardSurface({
   onEditLinkNote,
   placementPreview,
   onPlaceNote,
+  onCreateTextNoteAtPosition,
+  onCreateFileAtPosition,
+  onCreateLinkAtPosition,
   onDropFileAtPosition,
   onDropLinkAtPosition,
 }: BoardSurfaceProps) {
@@ -348,7 +354,9 @@ export function BoardSurface({
       inset: CONTEXT_MENU_INSET,
     });
 
-    setCanvasAddMenu({ x, y });
+    const flowPosition = getFlowPositionFromClientCoordinates(event);
+
+    setCanvasAddMenu({ x, y, flowPosition });
     setNoteContextMenu(null);
     setIsFabMenuOpen(false);
   };
@@ -462,6 +470,33 @@ export function BoardSurface({
     }
 
     onCreateLink?.();
+    setCanvasAddMenu(null);
+    setIsFabMenuOpen(false);
+  };
+
+  const handleCanvasAddMenuAction = (action: FabAction) => {
+    const flowPosition = canvasAddMenu?.flowPosition;
+
+    if (!flowPosition) {
+      handleFabAction(action);
+      return;
+    }
+
+    if (action === "text") {
+      onCreateTextNoteAtPosition?.(flowPosition);
+      setCanvasAddMenu(null);
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    if (action === "file") {
+      onCreateFileAtPosition?.(flowPosition);
+      setCanvasAddMenu(null);
+      setIsFabMenuOpen(false);
+      return;
+    }
+
+    onCreateLinkAtPosition?.(flowPosition);
     setCanvasAddMenu(null);
     setIsFabMenuOpen(false);
   };
@@ -629,7 +664,7 @@ export function BoardSurface({
             zIndex: 30,
           }}
         >
-          <AddNoteContextMenu onAction={handleFabAction} />
+          <AddNoteContextMenu onAction={handleCanvasAddMenuAction} />
         </div>
       ) : null}
       <NoteCreateFab

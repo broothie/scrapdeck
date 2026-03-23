@@ -64,8 +64,11 @@ export function BoardView({
     setLinkDescription,
     closeLinkComposer,
     handleAddTextNote,
+    handleAddTextNoteAtPosition,
     handleAddFile,
+    handleAddFileAtPosition,
     handleAddLink,
+    handleAddLinkAtPosition,
     handleEditLink,
     handleSaveLink,
     handleImageFileChange,
@@ -198,8 +201,11 @@ export function BoardView({
         board={board}
         isUploadingFile={isUploadingFile}
         onCreateTextNote={handleAddTextNote}
+        onCreateTextNoteAtPosition={handleAddTextNoteAtPosition}
         onCreateFile={handleAddFile}
+        onCreateFileAtPosition={handleAddFileAtPosition}
         onCreateLink={handleAddLink}
+        onCreateLinkAtPosition={handleAddLinkAtPosition}
         onEditLinkNote={handleEditLinkFromContextMenu}
         placementPreview={
           placementIntent
