@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useTheme } from "tamagui";
 import { useAppStore } from "@plumboard/core";
 import { BoardSidebar, BoardView } from "@plumboard/ui";
+import { Navigate, Route, Routes, useMatch, useNavigate, useParams } from "react-router-dom";
 import { AuthProvider, useAuth } from "../auth/AuthProvider";
 import { supabase } from "../auth/supabase";
 import { AccountPage } from "./AccountPage";
@@ -18,10 +19,6 @@ function createId(prefix: string) {
 
 type AppThemeMode = "light" | "dark";
 type ThemePreference = "system" | AppThemeMode;
-type AppRoute =
-  | { page: "boards" }
-  | { page: "board"; boardId: string }
-  | { page: "account" };
 
 type AppShellProps = {
   themePreference: ThemePreference;
@@ -63,36 +60,99 @@ function resolveStoredThemePreference(): ThemePreference {
   return "system";
 }
 
-function resolveRouteFromPath(pathname: string): AppRoute {
-  if (pathname === "/account") {
-    return { page: "account" };
+type BoardRoutePageProps = {
+  boards: ReturnType<typeof useAppStore.getState>["boards"];
+  boardSaveError: string | null;
+  boardIdNeedingMetadataEdit: string | null;
+  onMetadataEditorOpenHandled: (boardId: string) => void;
+  onDeleteBoard: (boardId: string) => void;
+  onUploadImage: (file: File) => Promise<{
+    src: string;
+    alt?: string;
+    caption?: string;
+  }>;
+  onResolveLinkPreview: (url: string) => Promise<LinkPreviewResponse>;
+};
+
+function BoardRoutePage({
+  boards,
+  boardSaveError,
+  boardIdNeedingMetadataEdit,
+  onMetadataEditorOpenHandled,
+  onDeleteBoard,
+  onUploadImage,
+  onResolveLinkPreview,
+}: BoardRoutePageProps) {
+  const theme = useTheme();
+  const { boardId = "" } = useParams<{ boardId: string }>();
+  const board = boards.find((candidate) => candidate.id === boardId) ?? null;
+
+  if (!board) {
+    return (
+      <YStack
+        style={{
+          flex: 1,
+          minHeight: 0,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "1.5rem",
+        }}
+      >
+        <Card width="100%" maxWidth={560} style={{ borderWidth: 1 }}>
+          <Card.Header style={{ padding: "1.25rem" }}>
+            <YStack gap="$3">
+              <H2 style={{ margin: 0 }}>Board not found</H2>
+              <Paragraph style={{ margin: 0 }}>
+                This board might have been deleted, or it has not loaded yet.
+              </Paragraph>
+              <Paragraph style={{ margin: 0 }}>
+                Open a board from the sidebar, or go back to the boards page.
+              </Paragraph>
+            </YStack>
+          </Card.Header>
+        </Card>
+      </YStack>
+    );
   }
 
-  const boardPrefix = "/board/";
-  if (pathname.startsWith(boardPrefix)) {
-    const boardId = decodeURIComponent(pathname.slice(boardPrefix.length));
-    if (boardId) {
-      return { page: "board", boardId };
-    }
-  }
-
-  return { page: "boards" };
-}
-
-function routeToPath(route: AppRoute): string {
-  if (route.page === "account") {
-    return "/account";
-  }
-
-  if (route.page === "board") {
-    return `/board/${encodeURIComponent(route.boardId)}`;
-  }
-
-  return "/";
+  return (
+    <YStack style={{ flex: 1, minHeight: 0 }}>
+      {boardSaveError ? (
+        <Card
+          style={{
+            borderWidth: 1,
+            borderColor: theme.danger.val,
+            borderRadius: 0,
+          }}
+        >
+          <Card.Header style={{ padding: "0.7rem 1rem" }}>
+            <Paragraph style={{ margin: 0 }}>
+              {`Could not save latest board changes: ${boardSaveError}`}
+            </Paragraph>
+          </Card.Header>
+        </Card>
+      ) : null}
+      <View style={{ flex: 1, minHeight: 0 }}>
+        <BoardView
+          board={board}
+          shouldOpenMetadataEditor={boardIdNeedingMetadataEdit === board.id}
+          onMetadataEditorOpenHandled={() => {
+            onMetadataEditorOpenHandled(board.id);
+          }}
+          onDeleteBoard={onDeleteBoard}
+          onUploadImage={onUploadImage}
+          onResolveLinkPreview={onResolveLinkPreview}
+        />
+      </View>
+    </YStack>
+  );
 }
 
 function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const boardRouteMatch = useMatch("/board/:boardId");
+  const routeBoardId = boardRouteMatch?.params.boardId ?? null;
   const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const boards = useAppStore((state) => state.boards);
   const activeBoardId = useAppStore((state) => state.activeBoardId);
@@ -102,60 +162,21 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const { isConfigured, isLoading, user, username, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
-  const [activeRoute, setActiveRoute] = useState<AppRoute>(() =>
-    typeof window === "undefined" ? { page: "boards" } : resolveRouteFromPath(window.location.pathname),
-  );
   const {
     isLoading: isBoardLoading,
     loadError: boardLoadError,
     saveError: boardSaveError,
   } = useBoardSync(user?.id);
 
-  const navigateToRoute = useCallback((nextRoute: AppRoute) => {
-    setActiveRoute(nextRoute);
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const nextPath = routeToPath(nextRoute);
-    if (window.location.pathname !== nextPath) {
-      window.history.pushState({}, "", nextPath);
-    }
-  }, []);
-
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!routeBoardId || isBoardLoading || boardLoadError) {
       return;
     }
 
-    const syncRouteWithLocation = () => {
-      setActiveRoute(resolveRouteFromPath(window.location.pathname));
-    };
-
-    syncRouteWithLocation();
-    window.addEventListener("popstate", syncRouteWithLocation);
-
-    return () => {
-      window.removeEventListener("popstate", syncRouteWithLocation);
-    };
-  }, []);
-
-  const routeBoardId = activeRoute.page === "board" ? activeRoute.boardId : null;
-  const activeBoard = routeBoardId
-    ? boards.find((board) => board.id === routeBoardId) ?? null
-    : boards.find((board) => board.id === activeBoardId) ?? boards[0] ?? null;
-
-  useEffect(() => {
-    if (activeRoute.page !== "board") {
-      return;
+    if (activeBoardId !== routeBoardId && boards.some((board) => board.id === routeBoardId)) {
+      setActiveBoard(routeBoardId);
     }
-
-    const boardStillExists = boards.some((board) => board.id === activeRoute.boardId);
-    if (!boardStillExists) {
-      navigateToRoute({ page: "boards" });
-    }
-  }, [activeRoute, boards, navigateToRoute]);
+  }, [activeBoardId, boardLoadError, boards, isBoardLoading, routeBoardId, setActiveBoard]);
 
   if (!isConfigured) {
     return <MissingSupabaseConfig />;
@@ -239,12 +260,12 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
     setActiveBoard(boardId);
     setBoardIdNeedingMetadataEdit(boardId);
-    navigateToRoute({ page: "board", boardId });
+    navigate(`/board/${encodeURIComponent(boardId)}`);
   };
 
   const handleSelectBoard = (boardId: string) => {
     setActiveBoard(boardId);
-    navigateToRoute({ page: "board", boardId });
+    navigate(`/board/${encodeURIComponent(boardId)}`);
   };
 
   const handleDeleteBoard = (boardId: string) => {
@@ -265,8 +286,8 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     deleteBoard(boardId);
     setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
 
-    if (activeRoute.page === "board" && activeRoute.boardId === boardId) {
-      navigateToRoute({ page: "boards" });
+    if (routeBoardId === boardId) {
+      navigate("/", { replace: true });
     }
   };
 
@@ -335,71 +356,61 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     >
       <BoardSidebar
         brandLogoUrl={brandLogoUrl}
-        activeBoardId={activeRoute.page === "board" ? activeRoute.boardId : ""}
+        activeBoardId={routeBoardId ?? ""}
         boards={boards}
-        onOpenBoards={() => navigateToRoute({ page: "boards" })}
+        onOpenBoards={() => navigate("/")}
         onCreateBoard={handleCreateBoard}
         onSelectBoard={handleSelectBoard}
         accountUsername={username}
-        onOpenAccount={() => navigateToRoute({ page: "account" })}
+        onOpenAccount={() => navigate("/account")}
       />
-      {activeRoute.page === "account" ? (
-        <AccountPage
-          username={username}
-          email={user.email}
-          themePreference={themePreference}
-          onThemePreferenceChange={onThemePreferenceChange}
-          onSignOut={handleSignOut}
-          isSigningOut={isSigningOut}
+      <Routes>
+        <Route
+          path="/account"
+          element={(
+            <AccountPage
+              username={username}
+              email={user.email}
+              themePreference={themePreference}
+              onThemePreferenceChange={onThemePreferenceChange}
+              onSignOut={handleSignOut}
+              isSigningOut={isSigningOut}
+            />
+          )}
         />
-      ) : activeRoute.page === "boards" ? (
-        boards.length > 0 ? (
-          <BoardsPage
-            boards={boards}
-            onOpenBoard={handleSelectBoard}
-          />
-        ) : (
-          <YStack style={{ flex: 1, minHeight: 0 }}>
-            <EmptyBoardsState onCreateBoard={handleCreateBoard} />
-          </YStack>
-        )
-      ) : (
-        <YStack style={{ flex: 1, minHeight: 0 }}>
-          {boardSaveError ? (
-            <Card
-              style={{
-                borderWidth: 1,
-                borderColor: theme.danger.val,
-                borderRadius: 0,
-              }}
-            >
-              <Card.Header style={{ padding: "0.7rem 1rem" }}>
-                <Paragraph style={{ margin: 0 }}>
-                  {`Could not save latest board changes: ${boardSaveError}`}
-                </Paragraph>
-              </Card.Header>
-            </Card>
-          ) : null}
-          <View style={{ flex: 1, minHeight: 0 }}>
-            {activeBoard ? (
-              <BoardView
-                board={activeBoard}
-                shouldOpenMetadataEditor={boardIdNeedingMetadataEdit === activeBoard.id}
-                onMetadataEditorOpenHandled={() => {
-                  setBoardIdNeedingMetadataEdit((current) =>
-                    current === activeBoard.id ? null : current,
-                  );
-                }}
-                onDeleteBoard={handleDeleteBoard}
-                onUploadImage={handleUploadImage}
-                onResolveLinkPreview={handleResolveLinkPreview}
+        <Route
+          path="/"
+          element={boards.length > 0
+            ? (
+              <BoardsPage
+                boards={boards}
+                onOpenBoard={handleSelectBoard}
               />
-            ) : (
-              <EmptyBoardsState onCreateBoard={handleCreateBoard} />
+            )
+            : (
+              <YStack style={{ flex: 1, minHeight: 0 }}>
+                <EmptyBoardsState onCreateBoard={handleCreateBoard} />
+              </YStack>
             )}
-          </View>
-        </YStack>
-      )}
+        />
+        <Route
+          path="/board/:boardId"
+          element={(
+            <BoardRoutePage
+              boards={boards}
+              boardSaveError={boardSaveError}
+              boardIdNeedingMetadataEdit={boardIdNeedingMetadataEdit}
+              onMetadataEditorOpenHandled={(boardId) => {
+                setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
+              }}
+              onDeleteBoard={handleDeleteBoard}
+              onUploadImage={handleUploadImage}
+              onResolveLinkPreview={handleResolveLinkPreview}
+            />
+          )}
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </XStack>
   );
 }
