@@ -14,6 +14,15 @@ export type PlacementIntent = {
   create: (position: { x: number; y: number }) => Note;
 };
 
+type LinkDraft = {
+  url: string;
+  siteName: string;
+  title: string;
+  description?: string;
+  previewImage?: string;
+  height: number;
+};
+
 type UploadImageFn = (file: File) => Promise<{
   src: string;
   alt?: string;
@@ -124,77 +133,23 @@ export function useNoteComposer({
       return;
     }
 
-    const trimmedUrl = linkUrl.trim();
-
-    if (!trimmedUrl) {
-      setLinkError("Enter a URL to save.");
-      return;
-    }
-
-    let parsedUrl: URL;
-
-    try {
-      parsedUrl = new URL(trimmedUrl);
-    } catch {
-      setLinkError("Enter a valid URL, including https://");
-      return;
-    }
-
     setLinkError("");
     setIsResolvingLink(true);
     try {
-      let metadata:
-        | {
-            url?: string;
-            siteName?: string;
-            title?: string;
-            description?: string;
-            previewImage?: string;
-          }
-        | undefined;
-
-      if (onResolveLinkPreview) {
-        try {
-          metadata = await onResolveLinkPreview(parsedUrl.toString());
-        } catch {
-          metadata = undefined;
-        }
-      }
-
-      const resolvedUrl = metadata?.url ? metadata.url.trim() : "";
-      const normalizedUrl = resolvedUrl || parsedUrl.toString();
-      const safeUrl = (() => {
-        try {
-          return new URL(normalizedUrl).toString();
-        } catch {
-          return parsedUrl.toString();
-        }
-      })();
-
-      const safeParsedUrl = new URL(safeUrl);
-      const hostname = safeParsedUrl.hostname.replace(/^www\./, "");
-      const path = safeParsedUrl.pathname === "/" ? "" : safeParsedUrl.pathname;
-      const summary = [hostname, path].filter(Boolean).join("");
-
-      const metadataTitle = metadata?.title?.trim() || "";
-      const manualTitle = linkTitle.trim();
-      const manualDescription = linkDescription.trim();
-      const title = manualTitle
-        || (hasMeaningfulTitle(metadataTitle) ? metadataTitle : (summary || safeUrl));
-      const description = manualDescription || metadata?.description?.trim() || undefined;
-      const siteName = metadata?.siteName?.trim()
-        || hostname
-        || editingLinkNote?.siteName
-        || "Saved Link";
-      const previewImage = metadata?.previewImage?.trim() || undefined;
+      const resolvedLink = await resolveLinkDraft({
+        rawUrl: linkUrl,
+        titleOverride: linkTitle,
+        descriptionOverride: linkDescription,
+        existingNote: editingLinkNote,
+      });
 
       if (editingLinkNote) {
         updateLinkNote(boardId, editingLinkNote.id, {
-          url: safeUrl,
-          siteName,
-          title,
-          description,
-          previewImage: previewImage || (safeUrl === editingLinkNote.url
+          url: resolvedLink.url,
+          siteName: resolvedLink.siteName,
+          title: resolvedLink.title,
+          description: resolvedLink.description,
+          previewImage: resolvedLink.previewImage || (resolvedLink.url === editingLinkNote.url
             ? editingLinkNote.previewImage
             : undefined),
         });
@@ -203,7 +158,7 @@ export function useNoteComposer({
       }
 
       const { width, height } = resolveNoteDefaults("link");
-      const resolvedHeight = previewImage ? height : 148;
+      const resolvedHeight = resolvedLink.previewImage ? height : 148;
 
       setPlacementIntent({
         type: "link",
@@ -216,15 +171,18 @@ export function useNoteComposer({
           y,
           width,
           height: resolvedHeight,
-          url: safeUrl,
-          siteName,
-          title,
-          description,
-          previewImage,
+          url: resolvedLink.url,
+          siteName: resolvedLink.siteName,
+          title: resolvedLink.title,
+          description: resolvedLink.description,
+          previewImage: resolvedLink.previewImage,
         }),
       });
 
       closeLinkComposer();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not save link note.";
+      setLinkError(message);
     } finally {
       setIsResolvingLink(false);
     }
@@ -283,6 +241,160 @@ export function useNoteComposer({
     }
   };
 
+  const resolveLinkDraft = async ({
+    rawUrl,
+    titleOverride,
+    descriptionOverride,
+    existingNote,
+  }: {
+    rawUrl: string;
+    titleOverride?: string;
+    descriptionOverride?: string;
+    existingNote?: LinkNote | null;
+  }): Promise<LinkDraft> => {
+    const trimmedUrl = rawUrl.trim();
+
+    if (!trimmedUrl) {
+      throw new Error("Enter a URL to save.");
+    }
+
+    let parsedUrl: URL;
+
+    try {
+      parsedUrl = new URL(trimmedUrl);
+    } catch {
+      throw new Error("Enter a valid URL, including https://");
+    }
+
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      throw new Error("Only http(s) URLs are supported.");
+    }
+
+    let metadata:
+      | {
+          url?: string;
+          siteName?: string;
+          title?: string;
+          description?: string;
+          previewImage?: string;
+        }
+      | undefined;
+
+    if (onResolveLinkPreview) {
+      try {
+        metadata = await onResolveLinkPreview(parsedUrl.toString());
+      } catch {
+        metadata = undefined;
+      }
+    }
+
+    const resolvedUrl = metadata?.url ? metadata.url.trim() : "";
+    const normalizedUrl = resolvedUrl || parsedUrl.toString();
+    const safeUrl = (() => {
+      try {
+        const url = new URL(normalizedUrl);
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          return parsedUrl.toString();
+        }
+
+        return url.toString();
+      } catch {
+        return parsedUrl.toString();
+      }
+    })();
+
+    const safeParsedUrl = new URL(safeUrl);
+    const hostname = safeParsedUrl.hostname.replace(/^www\./, "");
+    const path = safeParsedUrl.pathname === "/" ? "" : safeParsedUrl.pathname;
+    const summary = [hostname, path].filter(Boolean).join("");
+
+    const metadataTitle = metadata?.title?.trim() || "";
+    const manualTitle = (titleOverride ?? "").trim();
+    const manualDescription = (descriptionOverride ?? "").trim();
+    const title = manualTitle
+      || (hasMeaningfulTitle(metadataTitle) ? metadataTitle : (summary || safeUrl));
+    const description = manualDescription || metadata?.description?.trim() || undefined;
+    const siteName = metadata?.siteName?.trim()
+      || hostname
+      || existingNote?.siteName
+      || "Saved Link";
+    const previewImage = metadata?.previewImage?.trim() || undefined;
+    const { height } = resolveNoteDefaults("link");
+    const resolvedHeight = previewImage ? height : 148;
+
+    return {
+      url: safeUrl,
+      siteName,
+      title,
+      description,
+      previewImage,
+      height: resolvedHeight,
+    };
+  };
+
+  const handleDropFileAtPosition = async (file: File, position: { x: number; y: number }) => {
+    if (!onUploadImage) {
+      setFileUploadError("File upload is not configured.");
+      return;
+    }
+
+    setPlacementIntent(null);
+    setFileUploadError("");
+    setIsUploadingFile(true);
+
+    try {
+      const uploadedImage = await onUploadImage(file);
+      const { width, height } = resolveNoteDefaults("image");
+
+      addNote(boardId, {
+        id: createNoteId("image"),
+        type: "image",
+        x: position.x,
+        y: position.y,
+        width,
+        height,
+        src: uploadedImage.src,
+        alt: uploadedImage.alt ?? file.name ?? "Uploaded file",
+        caption: uploadedImage.caption ?? file.name ?? undefined,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not upload file.";
+      setFileUploadError(message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleDropLinkAtPosition = async (url: string, position: { x: number; y: number }) => {
+    setPlacementIntent(null);
+    setFileUploadError("");
+    setIsResolvingLink(true);
+
+    try {
+      const resolvedLink = await resolveLinkDraft({ rawUrl: url });
+      const { width } = resolveNoteDefaults("link");
+
+      addNote(boardId, {
+        id: createNoteId("link"),
+        type: "link",
+        x: position.x,
+        y: position.y,
+        width,
+        height: resolvedLink.height,
+        url: resolvedLink.url,
+        siteName: resolvedLink.siteName,
+        title: resolvedLink.title,
+        description: resolvedLink.description,
+        previewImage: resolvedLink.previewImage,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Could not create link note.";
+      setFileUploadError(message);
+    } finally {
+      setIsResolvingLink(false);
+    }
+  };
+
   const clearPlacementIntent = () => {
     setPlacementIntent(null);
   };
@@ -310,6 +422,8 @@ export function useNoteComposer({
     handleSaveLink,
     handleImageFileChange,
     handlePlaceNote,
+    handleDropFileAtPosition,
+    handleDropLinkAtPosition,
     clearPlacementIntent,
   };
 }

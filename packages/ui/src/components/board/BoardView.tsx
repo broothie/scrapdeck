@@ -70,6 +70,8 @@ export function BoardView({
     handleSaveLink,
     handleImageFileChange,
     handlePlaceNote,
+    handleDropFileAtPosition,
+    handleDropLinkAtPosition,
     clearPlacementIntent,
   } = useNoteComposer({
     boardId: board.id,
@@ -209,6 +211,8 @@ export function BoardView({
             : null
         }
         onPlaceNote={handlePlaceNote}
+        onDropFileAtPosition={handleDropFileAtPosition}
+        onDropLinkAtPosition={handleDropLinkAtPosition}
       />
 
       {isAddingLink ? (

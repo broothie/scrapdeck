@@ -10,9 +10,9 @@ import {
   type ReactFlowInstance,
   useNodesState,
 } from "@xyflow/react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
-import { useAppStore, type Board, type Note } from "@plumboard/core";
+import { resolveNoteDefaults, useAppStore, type Board, type Note } from "@plumboard/core";
 import { PlacementPreviewNode } from "./PlacementPreviewNode";
 import {
   resolveNoteMenuActions,
@@ -32,7 +32,9 @@ import type { FabAction, PlacementPreview, NoteContextMenuState } from "./boardS
 import {
   buildPlacementPreviewNode,
   clampContextMenuPosition,
+  extractDroppedUrl,
   getMiniMapNodeColor,
+  resolveDroppedContentType,
   withAlpha,
 } from "./boardSurface.utils";
 import { useNoteMenuActions } from "./useNoteMenuActions";
@@ -51,6 +53,8 @@ type BoardSurfaceProps = {
   onEditLinkNote?: (noteId: string) => boolean;
   placementPreview?: PlacementPreview | null;
   onPlaceNote?: (position: { x: number; y: number }) => void;
+  onDropFileAtPosition?: (file: File, position: { x: number; y: number }) => void | Promise<void>;
+  onDropLinkAtPosition?: (url: string, position: { x: number; y: number }) => void | Promise<void>;
 };
 
 export function BoardSurface({
@@ -62,16 +66,25 @@ export function BoardSurface({
   onEditLinkNote,
   placementPreview,
   onPlaceNote,
+  onDropFileAtPosition,
+  onDropLinkAtPosition,
 }: BoardSurfaceProps) {
   const theme = useTheme();
   const updateNoteLayout = useAppStore((state) => state.updateNoteLayout);
   const boardSurfaceRef = useRef<HTMLDivElement | null>(null);
+  const dropDragDepthRef = useRef(0);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [placementPosition, setPlacementPosition] = useState<{
     x: number;
     y: number;
   } | null>(null);
+  const [dragPlacementPreview, setDragPlacementPreview] = useState<PlacementPreview | null>(null);
+  const [dragPlacementPosition, setDragPlacementPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isDropOverlayVisible, setIsDropOverlayVisible] = useState(false);
   const [noteContextMenu, setNoteContextMenu] = useState<NoteContextMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const handleNoteActionComplete = useCallback((noteId: string, action: NoteContextMenuAction) => {
@@ -136,6 +149,10 @@ export function BoardSurface({
   useEffect(() => {
     setNoteContextMenu(null);
     setIsFabMenuOpen(false);
+    dropDragDepthRef.current = 0;
+    setIsDropOverlayVisible(false);
+    setDragPlacementPreview(null);
+    setDragPlacementPosition(null);
   }, [board.id]);
 
   useEffect(() => {
@@ -186,27 +203,40 @@ export function BoardSurface({
     setNoteContextMenu(null);
   };
 
-  const getFlowPositionFromEvent = (event: ReactMouseEvent) => {
+  const getFlowPositionFromClientCoordinates = (coordinates: {
+    clientX: number;
+    clientY: number;
+  }) => {
     if (!flowInstance) {
       return null;
     }
 
-    if (typeof event.clientX !== "number" || typeof event.clientY !== "number") {
+    if (
+      typeof coordinates.clientX !== "number"
+      || typeof coordinates.clientY !== "number"
+    ) {
       return null;
     }
 
     return flowInstance.screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
+      x: coordinates.clientX,
+      y: coordinates.clientY,
     });
   };
+
+  const clearDropOverlay = useCallback(() => {
+    dropDragDepthRef.current = 0;
+    setIsDropOverlayVisible(false);
+    setDragPlacementPreview(null);
+    setDragPlacementPosition(null);
+  }, []);
 
   const handlePaneMouseMove = (event: ReactMouseEvent) => {
     if (!placementPreview) {
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(event);
+    const resolvedPosition = getFlowPositionFromClientCoordinates(event);
 
     if (!resolvedPosition) {
       return;
@@ -231,7 +261,7 @@ export function BoardSurface({
       return;
     }
 
-    const resolvedPosition = getFlowPositionFromEvent(event);
+    const resolvedPosition = getFlowPositionFromClientCoordinates(event);
 
     if (!resolvedPosition) {
       return;
@@ -282,6 +312,99 @@ export function BoardSurface({
     setIsFabMenuOpen(false);
   };
 
+  const handleCanvasDragEnter = (event: ReactDragEvent<HTMLDivElement>) => {
+    const droppedType = resolveDroppedContentType(event.dataTransfer);
+    if (droppedType !== "image" && droppedType !== "link") {
+      return;
+    }
+
+    event.preventDefault();
+    dropDragDepthRef.current += 1;
+
+    const { width, height } = resolveNoteDefaults(droppedType);
+    const flowPosition = getFlowPositionFromClientCoordinates(event);
+
+    setIsDropOverlayVisible(true);
+    setDragPlacementPreview({
+      type: droppedType,
+      width,
+      height,
+    });
+    if (flowPosition) {
+      setDragPlacementPosition(flowPosition);
+    }
+  };
+
+  const handleCanvasDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    const droppedType = resolveDroppedContentType(event.dataTransfer);
+    if (droppedType !== "image" && droppedType !== "link") {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+
+    const { width, height } = resolveNoteDefaults(droppedType);
+    const flowPosition = getFlowPositionFromClientCoordinates(event);
+
+    setIsDropOverlayVisible(true);
+    setDragPlacementPreview({
+      type: droppedType,
+      width,
+      height,
+    });
+    if (flowPosition) {
+      setDragPlacementPosition(flowPosition);
+    }
+  };
+
+  const handleCanvasDragLeave = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!isDropOverlayVisible) {
+      return;
+    }
+
+    event.preventDefault();
+    dropDragDepthRef.current = Math.max(0, dropDragDepthRef.current - 1);
+
+    if (dropDragDepthRef.current === 0) {
+      clearDropOverlay();
+    }
+  };
+
+  const handleCanvasDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const droppedType = resolveDroppedContentType(event.dataTransfer);
+    if (droppedType !== "image" && droppedType !== "link") {
+      clearDropOverlay();
+      return;
+    }
+
+    const flowPosition = getFlowPositionFromClientCoordinates(event);
+    if (!flowPosition) {
+      clearDropOverlay();
+      return;
+    }
+
+    if (droppedType === "image" && event.dataTransfer.files.length > 0) {
+      const droppedFile = event.dataTransfer.files.item(0);
+      if (droppedFile) {
+        void onDropFileAtPosition?.(droppedFile, flowPosition);
+      }
+
+      clearDropOverlay();
+      return;
+    }
+
+    const droppedUrl = extractDroppedUrl(event.dataTransfer);
+    if (droppedUrl) {
+      void onDropLinkAtPosition?.(droppedUrl, flowPosition);
+    }
+
+    clearDropOverlay();
+  };
+
   const handleFabAction = (action: FabAction) => {
     if (action === "text") {
       onCreateTextNote?.();
@@ -299,27 +422,43 @@ export function BoardSurface({
     setIsFabMenuOpen(false);
   };
 
+  const activePlacementPreview = dragPlacementPreview ?? placementPreview;
+  const activePlacementPosition = dragPlacementPreview
+    ? dragPlacementPosition
+    : placementPosition;
+
   const flowNodes = useMemo<Node[]>(() => {
-    if (!placementPreview || !placementPosition) {
+    if (!activePlacementPreview || !activePlacementPosition) {
       return nodes;
     }
 
-    return [...nodes, buildPlacementPreviewNode(placementPreview, placementPosition)];
-  }, [nodes, placementPreview, placementPosition]);
+    return [...nodes, buildPlacementPreviewNode(activePlacementPreview, activePlacementPosition)];
+  }, [activePlacementPosition, activePlacementPreview, nodes]);
   const contextMenuNote = noteContextMenu
     ? board.notes.find((note) => note.id === noteContextMenu.noteId)
     : null;
-  const placementLabel = placementPreview
+  const placementLabel = activePlacementPreview
     ? ({
         text: "text note",
         image: "file note",
         link: "link note",
-      }[placementPreview.type])
+      }[activePlacementPreview.type])
     : "";
+  const dropOverlayLabel = dragPlacementPreview
+    ? ({
+        text: "Drop to create a text note",
+        image: "Drop to create a file note",
+        link: "Drop to create a link note",
+      }[dragPlacementPreview.type])
+    : "Drop to create a note";
 
   return (
     <div
       ref={boardSurfaceRef}
+      onDragEnterCapture={handleCanvasDragEnter}
+      onDragOverCapture={handleCanvasDragOver}
+      onDragLeaveCapture={handleCanvasDragLeave}
+      onDropCapture={handleCanvasDrop}
       style={{
         position: "relative",
         flex: 1,
@@ -344,7 +483,7 @@ export function BoardSurface({
         fitViewOptions={{ padding: 0.18 }}
         minZoom={0.4}
         maxZoom={1.8}
-        panOnDrag={!placementPreview}
+        panOnDrag={!activePlacementPreview}
         panOnScroll
         proOptions={{ hideAttribution: true }}
         onInit={handleInit}
@@ -386,6 +525,41 @@ export function BoardSurface({
           }}
         />
       </ReactFlow>
+      {isDropOverlayVisible ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 8,
+            pointerEvents: "none",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: withAlpha(theme.overlay.val, 0.52),
+          }}
+        >
+          <View
+            style={{
+              border: `1px dashed ${theme.borderStrong.val}`,
+              borderRadius: 14,
+              padding: "0.8rem 1rem",
+              backgroundColor: withAlpha(theme.surface.val, 0.86),
+              maxWidth: 380,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: theme.textPrimary.val,
+                textAlign: "center",
+              }}
+            >
+              {dropOverlayLabel}
+            </Text>
+          </View>
+        </div>
+      ) : null}
       {noteContextMenu ? (
         <div
           style={{
@@ -407,7 +581,7 @@ export function BoardSurface({
         onToggle={() => setIsFabMenuOpen((current) => !current)}
         onAction={handleFabAction}
       />
-      {placementPreview ? (
+      {activePlacementPreview ? (
         <View
           style={{
             position: "absolute",

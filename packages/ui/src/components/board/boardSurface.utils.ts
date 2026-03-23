@@ -4,6 +4,12 @@ import type { Node } from "@xyflow/react";
 import { PLACEMENT_PREVIEW_NODE_ID } from "./boardSurface.constants";
 import type { PlacementNodeData, PlacementPreview } from "./boardSurface.types";
 
+type DragDataSource = {
+  files?: ArrayLike<unknown>;
+  types?: Iterable<string>;
+  getData?: (format: string) => string;
+};
+
 export function getPlacementColor(noteType: Note["type"]): string {
   return placementColors[noteType];
 }
@@ -94,4 +100,72 @@ export function buildPlacementPreviewNode(
     draggable: false,
     deletable: false,
   };
+}
+
+export function resolveDroppedContentType(dataTransfer: DragDataSource | null | undefined): Note["type"] | null {
+  if (!dataTransfer) {
+    return null;
+  }
+
+  if ((dataTransfer.files?.length ?? 0) > 0) {
+    return "image";
+  }
+
+  const dataTypes = new Set(
+    Array.from(dataTransfer.types ?? [])
+      .map((type) => type.toLowerCase()),
+  );
+
+  if (dataTypes.has("files")) {
+    return "image";
+  }
+
+  if (dataTypes.has("text/uri-list") || dataTypes.has("text/plain")) {
+    return "link";
+  }
+
+  return null;
+}
+
+function normalizeUrlCandidate(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  try {
+    const parsedUrl = new URL(trimmed);
+    if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+      return "";
+    }
+
+    return parsedUrl.toString();
+  } catch {
+    return "";
+  }
+}
+
+export function extractDroppedUrl(dataTransfer: DragDataSource | null | undefined): string {
+  if (!dataTransfer?.getData) {
+    return "";
+  }
+
+  const uriList = dataTransfer.getData("text/uri-list");
+  const uriListCandidate = uriList
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line && !line.startsWith("#"));
+  const normalizedFromUriList = normalizeUrlCandidate(uriListCandidate ?? "");
+
+  if (normalizedFromUriList) {
+    return normalizedFromUriList;
+  }
+
+  const plainText = dataTransfer
+    .getData("text/plain")
+    .split("\n")
+    .map((line) => line.trim())
+    .find((line) => line);
+
+  return normalizeUrlCandidate(plainText ?? "");
 }

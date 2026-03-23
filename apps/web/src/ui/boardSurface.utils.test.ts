@@ -3,7 +3,9 @@ import type { Node } from "@xyflow/react";
 import {
   buildPlacementPreviewNode,
   clampContextMenuPosition,
+  extractDroppedUrl,
   getMiniMapNodeColor,
+  resolveDroppedContentType,
 } from "../../../../packages/ui/src/components/board/boardSurface.utils";
 
 describe("boardSurface utils", () => {
@@ -53,5 +55,80 @@ describe("boardSurface utils", () => {
     expect(getMiniMapNodeColor(imageNode, palette)).toBe("#333");
     expect(getMiniMapNodeColor(linkNode, palette)).toBe("#444");
     expect(getMiniMapNodeColor(emptyNode, palette)).toBe("#111");
+  });
+
+  it("resolves dropped content type for files and links", () => {
+    expect(
+      resolveDroppedContentType({
+        files: { length: 0 },
+        types: ["Files"],
+      }),
+    ).toBe("image");
+
+    expect(
+      resolveDroppedContentType({
+        files: { length: 2 },
+        types: ["Files"],
+      }),
+    ).toBe("image");
+
+    expect(
+      resolveDroppedContentType({
+        files: { length: 0 },
+        types: ["text/uri-list"],
+      }),
+    ).toBe("link");
+
+    expect(
+      resolveDroppedContentType({
+        files: { length: 0 },
+        types: ["text/plain"],
+      }),
+    ).toBe("link");
+
+    expect(
+      resolveDroppedContentType({
+        files: { length: 0 },
+        types: ["application/json"],
+      }),
+    ).toBeNull();
+  });
+
+  it("extracts dropped urls from uri-list and plain text payloads", () => {
+    expect(
+      extractDroppedUrl({
+        getData: (format) => {
+          if (format === "text/uri-list") {
+            return "# comment\nhttps://example.com/listing\n";
+          }
+
+          return "";
+        },
+      }),
+    ).toBe("https://example.com/listing");
+
+    expect(
+      extractDroppedUrl({
+        getData: (format) => {
+          if (format === "text/plain") {
+            return "https://example.com/plain";
+          }
+
+          return "";
+        },
+      }),
+    ).toBe("https://example.com/plain");
+
+    expect(
+      extractDroppedUrl({
+        getData: (format) => {
+          if (format === "text/plain") {
+            return "not a url";
+          }
+
+          return "";
+        },
+      }),
+    ).toBe("");
   });
 });
