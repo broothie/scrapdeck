@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Card, H2, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import { Card, H1, H2, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import { AppButton } from "@plumboard/ui";
 import { useAuth } from "./AuthProvider";
 
@@ -28,6 +28,7 @@ function GoogleLogo() {
 
 export function AuthScreen() {
   const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
+  const landingPreviewUrl = `${import.meta.env.BASE_URL}landing-board-preview.png`;
   const theme = useTheme();
   const { signInWithGoogle } = useAuth();
   const [error, setError] = useState("");
@@ -52,81 +53,134 @@ export function AuthScreen() {
         minHeight: "100vh",
         alignItems: "center",
         justifyContent: "center",
-        padding: "1.5rem",
+        padding: "3.25rem 1.25rem",
         backgroundColor: theme.canvas.val,
       }}
     >
-      <Card
+      <YStack
+        gap="$6"
         width="100%"
-        maxWidth={460}
         style={{
-          borderWidth: 1,
-          borderColor: theme.borderDefault.val,
-          backgroundColor: theme.surface.val,
-          boxShadow: "0 16px 34px rgba(20, 12, 38, 0.12)",
+          maxWidth: 640,
         }}
       >
-        <Card.Header style={{ padding: "1.25rem" }}>
-          <YStack gap="$3">
-            <XStack style={{ gap: "0.55rem", alignItems: "center" }}>
-              <img
-                src={brandLogoUrl}
-                alt="Plumboard logo"
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 7,
-                  objectFit: "cover",
-                }}
-              />
-              <Text
-                style={{
-                  fontSize: 12,
-                  letterSpacing: 2.1,
-                  textTransform: "uppercase",
-                  color: theme.textSecondary.val,
-                }}
-              >
-                Plumboard
-              </Text>
-            </XStack>
-            <H2 style={{ margin: 0, color: theme.textInk.val }}>Sign in to your boards</H2>
-            <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
-              Continue with your Google account to access Plumboard.
-            </Paragraph>
-          </YStack>
-        </Card.Header>
-        <Card.Footer style={{ padding: "1.25rem" }}>
-          <YStack gap="$3" width="100%">
-            {error ? (
-              <Text style={{ color: theme.danger.val }}>{error}</Text>
-            ) : null}
-            <AppButton
-              variant="google"
-              onPress={handleGoogleSignIn}
-              loading={isSubmitting}
-              disabled={isSubmitting}
+        <YStack gap="$3" style={{ textAlign: "center", alignItems: "center" }}>
+          <XStack style={{ gap: "0.7rem", alignItems: "center" }}>
+            <img
+              src={brandLogoUrl}
+              alt="Plumboard logo"
               style={{
-                width: "100%",
-                minHeight: 42,
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                objectFit: "cover",
+              }}
+            />
+            <Text
+              style={{
+                fontSize: 14,
+                letterSpacing: 2.4,
+                textTransform: "uppercase",
+                color: theme.textSecondary.val,
+                fontWeight: 700,
               }}
             >
-              <XStack style={{ gap: "0.65rem", alignItems: "center", justifyContent: "center" }}>
-                <GoogleLogo />
-                <Text
-                  style={{
-                    color: "#3c4043",
-                    fontSize: 15,
-                    fontWeight: 600,
-                  }}
-                >
-                  Sign in with Google
-                </Text>
-              </XStack>
-            </AppButton>
-          </YStack>
-        </Card.Footer>
-      </Card>
+              Plumboard
+            </Text>
+          </XStack>
+          <H1
+            style={{
+              margin: 0,
+              color: theme.textInk.val,
+              textAlign: "center",
+              fontSize: "clamp(2rem, 3.5vw, 2.8rem)",
+              lineHeight: 1.1,
+            }}
+          >
+            Visual Notes
+          </H1>
+          <Paragraph
+            style={{
+              margin: 0,
+              marginTop: "0.8rem",
+              color: theme.textSecondary.val,
+              fontSize: 17,
+              maxWidth: 560,
+              textAlign: "center",
+            }}
+          >
+            Capture text notes, links, and files on a flexible board.
+          </Paragraph>
+        </YStack>
+        <Card
+          width="100%"
+          style={{
+            borderWidth: 1,
+            borderColor: theme.borderDefault.val,
+            backgroundColor: theme.surface.val,
+            overflow: "hidden",
+            boxShadow: "0 16px 34px rgba(20, 12, 38, 0.12)",
+          }}
+        >
+          <img
+            src={landingPreviewUrl}
+            alt="Plumboard board preview"
+            style={{
+              width: "100%",
+              height: "auto",
+              display: "block",
+            }}
+          />
+        </Card>
+        <Card
+          width="100%"
+          style={{
+            borderWidth: 1,
+            borderColor: theme.borderDefault.val,
+            backgroundColor: theme.surface.val,
+            boxShadow: "0 16px 34px rgba(20, 12, 38, 0.12)",
+          }}
+        >
+          <Card.Header style={{ padding: "1.15rem 1.15rem 0.8rem" }}>
+            <YStack gap="$2">
+              <H2 style={{ margin: 0, color: theme.textInk.val }}>Welcome</H2>
+              <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
+                Sign in with Google to open your boards and start collaborating.
+              </Paragraph>
+            </YStack>
+          </Card.Header>
+          <Card.Footer style={{ padding: "0.8rem 1.15rem 1.15rem" }}>
+            <YStack gap="$3" width="100%">
+              {error ? (
+                <Text style={{ color: theme.danger.val }}>{error}</Text>
+              ) : null}
+              <AppButton
+                variant="google"
+                onPress={handleGoogleSignIn}
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                style={{
+                  width: "100%",
+                  minHeight: 44,
+                }}
+              >
+                <XStack style={{ gap: "0.65rem", alignItems: "center", justifyContent: "center" }}>
+                  <GoogleLogo />
+                  <Text
+                    style={{
+                      color: "#3c4043",
+                      fontSize: 15,
+                      fontWeight: 600,
+                    }}
+                  >
+                    Sign in with Google
+                  </Text>
+                </XStack>
+              </AppButton>
+            </YStack>
+          </Card.Footer>
+        </Card>
+      </YStack>
     </YStack>
   );
 }
