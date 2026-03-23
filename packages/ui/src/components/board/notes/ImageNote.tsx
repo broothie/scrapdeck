@@ -62,12 +62,10 @@ export function ImageNoteCard({
           {!hasImageError ? (
             <button
               type="button"
-              className="nodrag nopan"
               onDoubleClick={(event) => {
                 event.stopPropagation();
                 setIsLightboxOpen(true);
               }}
-              onPointerDown={(event) => event.stopPropagation()}
               style={{
                 width: "100%",
                 flex: 1,
@@ -77,7 +75,7 @@ export function ImageNoteCard({
                 padding: 0,
                 display: "block",
                 background: "transparent",
-                cursor: "default",
+                cursor: "grab",
               }}
             >
               <img
