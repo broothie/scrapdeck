@@ -18,4 +18,9 @@ export type NoteContextMenuState = {
   y: number;
 };
 
+export type CanvasAddMenuState = {
+  x: number;
+  y: number;
+};
+
 export type FabAction = "text" | "file" | "link";

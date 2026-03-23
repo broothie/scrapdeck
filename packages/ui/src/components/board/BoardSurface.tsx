@@ -14,6 +14,7 @@ import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from 
 import { Text, View, useTheme } from "tamagui";
 import { resolveNoteDefaults, useAppStore, type Board, type Note } from "@plumboard/core";
 import { PlacementPreviewNode } from "./PlacementPreviewNode";
+import { AddNoteContextMenu } from "./AddNoteContextMenu";
 import {
   resolveNoteMenuActions,
   NoteActionMenu,
@@ -22,13 +23,20 @@ import {
 import { NoteCreateFab } from "./NoteCreateFab";
 import { NoteNode, type NoteFlowNode } from "./NoteNode";
 import {
+  ADD_MENU_CLAMP_WIDTH,
+  ADD_MENU_HEIGHT,
   CONTEXT_MENU_CLAMP_WIDTH,
   CONTEXT_MENU_HEIGHT,
   CONTEXT_MENU_INSET,
   CONTROLS_PANEL_GAP,
   MINIMAP_SIZE,
 } from "./boardSurface.constants";
-import type { FabAction, PlacementPreview, NoteContextMenuState } from "./boardSurface.types";
+import type {
+  CanvasAddMenuState,
+  FabAction,
+  PlacementPreview,
+  NoteContextMenuState,
+} from "./boardSurface.types";
 import {
   buildPlacementPreviewNode,
   clampContextMenuPosition,
@@ -86,6 +94,7 @@ export function BoardSurface({
   } | null>(null);
   const [isDropOverlayVisible, setIsDropOverlayVisible] = useState(false);
   const [noteContextMenu, setNoteContextMenu] = useState<NoteContextMenuState | null>(null);
+  const [canvasAddMenu, setCanvasAddMenu] = useState<CanvasAddMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const handleNoteActionComplete = useCallback((noteId: string, action: NoteContextMenuAction) => {
     if (action !== "send-back") {
@@ -148,6 +157,7 @@ export function BoardSurface({
 
   useEffect(() => {
     setNoteContextMenu(null);
+    setCanvasAddMenu(null);
     setIsFabMenuOpen(false);
     dropDragDepthRef.current = 0;
     setIsDropOverlayVisible(false);
@@ -156,18 +166,20 @@ export function BoardSurface({
   }, [board.id]);
 
   useEffect(() => {
-    if (!noteContextMenu && !isFabMenuOpen) {
+    if (!noteContextMenu && !canvasAddMenu && !isFabMenuOpen) {
       return;
     }
 
     const handleGlobalPointerDown = () => {
       setNoteContextMenu(null);
+      setCanvasAddMenu(null);
       setIsFabMenuOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setNoteContextMenu(null);
+        setCanvasAddMenu(null);
         setIsFabMenuOpen(false);
       }
     };
@@ -179,7 +191,7 @@ export function BoardSurface({
       window.removeEventListener("pointerdown", handleGlobalPointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isFabMenuOpen, noteContextMenu]);
+  }, [canvasAddMenu, isFabMenuOpen, noteContextMenu]);
 
   const handleNodeDragStop = (_event: unknown, node: Node) => {
     if (node.type !== "note") {
@@ -255,6 +267,7 @@ export function BoardSurface({
 
   const handlePaneClick = (event: ReactMouseEvent) => {
     setNoteContextMenu(null);
+    setCanvasAddMenu(null);
     setIsFabMenuOpen(false);
 
     if (!placementPreview || !onPlaceNote) {
@@ -309,6 +322,34 @@ export function BoardSurface({
       x,
       y,
     });
+    setCanvasAddMenu(null);
+    setIsFabMenuOpen(false);
+  };
+
+  const handlePaneContextMenu = (event: MouseEvent | ReactMouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const paneBounds = boardSurfaceRef.current?.getBoundingClientRect();
+
+    if (!paneBounds) {
+      return;
+    }
+
+    const rawX = event.clientX - paneBounds.left;
+    const rawY = event.clientY - paneBounds.top;
+    const { x, y } = clampContextMenuPosition({
+      rawX,
+      rawY,
+      paneWidth: paneBounds.width,
+      paneHeight: paneBounds.height,
+      clampWidth: ADD_MENU_CLAMP_WIDTH,
+      menuHeight: ADD_MENU_HEIGHT,
+      inset: CONTEXT_MENU_INSET,
+    });
+
+    setCanvasAddMenu({ x, y });
+    setNoteContextMenu(null);
     setIsFabMenuOpen(false);
   };
 
@@ -408,17 +449,20 @@ export function BoardSurface({
   const handleFabAction = (action: FabAction) => {
     if (action === "text") {
       onCreateTextNote?.();
+      setCanvasAddMenu(null);
       setIsFabMenuOpen(false);
       return;
     }
 
     if (action === "file") {
       onCreateFile?.();
+      setCanvasAddMenu(null);
       setIsFabMenuOpen(false);
       return;
     }
 
     onCreateLink?.();
+    setCanvasAddMenu(null);
     setIsFabMenuOpen(false);
   };
 
@@ -476,6 +520,7 @@ export function BoardSurface({
         onNodesChange={onNodesChange}
         onNodeDragStop={handleNodeDragStop}
         onNodeContextMenu={handleNodeContextMenu}
+        onPaneContextMenu={handlePaneContextMenu}
         onPaneMouseMove={handlePaneMouseMove}
         onPaneMouseLeave={handlePaneMouseLeave}
         onPaneClick={handlePaneClick}
@@ -573,6 +618,18 @@ export function BoardSurface({
             actions={contextMenuNote ? resolveNoteMenuActions(contextMenuNote.type) : undefined}
             onAction={runNoteContextMenuAction}
           />
+        </div>
+      ) : null}
+      {canvasAddMenu ? (
+        <div
+          style={{
+            position: "absolute",
+            left: canvasAddMenu.x,
+            top: canvasAddMenu.y,
+            zIndex: 30,
+          }}
+        >
+          <AddNoteContextMenu onAction={handleFabAction} />
         </div>
       ) : null}
       <NoteCreateFab
