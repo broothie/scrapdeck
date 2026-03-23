@@ -1,6 +1,6 @@
 import { Plus } from "lucide-react";
-import type { CSSProperties } from "react";
-import { useTheme } from "tamagui";
+import { Text, XStack } from "tamagui";
+import { AppButton } from "../primitives/AppButton";
 import type { FabAction } from "./boardSurface.types";
 
 type ScrapCreateFabProps = {
@@ -16,8 +16,6 @@ export function ScrapCreateFab({
   onToggle,
   onAction,
 }: ScrapCreateFabProps) {
-  const theme = useTheme();
-
   return (
     <div
       onPointerDown={(event) => event.stopPropagation()}
@@ -32,41 +30,34 @@ export function ScrapCreateFab({
         gap: "0.45rem",
       }}
     >
-      <button
-        type="button"
+      <AppButton
         className="nodrag nopan"
         onClick={onToggle}
         aria-label="Create scrap"
+        variant="cta"
         style={{
           width: "fit-content",
           height: 44,
           padding: "0 0.7rem",
           borderRadius: 12,
-          border: `1px solid ${theme.accentStrong.val}`,
-          backgroundColor: theme.accentStrong.val,
-          color: theme.accentSubtle.val,
           boxShadow: "0 2px 7px rgba(5, 8, 14, 0.14)",
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          textAlign: "center",
-          justifyContent: "center",
-          gap: "0.34rem",
-          fontSize: 15,
-          lineHeight: 1.1,
-          fontWeight: 700,
         }}
       >
-        Add
-        <Plus
-          size={14}
-          strokeWidth={2.8}
-          style={{
-            transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
-            transition: "transform 160ms ease",
-          }}
-        />
-      </button>
+        <XStack style={{ alignItems: "center", gap: "0.34rem" }}>
+          <Text style={{ fontSize: 15, lineHeight: 1.1, fontWeight: 700, color: "currentColor" }}>
+            Add
+          </Text>
+          <Plus
+            size={14}
+            strokeWidth={2.8}
+            color="currentColor"
+            style={{
+              transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
+              transition: "transform 160ms ease",
+            }}
+          />
+        </XStack>
+      </AppButton>
       {isOpen ? (
         <div
           style={{
@@ -76,65 +67,45 @@ export function ScrapCreateFab({
             gap: "0.38rem",
           }}
         >
-          <button
-            type="button"
+          <AppButton
             className="nodrag nopan"
-            style={fabOptionButtonStyle({
-              background: theme.surface.val,
-              border: theme.borderDefault.val,
-              text: theme.textPrimary.val,
-            })}
+            variant="outline"
+            style={fabOptionButtonStyle()}
             onClick={() => onAction("note")}
           >
             Add note
-          </button>
-          <button
-            type="button"
+          </AppButton>
+          <AppButton
             className="nodrag nopan"
-            style={fabOptionButtonStyle({
-              background: theme.surface.val,
-              border: theme.borderDefault.val,
-              text: theme.textPrimary.val,
-            })}
+            variant="outline"
+            style={fabOptionButtonStyle()}
             onClick={() => onAction("file")}
             disabled={isUploadingFile}
           >
             {isUploadingFile ? "Uploading file..." : "Add file"}
-          </button>
-          <button
-            type="button"
+          </AppButton>
+          <AppButton
             className="nodrag nopan"
-            style={fabOptionButtonStyle({
-              background: theme.surface.val,
-              border: theme.borderDefault.val,
-              text: theme.textPrimary.val,
-            })}
+            variant="outline"
+            style={fabOptionButtonStyle()}
             onClick={() => onAction("link")}
           >
             Add link
-          </button>
+          </AppButton>
         </div>
       ) : null}
     </div>
   );
 }
 
-function fabOptionButtonStyle(options: {
-  background: string;
-  border: string;
-  text: string;
-}): CSSProperties {
+function fabOptionButtonStyle() {
   return {
     minWidth: 112,
-    border: `1px solid ${options.border}`,
     borderRadius: 10,
-    backgroundColor: options.background,
-    color: options.text,
-    textAlign: "left",
+    textAlign: "left" as const,
     padding: "0.42rem 0.72rem",
     fontSize: 13,
     fontWeight: 500,
     boxShadow: "0 2px 6px rgba(5, 8, 14, 0.1)",
-    cursor: "pointer",
   };
 }

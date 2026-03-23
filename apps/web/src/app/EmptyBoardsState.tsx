@@ -1,4 +1,5 @@
-import { Button, Card, H2, Paragraph, Text, YStack } from "tamagui";
+import { Card, H2, Paragraph, Text, YStack } from "tamagui";
+import { AppButton } from "@plumboard/ui";
 
 type EmptyBoardsStateProps = {
   onCreateBoard: () => void;
@@ -23,9 +24,9 @@ export function EmptyBoardsState({ onCreateBoard }: EmptyBoardsStateProps) {
             <Paragraph style={{ margin: 0 }}>
               Start from a blank canvas. Create a board, then add notes, files, and links as you go.
             </Paragraph>
-            <Button theme="blue" onPress={onCreateBoard} style={{ alignSelf: "flex-start" }}>
+            <AppButton variant="primary" onPress={onCreateBoard} style={{ alignSelf: "flex-start" }}>
               Create your first board
-            </Button>
+            </AppButton>
           </YStack>
         </Card.Header>
       </Card>

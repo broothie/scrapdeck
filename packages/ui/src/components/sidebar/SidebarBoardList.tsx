@@ -1,5 +1,6 @@
 import { Button, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
+import { AppButton } from "../primitives/AppButton";
 
 type SidebarBoardListProps = {
   boards: Board[];
@@ -21,18 +22,12 @@ export function SidebarBoardList({
   return (
     <YStack aria-label="Boards" style={{ gap: "0.75rem" }}>
       {onCreateBoard ? (
-        <Button
+        <AppButton
           onPress={onCreateBoard}
-          style={{
-            backgroundColor: theme.accentStrong.val,
-            borderColor: theme.accentStrong.val,
-            borderWidth: 1,
-          }}
+          variant="primary"
         >
-          <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
-            New board
-          </Text>
-        </Button>
+          New board
+        </AppButton>
       ) : null}
 
       {boards.map((board) => {

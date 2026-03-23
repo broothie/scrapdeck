@@ -1,4 +1,5 @@
-import { Button, Text, ToggleGroup, YStack, useTheme } from "tamagui";
+import { Text, ToggleGroup, YStack, useTheme } from "tamagui";
+import { AppButton } from "../primitives/AppButton";
 
 type ThemePreference = "system" | "light" | "dark";
 
@@ -115,13 +116,14 @@ export function SidebarAccountSection({
         </YStack>
       ) : null}
       {onSignOut ? (
-        <Button
+        <AppButton
           onPress={onSignOut}
-          variant="outlined"
+          variant="outline"
           disabled={isSigningOut}
+          loading={isSigningOut}
         >
           Sign out
-        </Button>
+        </AppButton>
       ) : null}
     </YStack>
   );

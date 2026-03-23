@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Button, Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
 import { BoardSurface } from "./BoardSurface";
 import { useBoardMetadataEditor } from "./useBoardMetadataEditor";
 import { useScrapComposer } from "./useScrapComposer";
+import { AppButton } from "../primitives/AppButton";
 
 type BoardViewProps = {
   board: Board;
@@ -183,12 +184,17 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
                 </Text>
               ) : null}
               <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
-                <Button onPress={closeLinkComposer} disabled={isResolvingLink}>
+                <AppButton variant="outline" onPress={closeLinkComposer} disabled={isResolvingLink}>
                   Cancel
-                </Button>
-                <Button theme="blue" onPress={() => void handleSaveLink()} disabled={isResolvingLink}>
+                </AppButton>
+                <AppButton
+                  variant="primary"
+                  onPress={() => void handleSaveLink()}
+                  disabled={isResolvingLink}
+                  loading={isResolvingLink}
+                >
                   {isResolvingLink ? "Fetching preview..." : "Save link"}
-                </Button>
+                </AppButton>
               </XStack>
             </YStack>
           </Card>

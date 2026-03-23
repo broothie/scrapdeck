@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button, Card, H2, Input, Paragraph, Spinner, Text, YStack, useTheme } from "tamagui";
+import { Card, H2, Input, Paragraph, Text, YStack, useTheme } from "tamagui";
+import { AppButton } from "@plumboard/ui";
 import { useAuth } from "./AuthProvider";
 
 function normalizeUsername(value: string) {
@@ -117,38 +118,22 @@ export function UsernameSetupScreen() {
               <Text style={{ color: theme.danger.val }}>{error}</Text>
             ) : null}
             <YStack gap="$2">
-              <Button
+              <AppButton
                 onPress={handleSave}
+                variant="cta"
                 disabled={isSubmitting}
-                style={{
-                  backgroundColor: theme.accentStrong.val,
-                  borderColor: theme.accentStrong.val,
-                  borderWidth: 1,
-                }}
+                loading={isSubmitting}
               >
-                {isSubmitting ? (
-                  <Spinner color={theme.accentSubtle.val} />
-                ) : (
-                  <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
-                    Save username
-                  </Text>
-                )}
-              </Button>
-              <Button
-                variant="outlined"
+                Save username
+              </AppButton>
+              <AppButton
+                variant="outline"
                 onPress={handleSignOut}
                 disabled={isSigningOut}
-                style={{
-                  borderColor: theme.borderDefault.val,
-                  backgroundColor: theme.surface.val,
-                }}
+                loading={isSigningOut}
               >
-                {isSigningOut ? (
-                  <Spinner color={theme.textPrimary.val} />
-                ) : (
-                  <Text style={{ color: theme.textPrimary.val }}>Sign out</Text>
-                )}
-              </Button>
+                Sign out
+              </AppButton>
             </YStack>
           </YStack>
         </Card.Footer>

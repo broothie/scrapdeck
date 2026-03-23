@@ -343,9 +343,9 @@ export function BoardSurface({
         nodesFocusable
       >
         <Background
-          color={theme.borderSubtle.val}
-          gap={28}
-          size={1.25}
+          color={withAlpha(theme.borderDefault.val, 0.7)}
+          gap={24}
+          size={1.6}
           variant={BackgroundVariant.Dots}
         />
         <MiniMap

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button, Card, H2, Input, Paragraph, Spinner, Text, XStack, YStack, useTheme } from "tamagui";
+import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import { AppButton } from "@plumboard/ui";
 import { useAuth } from "./AuthProvider";
 
 export function AuthScreen() {
@@ -224,79 +225,48 @@ export function AuthScreen() {
             ) : null}
             {authMode === "password" ? (
               <YStack gap="$2">
-                <Button
+                <AppButton
                   onPress={handlePasswordSignIn}
+                  loading={pendingAction === "sign-in"}
                   disabled={isSubmitting}
-                  style={{
-                    backgroundColor: theme.accentStrong.val,
-                    borderColor: theme.accentStrong.val,
-                    borderWidth: 1,
-                  }}
+                  variant="cta"
                 >
-                  {pendingAction === "sign-in" ? (
-                    <Spinner color={theme.accentSubtle.val} />
-                  ) : (
-                    <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
-                      Sign in
-                    </Text>
-                  )}
-                </Button>
-                <Button
-                  variant="outlined"
+                  Sign in
+                </AppButton>
+                <AppButton
+                  variant="outline"
                   onPress={handlePasswordSignUp}
+                  loading={pendingAction === "sign-up"}
                   disabled={isSubmitting}
-                  style={{
-                    borderColor: theme.borderDefault.val,
-                    backgroundColor: theme.surface.val,
-                  }}
                 >
-                  {pendingAction === "sign-up" ? (
-                    <Spinner color={theme.textPrimary.val} />
-                  ) : (
-                    <Text style={{ color: theme.textPrimary.val, fontWeight: 600 }}>
-                      Create account
-                    </Text>
-                  )}
-                </Button>
+                  Create account
+                </AppButton>
               </YStack>
             ) : (
-              <Button
+              <AppButton
                 onPress={handleMagicLinkSignIn}
+                loading={pendingAction === "magic-link"}
                 disabled={isSubmitting}
-                style={{
-                  backgroundColor: theme.accentStrong.val,
-                  borderColor: theme.accentStrong.val,
-                  borderWidth: 1,
-                }}
+                variant="cta"
               >
-                {pendingAction === "magic-link" ? (
-                  <Spinner color={theme.accentSubtle.val} />
-                ) : (
-                  <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
-                    Send magic link
-                  </Text>
-                )}
-              </Button>
+                Send magic link
+              </AppButton>
             )}
           </YStack>
         </Card.Footer>
       </Card>
-      <Button
-        variant="outlined"
+      <AppButton
+        variant="outline"
         onPress={handleSwapMode}
         disabled={isSubmitting}
         style={{
           marginTop: "0.85rem",
-          borderColor: theme.borderDefault.val,
-          backgroundColor: theme.surface.val,
         }}
       >
-        <Text style={{ color: theme.textSecondary.val }}>
-          {authMode === "password"
-            ? "Use passwordless magic link"
-            : "Use email + password"}
-        </Text>
-      </Button>
+        {authMode === "password"
+          ? "Use passwordless magic link"
+          : "Use email + password"}
+      </AppButton>
     </YStack>
   );
 }
