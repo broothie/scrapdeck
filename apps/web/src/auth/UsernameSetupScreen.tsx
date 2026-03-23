@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Card, H2, Input, Paragraph, Spinner, Text, YStack } from "tamagui";
+import { Button, Card, H2, Input, Paragraph, Spinner, Text, YStack, useTheme } from "tamagui";
 import { useAuth } from "./AuthProvider";
 
 function normalizeUsername(value: string) {
@@ -7,6 +7,7 @@ function normalizeUsername(value: string) {
 }
 
 export function UsernameSetupScreen() {
+  const theme = useTheme();
   const { user, saveUsername, signOut } = useAuth();
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
@@ -51,20 +52,37 @@ export function UsernameSetupScreen() {
         alignItems: "center",
         justifyContent: "center",
         padding: "1.5rem",
+        backgroundColor: theme.canvas.val,
       }}
     >
-      <Card width="100%" maxWidth={460} style={{ borderWidth: 1 }}>
+      <Card
+        width="100%"
+        maxWidth={460}
+        style={{
+          borderWidth: 1,
+          borderColor: theme.borderDefault.val,
+          backgroundColor: theme.surface.val,
+          boxShadow: "0 16px 34px rgba(20, 12, 38, 0.12)",
+        }}
+      >
         <Card.Header style={{ padding: "1.25rem" }}>
           <YStack gap="$3">
-            <Text style={{ fontSize: 13, opacity: 0.7, textTransform: "uppercase", letterSpacing: 2 }}>
+            <Text
+              style={{
+                fontSize: 12,
+                letterSpacing: 2.1,
+                textTransform: "uppercase",
+                color: theme.textSecondary.val,
+              }}
+            >
               Finish setup
             </Text>
-            <H2 style={{ margin: 0 }}>Pick a username</H2>
-            <Paragraph style={{ margin: 0 }}>
+            <H2 style={{ margin: 0, color: theme.textInk.val }}>Pick a username</H2>
+            <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
               This gives your account a human-friendly handle before you enter the app.
             </Paragraph>
             {user?.email ? (
-              <Text style={{ opacity: 0.72 }}>
+              <Text style={{ color: theme.textMuted.val }}>
                 Signed in as {user.email}
               </Text>
             ) : null}
@@ -76,6 +94,7 @@ export function UsernameSetupScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               placeholder="andrew_booth"
+              placeholderTextColor="$placeholderColor"
               value={username}
               onChange={(event) => {
                 setUsername(normalizeUsername(event.target.value));
@@ -85,23 +104,50 @@ export function UsernameSetupScreen() {
                   handleSave();
                 }
               }}
+              style={{
+                borderColor: theme.borderDefault.val,
+                backgroundColor: theme.surfaceHover.val,
+                color: theme.textPrimary.val,
+              }}
             />
-            <Text style={{ opacity: 0.68 }}>
+            <Text style={{ color: theme.textSecondary.val }}>
               Lowercase letters, numbers, and underscores only.
             </Text>
             {error ? (
-              <Text color="$red10">{error}</Text>
+              <Text style={{ color: theme.danger.val }}>{error}</Text>
             ) : null}
             <YStack gap="$2">
-              <Button theme="blue" onPress={handleSave} disabled={isSubmitting}>
-                {isSubmitting ? <Spinner color="white" /> : "Save username"}
+              <Button
+                onPress={handleSave}
+                disabled={isSubmitting}
+                style={{
+                  backgroundColor: theme.accentStrong.val,
+                  borderColor: theme.accentStrong.val,
+                  borderWidth: 1,
+                }}
+              >
+                {isSubmitting ? (
+                  <Spinner color={theme.accentSubtle.val} />
+                ) : (
+                  <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
+                    Save username
+                  </Text>
+                )}
               </Button>
               <Button
                 variant="outlined"
                 onPress={handleSignOut}
                 disabled={isSigningOut}
+                style={{
+                  borderColor: theme.borderDefault.val,
+                  backgroundColor: theme.surface.val,
+                }}
               >
-                {isSigningOut ? <Spinner /> : "Sign out"}
+                {isSigningOut ? (
+                  <Spinner color={theme.textPrimary.val} />
+                ) : (
+                  <Text style={{ color: theme.textPrimary.val }}>Sign out</Text>
+                )}
               </Button>
             </YStack>
           </YStack>
