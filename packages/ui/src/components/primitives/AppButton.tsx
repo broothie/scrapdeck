@@ -35,10 +35,10 @@ function resolveVariantStyles(variant: ButtonVariant, theme: ReturnType<typeof u
       };
     case "cta":
       return {
-        background: theme.accentStrong.val,
-        border: theme.accentStrong.val,
-        text: theme.accentSubtle.val,
-        hoverBackground: theme.accentStrong.val,
+        background: theme.accentLight.val,
+        border: theme.accentDefault.val,
+        text: theme.accentText.val,
+        hoverBackground: theme.accentDefault.val,
         hoverBorder: theme.accentStrong.val,
         pressBackground: theme.accentDefault.val,
         pressBorder: theme.accentStrong.val,

@@ -24,7 +24,7 @@ export function EmptyBoardsState({ onCreateBoard }: EmptyBoardsStateProps) {
             <Paragraph style={{ margin: 0 }}>
               Start from a blank canvas. Create a board, then add text notes, files, and links as you go.
             </Paragraph>
-            <AppButton variant="primary" onPress={onCreateBoard} style={{ alignSelf: "flex-start" }}>
+            <AppButton variant="cta" onPress={onCreateBoard} style={{ alignSelf: "flex-start" }}>
               Create your first board
             </AppButton>
           </YStack>

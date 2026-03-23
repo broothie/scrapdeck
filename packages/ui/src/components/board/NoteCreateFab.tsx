@@ -34,7 +34,7 @@ export function NoteCreateFab({
           className="nodrag nopan"
           onClick={onToggle}
           aria-label="Create note"
-        variant="cta"
+          variant="cta"
         style={{
           width: "fit-content",
           height: 44,
@@ -44,9 +44,6 @@ export function NoteCreateFab({
         }}
       >
         <XStack style={{ alignItems: "center", gap: "0.34rem" }}>
-          <Text style={{ fontSize: 15, lineHeight: 1.1, fontWeight: 700, color: "currentColor" }}>
-            Add
-          </Text>
           <Plus
             size={14}
             strokeWidth={2.8}
@@ -56,6 +53,9 @@ export function NoteCreateFab({
               transition: "transform 160ms ease",
             }}
           />
+          <Text style={{ fontSize: 15, lineHeight: 1.1, fontWeight: 700, color: "currentColor" }}>
+            Add note
+          </Text>
         </XStack>
       </AppButton>
       {isOpen ? (

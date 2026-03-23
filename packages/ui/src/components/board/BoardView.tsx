@@ -204,7 +204,7 @@ export function BoardView({
                   Cancel
                 </AppButton>
                 <AppButton
-                  variant="primary"
+                  variant="cta"
                   onPress={() => void handleSaveLink()}
                   disabled={isResolvingLink}
                   loading={isResolvingLink}
@@ -336,7 +336,7 @@ export function BoardView({
                 <AppButton variant="outline" onPress={handleCancelBoardMetadata}>
                   Cancel
                 </AppButton>
-                <AppButton variant="primary" onPress={handleSaveBoardMetadata}>
+                <AppButton variant="cta" onPress={handleSaveBoardMetadata}>
                   Save changes
                 </AppButton>
               </XStack>
