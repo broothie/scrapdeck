@@ -1,17 +1,28 @@
 import { FileImage, Link2, Type } from "lucide-react";
 import type { FabAction } from "./boardSurface.types";
-import { ContextActionMenu, type ContextActionMenuItem } from "./ContextActionMenu";
+import {
+  ContextActionMenu,
+  type ContextActionMenuAlignment,
+  type ContextActionMenuItem,
+} from "./ContextActionMenu";
 
 type AddNoteContextMenuProps = {
   onAction: (action: FabAction) => void;
+  align?: ContextActionMenuAlignment;
+  isUploadingFile?: boolean;
 };
 
-const addMenuItems: ContextActionMenuItem<FabAction>[] = [
-  { action: "text", label: "Add text note", Icon: Type },
-  { action: "file", label: "Add file", Icon: FileImage },
-  { action: "link", label: "Add link", Icon: Link2 },
-];
+export function AddNoteContextMenu({ onAction, align, isUploadingFile }: AddNoteContextMenuProps) {
+  const addMenuItems: ContextActionMenuItem<FabAction>[] = [
+    { action: "text", label: "Add text note", Icon: Type },
+    {
+      action: "file",
+      label: isUploadingFile ? "Uploading file..." : "Add file",
+      Icon: FileImage,
+      isDisabled: Boolean(isUploadingFile),
+    },
+    { action: "link", label: "Add link", Icon: Link2 },
+  ];
 
-export function AddNoteContextMenu({ onAction }: AddNoteContextMenuProps) {
-  return <ContextActionMenu items={addMenuItems} onAction={onAction} />;
+  return <ContextActionMenu items={addMenuItems} onAction={onAction} align={align} />;
 }

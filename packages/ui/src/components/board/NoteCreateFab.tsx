@@ -2,6 +2,7 @@ import { Plus } from "lucide-react";
 import { Text, XStack } from "tamagui";
 import { AppButton } from "../primitives/AppButton";
 import type { FabAction } from "./boardSurface.types";
+import { AddNoteContextMenu } from "./AddNoteContextMenu";
 
 type NoteCreateFabProps = {
   isOpen: boolean;
@@ -30,11 +31,11 @@ export function NoteCreateFab({
         gap: "0.45rem",
       }}
     >
-        <AppButton
-          className="nodrag nopan"
-          onClick={onToggle}
-          aria-label="Create note"
-          variant="cta"
+      <AppButton
+        className="nodrag nopan"
+        onPress={onToggle}
+        aria-label="Create note"
+        variant="cta"
         style={{
           width: "fit-content",
           height: 44,
@@ -54,58 +55,17 @@ export function NoteCreateFab({
             }}
           />
           <Text style={{ fontSize: 15, lineHeight: 1.1, fontWeight: 700, color: "currentColor" }}>
-            Add note
+            Add
           </Text>
         </XStack>
       </AppButton>
       {isOpen ? (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-end",
-            gap: "0.38rem",
-          }}
-        >
-          <AppButton
-            className="nodrag nopan"
-            variant="outline"
-            style={fabOptionButtonStyle()}
-            onClick={() => onAction("text")}
-          >
-            Add text note
-          </AppButton>
-          <AppButton
-            className="nodrag nopan"
-            variant="outline"
-            style={fabOptionButtonStyle()}
-            onClick={() => onAction("file")}
-            disabled={isUploadingFile}
-          >
-            {isUploadingFile ? "Uploading file..." : "Add file"}
-          </AppButton>
-          <AppButton
-            className="nodrag nopan"
-            variant="outline"
-            style={fabOptionButtonStyle()}
-            onClick={() => onAction("link")}
-          >
-            Add link
-          </AppButton>
-        </div>
+        <AddNoteContextMenu
+          onAction={onAction}
+          align="right"
+          isUploadingFile={isUploadingFile}
+        />
       ) : null}
     </div>
   );
-}
-
-function fabOptionButtonStyle() {
-  return {
-    minWidth: 112,
-    borderRadius: 10,
-    textAlign: "left" as const,
-    padding: "0.42rem 0.72rem",
-    fontSize: 13,
-    fontWeight: 500,
-    boxShadow: "0 2px 6px rgba(5, 8, 14, 0.1)",
-  };
 }
