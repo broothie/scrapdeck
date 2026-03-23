@@ -59,6 +59,7 @@ export function BoardView({
     linkError,
     fileUploadError,
     placementIntent,
+    autoEditTextNoteId,
     setLinkUrl,
     setLinkTitle,
     setLinkDescription,
@@ -76,6 +77,7 @@ export function BoardView({
     handleDropFileAtPosition,
     handleDropLinkAtPosition,
     clearPlacementIntent,
+    handleAutoEditTextNoteHandled,
   } = useNoteComposer({
     boardId: board.id,
     onUploadImage,
@@ -207,6 +209,8 @@ export function BoardView({
         onCreateLink={handleAddLink}
         onCreateLinkAtPosition={handleAddLinkAtPosition}
         onEditLinkNote={handleEditLinkFromContextMenu}
+        autoEditTextNoteId={autoEditTextNoteId}
+        onAutoEditTextNoteHandled={handleAutoEditTextNoteHandled}
         placementPreview={
           placementIntent
             ? {

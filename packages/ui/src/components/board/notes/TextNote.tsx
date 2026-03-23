@@ -21,6 +21,8 @@ import { useAppStore, type TextNote } from "@plumboard/core";
 type TextNoteCardProps = {
   boardId: string;
   note: TextNote;
+  shouldStartEditing?: boolean;
+  onStartEditingHandled?: () => void;
   onAutoGrowHeight: (nextHeight: number) => void;
 };
 
@@ -38,10 +40,17 @@ type ToolbarAction = {
   onClick: () => void;
 };
 
-export function TextNoteCard({ boardId, note, onAutoGrowHeight }: TextNoteCardProps) {
+export function TextNoteCard({
+  boardId,
+  note,
+  shouldStartEditing = false,
+  onStartEditingHandled,
+  onAutoGrowHeight,
+}: TextNoteCardProps) {
   const theme = useTheme();
   const updateTextNote = useAppStore((state) => state.updateTextNote);
   const [isEditing, setIsEditing] = useState(false);
+  const hasHandledAutoStartRef = useRef(false);
   const [toolbarOffsetX, setToolbarOffsetX] = useState(0);
   const readBodyRef = useRef<HTMLDivElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -159,6 +168,21 @@ export function TextNoteCard({ boardId, note, onAutoGrowHeight }: TextNoteCardPr
       editor.commands.setContent(normalizedBody, { emitUpdate: false });
     }
   }, [editor, normalizedBody]);
+
+  useEffect(() => {
+    if (!shouldStartEditing) {
+      hasHandledAutoStartRef.current = false;
+      return;
+    }
+
+    if (hasHandledAutoStartRef.current) {
+      return;
+    }
+
+    hasHandledAutoStartRef.current = true;
+    setIsEditing(true);
+    onStartEditingHandled?.();
+  }, [onStartEditingHandled, shouldStartEditing]);
 
   useEffect(() => {
     if (!editor) {

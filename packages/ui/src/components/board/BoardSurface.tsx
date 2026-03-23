@@ -64,6 +64,8 @@ type BoardSurfaceProps = {
   onCreateTextNoteAtPosition?: (position: { x: number; y: number }) => void;
   onCreateFileAtPosition?: (position: { x: number; y: number }) => void;
   onCreateLinkAtPosition?: (position: { x: number; y: number }) => void;
+  autoEditTextNoteId?: string | null;
+  onAutoEditTextNoteHandled?: (noteId: string) => void;
   onDropFileAtPosition?: (file: File, position: { x: number; y: number }) => void | Promise<void>;
   onDropLinkAtPosition?: (url: string, position: { x: number; y: number }) => void | Promise<void>;
 };
@@ -80,6 +82,8 @@ export function BoardSurface({
   onCreateTextNoteAtPosition,
   onCreateFileAtPosition,
   onCreateLinkAtPosition,
+  autoEditTextNoteId,
+  onAutoEditTextNoteHandled,
   onDropFileAtPosition,
   onDropLinkAtPosition,
 }: BoardSurfaceProps) {
@@ -156,10 +160,20 @@ export function BoardSurface({
           ) => {
             updateNoteLayout(board.id, noteId, nextLayout);
           },
+          shouldStartEditing: note.type === "text" && autoEditTextNoteId === note.id,
+          onStartEditingHandled: () => onAutoEditTextNoteHandled?.(note.id),
         },
       }));
     });
-  }, [board, runNoteMenuAction, noteContextMenu, setNodes, updateNoteLayout]);
+  }, [
+    autoEditTextNoteId,
+    board,
+    noteContextMenu,
+    onAutoEditTextNoteHandled,
+    runNoteMenuAction,
+    setNodes,
+    updateNoteLayout,
+  ]);
 
   useEffect(() => {
     setNoteContextMenu(null);

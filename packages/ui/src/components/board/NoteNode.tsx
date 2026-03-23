@@ -14,6 +14,8 @@ export type NoteNodeData = {
   note: Note;
   boardId: string;
   showPinnedMenu: boolean;
+  shouldStartEditing?: boolean;
+  onStartEditingHandled?: () => void;
   onMenuAction: (noteId: string, action: NoteContextMenuAction) => void;
   onAutoGrowHeight: (noteId: string, nextHeight: number) => void;
   onResizeEnd: (
@@ -84,6 +86,8 @@ function NoteNodeComponent({
           <TextNoteCard
             boardId={data.boardId}
             note={data.note}
+            shouldStartEditing={data.shouldStartEditing}
+            onStartEditingHandled={data.onStartEditingHandled}
             onAutoGrowHeight={(nextHeight) => data.onAutoGrowHeight(data.note.id, nextHeight)}
           />
         ) : null}

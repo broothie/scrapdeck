@@ -66,6 +66,7 @@ export function useNoteComposer({
   const [linkError, setLinkError] = useState("");
   const [fileUploadError, setFileUploadError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
+  const [autoEditTextNoteId, setAutoEditTextNoteId] = useState<string | null>(null);
   const [pendingFilePosition, setPendingFilePosition] = useState<{ x: number; y: number } | null>(null);
   const [pendingLinkPosition, setPendingLinkPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -83,7 +84,7 @@ export function useNoteComposer({
         y,
         width,
         height,
-        body: "<p>Drop quick thoughts here and drag them into place.</p>",
+        body: "",
       }),
     };
   }, []);
@@ -103,7 +104,9 @@ export function useNoteComposer({
   };
 
   const handleAddTextNoteAtPosition = (position: { x: number; y: number }) => {
-    addNote(boardId, addTextNoteIntent.create(position));
+    const nextNote = addTextNoteIntent.create(position);
+    addNote(boardId, nextNote);
+    setAutoEditTextNoteId(nextNote.id);
     setPlacementIntent(null);
   };
 
@@ -244,7 +247,13 @@ export function useNoteComposer({
       return;
     }
 
-    addNote(boardId, placementIntent.create(position));
+    const nextNote = placementIntent.create(position);
+    addNote(boardId, nextNote);
+
+    if (nextNote.type === "text") {
+      setAutoEditTextNoteId(nextNote.id);
+    }
+
     setPlacementIntent(null);
   };
 
@@ -469,6 +478,10 @@ export function useNoteComposer({
     setPlacementIntent(null);
   };
 
+  const handleAutoEditTextNoteHandled = (noteId: string) => {
+    setAutoEditTextNoteId((current) => (current === noteId ? null : current));
+  };
+
   return {
     imageInputRef,
     isAddingLink,
@@ -481,6 +494,7 @@ export function useNoteComposer({
     linkError,
     fileUploadError,
     placementIntent,
+    autoEditTextNoteId,
     setLinkUrl,
     setLinkTitle,
     setLinkDescription,
@@ -498,5 +512,6 @@ export function useNoteComposer({
     handleDropFileAtPosition,
     handleDropLinkAtPosition,
     clearPlacementIntent,
+    handleAutoEditTextNoteHandled,
   };
 }
