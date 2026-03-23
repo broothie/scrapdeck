@@ -1,8 +1,8 @@
-import { ArrowDown, ArrowUp, Copy, Pencil, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Copy, Pencil, Search, Trash2 } from "lucide-react";
 import type { Note } from "@plumboard/core";
 import { ContextActionMenu, type ContextActionMenuItem } from "./ContextActionMenu";
 
-export type NoteContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
+export type NoteContextMenuAction = "view" | "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 
 type NoteActionMenuProps = {
   onAction: (action: NoteContextMenuAction) => void;
@@ -10,6 +10,7 @@ type NoteActionMenuProps = {
 };
 
 const menuItems: ContextActionMenuItem<NoteContextMenuAction>[] = [
+  { action: "view", label: "View", Icon: Search },
   { action: "edit", label: "Edit", Icon: Pencil },
   { action: "duplicate", label: "Duplicate", Icon: Copy },
   { action: "bring-front", label: "Bring To Front", Icon: ArrowUp },
@@ -20,11 +21,15 @@ const menuItems: ContextActionMenuItem<NoteContextMenuAction>[] = [
 const defaultNoteMenuActions = menuItems.map((item) => item.action);
 
 export function resolveNoteMenuActions(noteType: Note["type"]): NoteContextMenuAction[] {
-  if (noteType !== "link") {
-    return defaultNoteMenuActions.filter((action) => action !== "edit");
+  if (noteType === "image") {
+    return defaultNoteMenuActions;
   }
 
-  return defaultNoteMenuActions;
+  if (noteType !== "link") {
+    return defaultNoteMenuActions.filter((action) => action !== "edit" && action !== "view");
+  }
+
+  return defaultNoteMenuActions.filter((action) => action !== "view");
 }
 
 export function NoteActionMenu({ onAction, actions = defaultNoteMenuActions }: NoteActionMenuProps) {

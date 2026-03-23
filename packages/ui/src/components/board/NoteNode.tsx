@@ -16,6 +16,8 @@ export type NoteNodeData = {
   showPinnedMenu: boolean;
   shouldStartEditing?: boolean;
   onStartEditingHandled?: () => void;
+  shouldOpenLightbox?: boolean;
+  onOpenLightboxHandled?: () => void;
   onMenuAction: (noteId: string, action: NoteContextMenuAction) => void;
   onAutoGrowHeight: (noteId: string, nextHeight: number) => void;
   onResizeEnd: (
@@ -91,7 +93,13 @@ function NoteNodeComponent({
             onAutoGrowHeight={(nextHeight) => data.onAutoGrowHeight(data.note.id, nextHeight)}
           />
         ) : null}
-        {data.note.type === "image" ? <ImageNoteCard note={data.note} /> : null}
+        {data.note.type === "image" ? (
+          <ImageNoteCard
+            note={data.note}
+            shouldOpenLightbox={data.shouldOpenLightbox}
+            onOpenLightboxHandled={data.onOpenLightboxHandled}
+          />
+        ) : null}
         {data.note.type === "link" ? <LinkNoteCard note={data.note} /> : null}
       </div>
     </div>

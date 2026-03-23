@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
@@ -35,6 +35,7 @@ export function BoardView({
   onResolveLinkPreview,
 }: BoardViewProps) {
   const theme = useTheme();
+  const [activeLightboxImageNoteId, setActiveLightboxImageNoteId] = useState<string | null>(null);
   const {
     isEditingBoardMetadata,
     boardTitleDraft,
@@ -83,6 +84,10 @@ export function BoardView({
     onUploadImage,
     onResolveLinkPreview,
   });
+
+  useEffect(() => {
+    setActiveLightboxImageNoteId(null);
+  }, [board.id]);
 
   useEffect(() => {
     if (!placementIntent && !isAddingLink) {
@@ -140,6 +145,17 @@ export function BoardView({
     handleEditLink(note);
     return true;
   }, [board.notes, handleEditLink]);
+
+  const handleViewImageFromContextMenu = useCallback((noteId: string) => {
+    const note = board.notes.find((candidate) => candidate.id === noteId);
+
+    if (!note || note.type !== "image") {
+      return false;
+    }
+
+    setActiveLightboxImageNoteId(noteId);
+    return true;
+  }, [board.notes]);
 
   return (
     <YStack flex={1} style={{ minHeight: 0 }}>
@@ -209,6 +225,11 @@ export function BoardView({
         onCreateLink={handleAddLink}
         onCreateLinkAtPosition={handleAddLinkAtPosition}
         onEditLinkNote={handleEditLinkFromContextMenu}
+        onViewImageNote={handleViewImageFromContextMenu}
+        activeLightboxImageNoteId={activeLightboxImageNoteId}
+        onLightboxImageNoteHandled={(noteId) => {
+          setActiveLightboxImageNoteId((current) => (current === noteId ? null : current));
+        }}
         autoEditTextNoteId={autoEditTextNoteId}
         onAutoEditTextNoteHandled={handleAutoEditTextNoteHandled}
         placementPreview={

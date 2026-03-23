@@ -64,6 +64,9 @@ type BoardSurfaceProps = {
   onCreateTextNoteAtPosition?: (position: { x: number; y: number }) => void;
   onCreateFileAtPosition?: (position: { x: number; y: number }) => void;
   onCreateLinkAtPosition?: (position: { x: number; y: number }) => void;
+  activeLightboxImageNoteId?: string | null;
+  onLightboxImageNoteHandled?: (noteId: string) => void;
+  onViewImageNote?: (noteId: string) => boolean;
   autoEditTextNoteId?: string | null;
   onAutoEditTextNoteHandled?: (noteId: string) => void;
   onDropFileAtPosition?: (file: File, position: { x: number; y: number }) => void | Promise<void>;
@@ -82,6 +85,9 @@ export function BoardSurface({
   onCreateTextNoteAtPosition,
   onCreateFileAtPosition,
   onCreateLinkAtPosition,
+  activeLightboxImageNoteId,
+  onLightboxImageNoteHandled,
+  onViewImageNote,
   autoEditTextNoteId,
   onAutoEditTextNoteHandled,
   onDropFileAtPosition,
@@ -121,6 +127,7 @@ export function BoardSurface({
   const { runNoteMenuAction } = useNoteMenuActions(board, {
     onActionComplete: handleNoteActionComplete,
     onEditLinkNote,
+    onViewImageNote,
   });
 
   useEffect(() => {
@@ -162,13 +169,17 @@ export function BoardSurface({
           },
           shouldStartEditing: note.type === "text" && autoEditTextNoteId === note.id,
           onStartEditingHandled: () => onAutoEditTextNoteHandled?.(note.id),
+          shouldOpenLightbox: note.type === "image" && activeLightboxImageNoteId === note.id,
+          onOpenLightboxHandled: () => onLightboxImageNoteHandled?.(note.id),
         },
       }));
     });
   }, [
+    activeLightboxImageNoteId,
     autoEditTextNoteId,
     board,
     noteContextMenu,
+    onLightboxImageNoteHandled,
     onAutoEditTextNoteHandled,
     runNoteMenuAction,
     setNodes,

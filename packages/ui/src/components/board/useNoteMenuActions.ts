@@ -6,12 +6,14 @@ import { browserNoteEditAdapter, type NoteEditAdapter } from "./noteEditAdapter"
 type UseNoteMenuActionsOptions = {
   onActionComplete?: (noteId: string, action: NoteContextMenuAction) => void;
   onEditLinkNote?: (noteId: string) => boolean;
+  onViewImageNote?: (noteId: string) => boolean;
   editAdapter?: NoteEditAdapter;
 };
 
 export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOptions = {}) {
   const onActionComplete = options.onActionComplete;
   const onEditLinkNote = options.onEditLinkNote;
+  const onViewImageNote = options.onViewImageNote;
   const editAdapter = options.editAdapter ?? browserNoteEditAdapter;
   const deleteNote = useAppStore((state) => state.deleteNote);
   const duplicateNote = useAppStore((state) => state.duplicateNote);
@@ -97,6 +99,11 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
   ]);
 
   const runNoteMenuAction = useCallback((noteId: string, action: NoteContextMenuAction) => {
+    if (action === "view") {
+      onViewImageNote?.(noteId);
+      return;
+    }
+
     if (action === "edit") {
       handleEditNote(noteId);
       return;
@@ -127,6 +134,7 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
     moveNoteToBack,
     moveNoteToFront,
     onActionComplete,
+    onViewImageNote,
   ]);
 
   return {
