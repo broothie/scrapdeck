@@ -5,6 +5,7 @@ import { browserNoteEditAdapter, type NoteEditAdapter } from "./noteEditAdapter"
 
 type UseNoteMenuActionsOptions = {
   onActionComplete?: (noteId: string, action: NoteContextMenuAction) => void;
+  onEditImageNote?: (noteId: string) => boolean;
   onEditLinkNote?: (noteId: string) => boolean;
   onViewImageNote?: (noteId: string) => boolean;
   editAdapter?: NoteEditAdapter;
@@ -12,6 +13,7 @@ type UseNoteMenuActionsOptions = {
 
 export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOptions = {}) {
   const onActionComplete = options.onActionComplete;
+  const onEditImageNote = options.onEditImageNote;
   const onEditLinkNote = options.onEditLinkNote;
   const onViewImageNote = options.onViewImageNote;
   const editAdapter = options.editAdapter ?? browserNoteEditAdapter;
@@ -35,6 +37,10 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
     }
 
     if (note.type === "image") {
+      if (onEditImageNote?.(note.id)) {
+        return;
+      }
+
       const nextCaption = editAdapter.prompt("Edit file caption", note.caption ?? "");
 
       if (nextCaption === null) {
@@ -95,6 +101,7 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
     updateImageNote,
     updateLinkNote,
     onEditLinkNote,
+    onEditImageNote,
     editAdapter,
   ]);
 

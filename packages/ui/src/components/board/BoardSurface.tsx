@@ -58,6 +58,7 @@ type BoardSurfaceProps = {
   onCreateTextNote?: () => void;
   onCreateFile?: () => void;
   onCreateLink?: () => void;
+  onEditImageNote?: (noteId: string) => boolean;
   onEditLinkNote?: (noteId: string) => boolean;
   placementPreview?: PlacementPreview | null;
   onPlaceNote?: (position: { x: number; y: number }) => void;
@@ -79,6 +80,7 @@ export function BoardSurface({
   onCreateTextNote,
   onCreateFile,
   onCreateLink,
+  onEditImageNote,
   onEditLinkNote,
   placementPreview,
   onPlaceNote,
@@ -126,6 +128,7 @@ export function BoardSurface({
   }, [setNodes]);
   const { runNoteMenuAction } = useNoteMenuActions(board, {
     onActionComplete: handleNoteActionComplete,
+    onEditImageNote,
     onEditLinkNote,
     onViewImageNote,
   });
