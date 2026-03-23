@@ -48,6 +48,7 @@ type BoardSurfaceProps = {
   onCreateTextNote?: () => void;
   onCreateFile?: () => void;
   onCreateLink?: () => void;
+  onEditLinkNote?: (noteId: string) => boolean;
   placementPreview?: PlacementPreview | null;
   onPlaceNote?: (position: { x: number; y: number }) => void;
 };
@@ -58,6 +59,7 @@ export function BoardSurface({
   onCreateTextNote,
   onCreateFile,
   onCreateLink,
+  onEditLinkNote,
   placementPreview,
   onPlaceNote,
 }: BoardSurfaceProps) {
@@ -86,6 +88,7 @@ export function BoardSurface({
   }, [setNodes]);
   const { runNoteMenuAction } = useNoteMenuActions(board, {
     onActionComplete: handleNoteActionComplete,
+    onEditLinkNote,
   });
 
   useEffect(() => {

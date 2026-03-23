@@ -5,11 +5,13 @@ import { browserNoteEditAdapter, type NoteEditAdapter } from "./noteEditAdapter"
 
 type UseNoteMenuActionsOptions = {
   onActionComplete?: (noteId: string, action: NoteContextMenuAction) => void;
+  onEditLinkNote?: (noteId: string) => boolean;
   editAdapter?: NoteEditAdapter;
 };
 
 export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOptions = {}) {
   const onActionComplete = options.onActionComplete;
+  const onEditLinkNote = options.onEditLinkNote;
   const editAdapter = options.editAdapter ?? browserNoteEditAdapter;
   const deleteNote = useAppStore((state) => state.deleteNote);
   const duplicateNote = useAppStore((state) => state.duplicateNote);
@@ -40,6 +42,10 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
       updateImageNote(board.id, note.id, {
         caption: nextCaption.trim() || undefined,
       });
+      return;
+    }
+
+    if (onEditLinkNote?.(note.id)) {
       return;
     }
 
@@ -86,6 +92,7 @@ export function useNoteMenuActions(board: Board, options: UseNoteMenuActionsOpti
     board.notes,
     updateImageNote,
     updateLinkNote,
+    onEditLinkNote,
     editAdapter,
   ]);
 

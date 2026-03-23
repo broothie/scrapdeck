@@ -1,5 +1,11 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { createNoteId, resolveNoteDefaults, useAppStore, type Note } from "@plumboard/core";
+import {
+  createNoteId,
+  resolveNoteDefaults,
+  useAppStore,
+  type LinkNote,
+  type Note,
+} from "@plumboard/core";
 
 export type PlacementIntent = {
   type: Note["type"];
@@ -39,11 +45,15 @@ export function useNoteComposer({
   onResolveLinkPreview,
 }: UseNoteComposerOptions) {
   const addNote = useAppStore((state) => state.addNote);
+  const updateLinkNote = useAppStore((state) => state.updateLinkNote);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [isResolvingLink, setIsResolvingLink] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [editingLinkNote, setEditingLinkNote] = useState<LinkNote | null>(null);
   const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [linkDescription, setLinkDescription] = useState("");
   const [linkError, setLinkError] = useState("");
   const [fileUploadError, setFileUploadError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
@@ -52,10 +62,10 @@ export function useNoteComposer({
     const { width, height } = resolveNoteDefaults("text");
 
     return {
-        type: "text",
-        width,
-        height,
-        create: ({ x, y }: { x: number; y: number }) => ({
+      type: "text",
+      width,
+      height,
+      create: ({ x, y }: { x: number; y: number }) => ({
         id: createNoteId("text"),
         type: "text",
         x,
@@ -69,7 +79,10 @@ export function useNoteComposer({
 
   const closeLinkComposer = () => {
     setIsAddingLink(false);
+    setEditingLinkNote(null);
     setLinkUrl("");
+    setLinkTitle("");
+    setLinkDescription("");
     setLinkError("");
   };
 
@@ -88,6 +101,21 @@ export function useNoteComposer({
 
   const handleAddLink = () => {
     setIsAddingLink(true);
+    setEditingLinkNote(null);
+    setPlacementIntent(null);
+    setLinkUrl("");
+    setLinkTitle("");
+    setLinkDescription("");
+    setLinkError("");
+  };
+
+  const handleEditLink = (note: LinkNote) => {
+    setIsAddingLink(true);
+    setEditingLinkNote(note);
+    setPlacementIntent(null);
+    setLinkUrl(note.url);
+    setLinkTitle(note.title);
+    setLinkDescription(note.description ?? "");
     setLinkError("");
   };
 
@@ -149,10 +177,30 @@ export function useNoteComposer({
       const summary = [hostname, path].filter(Boolean).join("");
 
       const metadataTitle = metadata?.title?.trim() || "";
-      const title = hasMeaningfulTitle(metadataTitle) ? metadataTitle : (summary || safeUrl);
-      const description = metadata?.description?.trim() || undefined;
-      const siteName = metadata?.siteName?.trim() || hostname || "Saved Link";
+      const manualTitle = linkTitle.trim();
+      const manualDescription = linkDescription.trim();
+      const title = manualTitle
+        || (hasMeaningfulTitle(metadataTitle) ? metadataTitle : (summary || safeUrl));
+      const description = manualDescription || metadata?.description?.trim() || undefined;
+      const siteName = metadata?.siteName?.trim()
+        || hostname
+        || editingLinkNote?.siteName
+        || "Saved Link";
       const previewImage = metadata?.previewImage?.trim() || undefined;
+
+      if (editingLinkNote) {
+        updateLinkNote(boardId, editingLinkNote.id, {
+          url: safeUrl,
+          siteName,
+          title,
+          description,
+          previewImage: previewImage || (safeUrl === editingLinkNote.url
+            ? editingLinkNote.previewImage
+            : undefined),
+        });
+        closeLinkComposer();
+        return;
+      }
 
       const { width, height } = resolveNoteDefaults("link");
       const resolvedHeight = previewImage ? height : 148;
@@ -244,15 +292,21 @@ export function useNoteComposer({
     isAddingLink,
     isResolvingLink,
     isUploadingFile,
+    isEditingLink: Boolean(editingLinkNote),
     linkUrl,
+    linkTitle,
+    linkDescription,
     linkError,
     fileUploadError,
     placementIntent,
     setLinkUrl,
+    setLinkTitle,
+    setLinkDescription,
     closeLinkComposer,
     handleAddTextNote,
     handleAddFile,
     handleAddLink,
+    handleEditLink,
     handleSaveLink,
     handleImageFileChange,
     handlePlaceNote,
