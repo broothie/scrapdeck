@@ -56,6 +56,7 @@ export function TextNoteCard({
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const autoGrowFrameRef = useRef<number | null>(null);
   const normalizedBody = normalizeNoteBodyForEditor(note.body);
+  const draftBodyRef = useRef(normalizedBody);
 
   const autoGrowIfNeeded = useCallback((element: HTMLElement | null) => {
     if (!element) {
@@ -125,15 +126,8 @@ export function TextNoteCard({
     content: normalizedBody,
     onUpdate({ editor: currentEditor }) {
       const nextBody = currentEditor.getHTML();
+      draftBodyRef.current = nextBody;
       scheduleAutoGrow(currentEditor.view.dom as HTMLElement | null);
-
-      if (nextBody === note.body) {
-        return;
-      }
-
-      updateTextNote(boardId, note.id, {
-        body: nextBody,
-      });
     },
     editorProps: {
       attributes: {
@@ -159,15 +153,29 @@ export function TextNoteCard({
     editable: false,
   });
 
+  const commitDraftBody = useCallback((nextBodyInput?: string) => {
+    const nextBody = nextBodyInput ?? editor?.getHTML() ?? draftBodyRef.current;
+    draftBodyRef.current = nextBody;
+
+    if (areNoteBodiesEquivalent(nextBody, note.body)) {
+      return;
+    }
+
+    updateTextNote(boardId, note.id, {
+      body: nextBody,
+    });
+  }, [boardId, editor, note.body, note.id, updateTextNote]);
+
   useEffect(() => {
-    if (!editor) {
+    if (!editor || isEditing) {
       return;
     }
 
     if (editor.getHTML() !== normalizedBody) {
       editor.commands.setContent(normalizedBody, { emitUpdate: false });
     }
-  }, [editor, normalizedBody]);
+    draftBodyRef.current = normalizedBody;
+  }, [editor, isEditing, normalizedBody]);
 
   useEffect(() => {
     if (!shouldStartEditing) {
@@ -204,6 +212,7 @@ export function TextNoteCard({
     }
 
     const handleBlur = () => {
+      commitDraftBody();
       setIsEditing(false);
     };
 
@@ -212,7 +221,11 @@ export function TextNoteCard({
     return () => {
       editor.off("blur", handleBlur);
     };
-  }, [editor]);
+  }, [commitDraftBody, editor]);
+
+  useEffect(() => () => {
+    commitDraftBody(draftBodyRef.current);
+  }, [commitDraftBody]);
 
   useEffect(() => {
     const target =
@@ -499,6 +512,10 @@ function normalizeNoteBodyForEditor(body: string) {
   }
 
   return `<p>${escapeHtml(body).replace(/\n/g, "<br/>")}</p>`;
+}
+
+function areNoteBodiesEquivalent(leftBody: string, rightBody: string) {
+  return normalizeNoteBodyForEditor(leftBody) === normalizeNoteBodyForEditor(rightBody);
 }
 
 function toolbarButtonStyle(options: {
