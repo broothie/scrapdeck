@@ -75,36 +75,38 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 ## Todo
 
 - [x] Rename boards
-- [ ] Standardize board terminology across UI copy and data model naming
+- [x] Standardize board terminology across UI copy and data model naming
 - [x] Edit board descriptions
 - [x] Delete boards
 - [x] Edit existing text notes
-- [ ] Fix text notes UX to feel more natural
+- [x] Fix text notes UX to feel more natural
 - [x] Add rich text support to notes
-- [ ] Remove "Edit" from notes context menu
-- [ ] Edit existing link notes
-- [ ] Edit existing image notes
+- [x] Remove "Edit" from notes context menu
+- [x] Edit existing link notes
+- [x] Edit existing image notes
 - [x] Delete notes
 - [x] Upload real images with Supabase Storage
 - [x] Replace placeholder image notes with uploaded images
-- [ ] Rename "images" to "files" across UI and data labels
+- [x] Rename "images" to "files" across UI and data labels
 - [x] Fetch real link metadata and social preview images
-- [ ] Fix link note text clipping/cutoff (links unreadable)
-- [ ] Fix file note details spacing (filename has too much bottom padding)
+- [x] Fix link note text clipping/cutoff (links unreadable)
+- [x] Fix file note details spacing (filename has too much bottom padding)
 - [x] Persist deletions to Supabase
-- [ ] Fix board trash icon
-- [ ] Fix board list layout/UX in the sidebar
+- [x] Fix board trash icon
+- [x] Fix board list layout/UX in the sidebar
+- [ ] Add landing page
+- [ ] Use a router for multi-page app navigation
 - [ ] Add shared boards / multi-user collaboration
 - [ ] Add realtime sync
 - [ ] Handle multi-session conflicts cleanly
 - [ ] Show richer save/loading/error state in the UI
-- [ ] Improve empty-state onboarding
+- [x] Improve empty-state onboarding
 - [ ] Add mobile interaction polish
-- [ ] Allow right-click context menu on open canvas space
-- [ ] Add lasso selection
+- [ ] Allow double-click or right-click on canvas to create notes
+- [ ] Improve add-note dropdown with bigger buttons and icons
 - [x] Dial down the minimap and zoom-controls shadow
 - [x] Make zoom-controls colors adapt to light/dark theme
-- [ ] Make board title/description editing feel more natural
+- [x] Make board title/description editing feel more natural
 - [x] Add tests
 - [x] Refactor into smaller, more modular/testable files
 - [ ] Reduce bundle size with code-splitting/perf cleanup
