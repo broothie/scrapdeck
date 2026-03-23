@@ -6,13 +6,13 @@ import { useAuth } from "./AuthProvider";
 export function AuthScreen() {
   const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const theme = useTheme();
-  const { signInWithMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
+  const { signInWithGoogle, signInWithMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
   const [authMode, setAuthMode] = useState<"password" | "magic-link">("password");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [pendingAction, setPendingAction] = useState<"sign-in" | "sign-up" | "magic-link" | null>(null);
+  const [pendingAction, setPendingAction] = useState<"google" | "sign-in" | "sign-up" | "magic-link" | null>(null);
   const isSubmitting = pendingAction !== null;
 
   const validateCredentials = () => {
@@ -109,6 +109,20 @@ export function AuthScreen() {
     }
 
     setNotice(`Magic link sent to ${trimmedEmail}. Open the email to sign in.`);
+  };
+
+  const handleGoogleSignIn = async () => {
+    setPendingAction("google");
+    setError("");
+    setNotice("");
+
+    const result = await signInWithGoogle();
+
+    setPendingAction(null);
+
+    if (result.error) {
+      setError(result.error);
+    }
   };
 
   const handleSwapMode = () => {
@@ -252,6 +266,19 @@ export function AuthScreen() {
                 Send magic link
               </AppButton>
             )}
+            <YStack gap="$2">
+              <Paragraph style={{ margin: 0, color: theme.textMuted.val, textAlign: "center", fontSize: 13 }}>
+                or
+              </Paragraph>
+              <AppButton
+                variant="outline"
+                onPress={handleGoogleSignIn}
+                loading={pendingAction === "google"}
+                disabled={isSubmitting}
+              >
+                Continue with Google
+              </AppButton>
+            </YStack>
           </YStack>
         </Card.Footer>
       </Card>

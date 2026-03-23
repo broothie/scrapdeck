@@ -15,6 +15,7 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   username: string | null;
+  signInWithGoogle: () => Promise<{ error?: string }>;
   signInWithMagicLink: (email: string) => Promise<{ error?: string }>;
   signInWithPassword: (
     email: string,
@@ -79,6 +80,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       session,
       user: session?.user ?? null,
       username,
+      async signInWithGoogle() {
+        if (!supabase) {
+          return { error: "Supabase is not configured yet." };
+        }
+
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo: window.location.origin,
+          },
+        });
+
+        return error ? { error: error.message } : {};
+      },
       async signInWithMagicLink(email) {
         if (!supabase) {
           return { error: "Supabase is not configured yet." };
