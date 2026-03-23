@@ -15,15 +15,16 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
-The current auth flow supports email/password sign-in and sign-up, with an optional passwordless
-email magic-link fallback through Supabase, plus Google OAuth.
+The current auth flow uses Google OAuth through Supabase.
 After the first sign-in, the app asks the user to choose a username and stores it in Supabase auth metadata.
 
 ### Google OAuth Setup
 
 1. In Google Cloud OAuth client settings:
    - Add origins: `http://localhost:5173`, `https://plumboard.xyz`
-   - Add redirect URI: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+   - Add redirect URIs:
+     - `https://<your-project-ref>.supabase.co/auth/v1/callback`
+     - `http://127.0.0.1:54321/auth/v1/callback`
 2. In Supabase Dashboard, enable Google provider and add your Google client ID and secret.
 3. In Supabase Auth URL configuration, make sure:
    - Site URL includes `https://plumboard.xyz`

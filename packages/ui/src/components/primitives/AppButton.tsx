@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { Button, Spinner, Text, useTheme } from "tamagui";
 
-type ButtonVariant = "primary" | "cta" | "outline" | "secondary" | "danger";
+type ButtonVariant = "primary" | "cta" | "outline" | "secondary" | "danger" | "google";
 
 type AppButtonProps = Omit<ComponentProps<typeof Button>, "children" | "variant"> & {
   variant?: ButtonVariant;
@@ -65,6 +65,17 @@ function resolveVariantStyles(variant: ButtonVariant, theme: ReturnType<typeof u
         pressBackground: theme.dangerSubtle.val,
         pressBorder: theme.danger.val,
         fontWeight: 700,
+      };
+    case "google":
+      return {
+        background: "#ffffff",
+        border: "#dadce0",
+        text: "#3c4043",
+        hoverBackground: "#f8f9fa",
+        hoverBorder: "#dadce0",
+        pressBackground: "#f1f3f4",
+        pressBorder: "#dadce0",
+        fontWeight: 600,
       };
     case "outline":
     default:

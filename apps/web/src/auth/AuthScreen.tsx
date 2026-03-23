@@ -1,135 +1,49 @@
 import { useState } from "react";
-import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
+import { Card, H2, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import { AppButton } from "@plumboard/ui";
 import { useAuth } from "./AuthProvider";
+
+function GoogleLogo() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden focusable="false">
+      <path
+        fill="#4285F4"
+        d="M23.49 12.27c0-.79-.07-1.55-.2-2.27H12v4.3h6.44a5.5 5.5 0 0 1-2.38 3.61v3h3.84c2.25-2.07 3.59-5.12 3.59-8.64Z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 24c3.24 0 5.95-1.07 7.93-2.9l-3.84-3c-1.07.72-2.44 1.15-4.09 1.15-3.14 0-5.8-2.12-6.75-4.97H1.29v3.08A12 12 0 0 0 12 24Z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.25 14.28A7.21 7.21 0 0 1 4.87 12c0-.79.14-1.55.38-2.28V6.64H1.29A12 12 0 0 0 0 12c0 1.94.46 3.78 1.29 5.36l3.96-3.08Z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 4.77c1.77 0 3.35.61 4.6 1.81l3.45-3.45C17.94 1.13 15.24 0 12 0A12 12 0 0 0 1.29 6.64l3.96 3.08c.95-2.85 3.61-4.95 6.75-4.95Z"
+      />
+    </svg>
+  );
+}
 
 export function AuthScreen() {
   const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const theme = useTheme();
-  const { signInWithGoogle, signInWithMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
-  const [authMode, setAuthMode] = useState<"password" | "magic-link">("password");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { signInWithGoogle } = useAuth();
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [pendingAction, setPendingAction] = useState<"google" | "sign-in" | "sign-up" | "magic-link" | null>(null);
-  const isSubmitting = pendingAction !== null;
-
-  const validateCredentials = () => {
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail) {
-      setError("Enter an email address to continue.");
-      return null;
-    }
-
-    if (!password) {
-      setError("Enter your password to continue.");
-      return null;
-    }
-
-    if (password.length < 6) {
-      setError("Passwords must be at least 6 characters.");
-      return null;
-    }
-
-    return {
-      email: trimmedEmail,
-      password,
-    };
-  };
-
-  const handlePasswordSignIn = async () => {
-    const credentials = validateCredentials();
-
-    if (!credentials) {
-      return;
-    }
-
-    setPendingAction("sign-in");
-    setError("");
-    setNotice("");
-
-    const result = await signInWithPassword(credentials.email, credentials.password);
-
-    setPendingAction(null);
-
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-  };
-
-  const handlePasswordSignUp = async () => {
-    const credentials = validateCredentials();
-
-    if (!credentials) {
-      return;
-    }
-
-    setPendingAction("sign-up");
-    setError("");
-    setNotice("");
-
-    const result = await signUpWithPassword(credentials.email, credentials.password);
-
-    setPendingAction(null);
-
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-
-    setNotice(
-      result.requiresEmailConfirmation
-        ? `Account created for ${credentials.email}. Check your inbox to confirm your email, then sign in.`
-        : "Account created. You can sign in now.",
-    );
-  };
-
-  const handleMagicLinkSignIn = async () => {
-    const trimmedEmail = email.trim();
-
-    if (!trimmedEmail) {
-      setError("Enter an email address to continue.");
-      return;
-    }
-
-    setPendingAction("magic-link");
-    setError("");
-    setNotice("");
-
-    const result = await signInWithMagicLink(trimmedEmail);
-
-    setPendingAction(null);
-
-    if (result.error) {
-      setError(result.error);
-      return;
-    }
-
-    setNotice(`Magic link sent to ${trimmedEmail}. Open the email to sign in.`);
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleGoogleSignIn = async () => {
-    setPendingAction("google");
+    setIsSubmitting(true);
     setError("");
-    setNotice("");
 
     const result = await signInWithGoogle();
 
-    setPendingAction(null);
+    setIsSubmitting(false);
 
     if (result.error) {
       setError(result.error);
     }
-  };
-
-  const handleSwapMode = () => {
-    setAuthMode((currentMode) => (currentMode === "password" ? "magic-link" : "password"));
-    setError("");
-    setNotice("");
-    setPendingAction(null);
   };
 
   return (
@@ -178,122 +92,41 @@ export function AuthScreen() {
             </XStack>
             <H2 style={{ margin: 0, color: theme.textInk.val }}>Sign in to your boards</H2>
             <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
-              {authMode === "password"
-                ? "Use email + password to sign in or create a new account."
-                : "Use a magic link for passwordless sign-in."}
+              Continue with your Google account to access Plumboard.
             </Paragraph>
           </YStack>
         </Card.Header>
         <Card.Footer style={{ padding: "1.25rem" }}>
           <YStack gap="$3" width="100%">
-            <Input
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              placeholder="you@example.com"
-              placeholderTextColor="$placeholderColor"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  if (authMode === "password") {
-                    handlePasswordSignIn();
-                    return;
-                  }
-
-                  handleMagicLinkSignIn();
-                }
-              }}
-              style={{
-                borderColor: theme.borderDefault.val,
-                backgroundColor: theme.surfaceHover.val,
-                color: theme.textPrimary.val,
-              }}
-            />
-            {authMode === "password" ? (
-              <Input
-                autoCapitalize="none"
-                autoComplete="current-password"
-                secureTextEntry
-                placeholder="Password"
-                placeholderTextColor="$placeholderColor"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    handlePasswordSignIn();
-                  }
-                }}
-                style={{
-                  borderColor: theme.borderDefault.val,
-                  backgroundColor: theme.surfaceHover.val,
-                  color: theme.textPrimary.val,
-                }}
-              />
-            ) : null}
             {error ? (
               <Text style={{ color: theme.danger.val }}>{error}</Text>
             ) : null}
-            {notice ? (
-              <Text style={{ color: theme.success.val }}>{notice}</Text>
-            ) : null}
-            {authMode === "password" ? (
-              <YStack gap="$2">
-                <AppButton
-                  onPress={handlePasswordSignIn}
-                  loading={pendingAction === "sign-in"}
-                  disabled={isSubmitting}
-                  variant="cta"
+            <AppButton
+              variant="google"
+              onPress={handleGoogleSignIn}
+              loading={isSubmitting}
+              disabled={isSubmitting}
+              style={{
+                width: "100%",
+                minHeight: 42,
+              }}
+            >
+              <XStack style={{ gap: "0.65rem", alignItems: "center", justifyContent: "center" }}>
+                <GoogleLogo />
+                <Text
+                  style={{
+                    color: "#3c4043",
+                    fontSize: 15,
+                    fontWeight: 600,
+                  }}
                 >
-                  Sign in
-                </AppButton>
-                <AppButton
-                  variant="outline"
-                  onPress={handlePasswordSignUp}
-                  loading={pendingAction === "sign-up"}
-                  disabled={isSubmitting}
-                >
-                  Create account
-                </AppButton>
-              </YStack>
-            ) : (
-              <AppButton
-                onPress={handleMagicLinkSignIn}
-                loading={pendingAction === "magic-link"}
-                disabled={isSubmitting}
-                variant="cta"
-              >
-                Send magic link
-              </AppButton>
-            )}
-            <YStack gap="$2">
-              <Paragraph style={{ margin: 0, color: theme.textMuted.val, textAlign: "center", fontSize: 13 }}>
-                or
-              </Paragraph>
-              <AppButton
-                variant="outline"
-                onPress={handleGoogleSignIn}
-                loading={pendingAction === "google"}
-                disabled={isSubmitting}
-              >
-                Continue with Google
-              </AppButton>
-            </YStack>
+                  Sign in with Google
+                </Text>
+              </XStack>
+            </AppButton>
           </YStack>
         </Card.Footer>
       </Card>
-      <AppButton
-        variant="outline"
-        onPress={handleSwapMode}
-        disabled={isSubmitting}
-        style={{
-          marginTop: "0.85rem",
-        }}
-      >
-        {authMode === "password"
-          ? "Use passwordless magic link"
-          : "Use email + password"}
-      </AppButton>
     </YStack>
   );
 }
