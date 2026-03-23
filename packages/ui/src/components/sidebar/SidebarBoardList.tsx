@@ -6,7 +6,6 @@ type SidebarBoardListProps = {
   boards: Board[];
   activeBoardId: string;
   onSelectBoard: (boardId: string) => void;
-  onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
 };
 
@@ -14,7 +13,6 @@ export function SidebarBoardList({
   boards,
   activeBoardId,
   onSelectBoard,
-  onDeleteBoard,
   onCreateBoard,
 }: SidebarBoardListProps) {
   const theme = useTheme();
@@ -68,16 +66,6 @@ export function SidebarBoardList({
                 </Text>
               </YStack>
             </Button>
-            {onDeleteBoard ? (
-              <Button
-                aria-label={`Delete board ${board.title}`}
-                onPress={() => onDeleteBoard(board.id)}
-                variant="outlined"
-                style={{ width: 42, minWidth: 42, paddingHorizontal: 0 }}
-              >
-                Del
-              </Button>
-            ) : null}
           </XStack>
         );
       })}

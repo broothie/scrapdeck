@@ -11,7 +11,6 @@ type BoardSidebarProps = {
   activeBoardId: string;
   brandLogoUrl?: string;
   onSelectBoard: (boardId: string) => void;
-  onDeleteBoard?: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
   themePreference?: ThemePreference;
@@ -25,7 +24,6 @@ export function BoardSidebar({
   activeBoardId,
   brandLogoUrl,
   onSelectBoard,
-  onDeleteBoard,
   onCreateBoard,
   accountUsername,
   themePreference = "system",
@@ -52,7 +50,6 @@ export function BoardSidebar({
         boards={boards}
         activeBoardId={activeBoardId}
         onSelectBoard={onSelectBoard}
-        onDeleteBoard={onDeleteBoard}
         onCreateBoard={onCreateBoard}
       />
       <SidebarAccountSection

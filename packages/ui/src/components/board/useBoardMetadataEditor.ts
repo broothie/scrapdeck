@@ -3,82 +3,76 @@ import { useAppStore, type Board } from "@plumboard/core";
 
 export function useBoardMetadataEditor(board: Board) {
   const updateBoard = useAppStore((state) => state.updateBoard);
-  const [isEditingBoardTitle, setIsEditingBoardTitle] = useState(false);
-  const [isEditingBoardDescription, setIsEditingBoardDescription] = useState(false);
+  const [isEditingBoardMetadata, setIsEditingBoardMetadata] = useState(false);
   const [boardTitleDraft, setBoardTitleDraft] = useState(board.title);
   const [boardDescriptionDraft, setBoardDescriptionDraft] = useState(board.description);
 
   useEffect(() => {
-    if (!isEditingBoardTitle) {
+    if (!isEditingBoardMetadata) {
       setBoardTitleDraft(board.title);
-    }
-  }, [board.title, isEditingBoardTitle]);
-
-  useEffect(() => {
-    if (!isEditingBoardDescription) {
       setBoardDescriptionDraft(board.description);
     }
-  }, [board.description, isEditingBoardDescription]);
+  }, [board.description, board.title, isEditingBoardMetadata]);
 
-  const handleSaveBoardTitle = () => {
-    const nextTitle = boardTitleDraft.trim() || "Untitled board";
-    updateBoard(board.id, { title: nextTitle });
-    setIsEditingBoardTitle(false);
-  };
-
-  const handleCancelBoardTitle = () => {
+  const openBoardMetadataEditor = () => {
     setBoardTitleDraft(board.title);
-    setIsEditingBoardTitle(false);
-  };
-
-  const handleSaveBoardDescription = () => {
-    updateBoard(board.id, { description: boardDescriptionDraft.trim() });
-    setIsEditingBoardDescription(false);
-  };
-
-  const handleCancelBoardDescription = () => {
     setBoardDescriptionDraft(board.description);
-    setIsEditingBoardDescription(false);
+    setIsEditingBoardMetadata(true);
   };
 
-  const handleBoardTitleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+  const handleSaveBoardMetadata = () => {
+    const nextTitle = boardTitleDraft.trim() || "Untitled board";
+    updateBoard(board.id, {
+      title: nextTitle,
+      description: boardDescriptionDraft.trim(),
+    });
+    setIsEditingBoardMetadata(false);
+  };
+
+  const handleCancelBoardMetadata = () => {
+    setBoardTitleDraft(board.title);
+    setBoardDescriptionDraft(board.description);
+    setIsEditingBoardMetadata(false);
+  };
+
+  const handleBoardMetadataTitleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      handleSaveBoardTitle();
+      handleSaveBoardMetadata();
       return;
     }
 
     if (event.key === "Escape") {
       event.preventDefault();
-      handleCancelBoardTitle();
+      handleCancelBoardMetadata();
     }
   };
 
-  const handleBoardDescriptionKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+  const handleBoardMetadataDescriptionKeyDown = (
+    event: ReactKeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     if (event.key === "Escape") {
       event.preventDefault();
-      handleCancelBoardDescription();
+      handleCancelBoardMetadata();
       return;
     }
 
     if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
       event.preventDefault();
-      handleSaveBoardDescription();
+      handleSaveBoardMetadata();
     }
   };
 
   return {
-    isEditingBoardTitle,
-    isEditingBoardDescription,
+    isEditingBoardMetadata,
     boardTitleDraft,
     boardDescriptionDraft,
     setBoardTitleDraft,
     setBoardDescriptionDraft,
-    setIsEditingBoardTitle,
-    setIsEditingBoardDescription,
-    handleSaveBoardTitle,
-    handleSaveBoardDescription,
-    handleBoardTitleKeyDown,
-    handleBoardDescriptionKeyDown,
+    openBoardMetadataEditor,
+    handleSaveBoardMetadata,
+    handleCancelBoardMetadata,
+    handleBoardMetadataTitleKeyDown,
+    handleBoardMetadataDescriptionKeyDown,
   };
 }

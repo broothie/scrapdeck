@@ -67,6 +67,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const setActiveBoard = useAppStore((state) => state.setActiveBoard);
   const { isConfigured, isLoading, user, username, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
   const {
     isLoading: isBoardLoading,
     loadError: boardLoadError,
@@ -157,6 +158,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     });
 
     setActiveBoard(boardId);
+    setBoardIdNeedingMetadataEdit(boardId);
   };
 
   const handleDeleteBoard = (boardId: string) => {
@@ -175,6 +177,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     }
 
     deleteBoard(boardId);
+    setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
   };
 
   const handleUploadImage = async (file: File) => {
@@ -246,7 +249,6 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
         boards={boards}
         onCreateBoard={handleCreateBoard}
         onSelectBoard={setActiveBoard}
-        onDeleteBoard={handleDeleteBoard}
         accountUsername={username}
         themePreference={themePreference}
         onThemePreferenceChange={onThemePreferenceChange}
@@ -273,6 +275,13 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
           {activeBoard ? (
             <BoardView
               board={activeBoard}
+              shouldOpenMetadataEditor={boardIdNeedingMetadataEdit === activeBoard.id}
+              onMetadataEditorOpenHandled={() => {
+                setBoardIdNeedingMetadataEdit((current) =>
+                  current === activeBoard.id ? null : current,
+                );
+              }}
+              onDeleteBoard={handleDeleteBoard}
               onUploadImage={handleUploadImage}
               onResolveLinkPreview={handleResolveLinkPreview}
             />
