@@ -60,14 +60,14 @@ a {
   height: 100%;
 }
 
-.plumboard-flow .react-flow__node-scrap {
+.plumboard-flow .react-flow__node-note {
   background: transparent;
   border: 0;
   padding: 0;
   border-radius: 18px;
 }
 
-.plumboard-flow .react-flow__node-scrap.selectable.selected {
+.plumboard-flow .react-flow__node-note.selectable.selected {
   box-shadow: none;
 }
 

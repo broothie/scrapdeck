@@ -1,6 +1,6 @@
 # Plumboard
 
-A frontend-first prototype for a spatial note board. The first goal is to prove the interaction model: a sidebar of boards, a large board area, and mixed content scraps that feel good to browse and arrange.
+A frontend-first prototype for a spatial note board. The first goal is to prove the interaction model: a sidebar of boards, a large board area, and mixed content notes that feel good to browse and arrange.
 
 ---
 
@@ -8,7 +8,7 @@ A frontend-first prototype for a spatial note board. The first goal is to prove 
 
 Build a believable prototype that answers one question well:
 
-**Does Plumboard feel compelling when a user can switch between boards and arrange notes, images, and website previews on a large visual surface?**
+**Does Plumboard feel compelling when a user can switch between boards and arrange text notes, images, and website previews on a large visual surface?**
 
 This phase is intentionally frontend-only. No auth, backend, uploads, or live scraping yet.
 
@@ -21,12 +21,12 @@ This phase is intentionally frontend-only. No auth, backend, uploads, or live sc
 - [ ] Left sidebar with a list of boards
 - [ ] Board selection with active state
 - [ ] Main board view filling most of the screen
-- [ ] Render note scraps
-- [ ] Render image scraps
-- [ ] Render website preview scraps
+- [ ] Render text notes
+- [ ] Render image notes
+- [ ] Render website preview notes
 - [ ] Mixed board content from local mock data
-- [ ] Freeform positioning of scraps on the board
-- [ ] Basic drag-to-move interaction for scraps
+- [ ] Freeform positioning of notes on the board
+- [ ] Basic drag-to-move interaction for notes
 - [ ] Simple board pan and zoom, if supported cheaply by the canvas choice
 
 ### Explicitly Out of Scope
@@ -48,14 +48,14 @@ The prototype is successful if a user can:
 
 1. Open the app and immediately see multiple boards in a sidebar
 2. Switch between boards and feel that each board has a different personality
-3. See at least three scrap types on the board: notes, images, and website previews
-4. Move scraps around and understand the spatial canvas concept without explanation
+3. See at least three note types on the board: text notes, images, and website previews
+4. Move notes around and understand the spatial canvas concept without explanation
 
 ---
 
 ## Recommended MVP Shape
 
-To keep risk low, the first note scraps should be **styled text cards**, not full rich text editors. The goal is layout and interaction, not authoring depth.
+To keep risk low, the first text notes should be **styled text cards**, not full rich text editors. The goal is layout and interaction, not authoring depth.
 
 Likewise, website previews should be rendered from **mock metadata** rather than fetched from real URLs. That still validates the visual model.
 
@@ -63,12 +63,12 @@ Likewise, website previews should be rendered from **mock metadata** rather than
 
 1. App shell with sidebar and board viewport
 2. Mock board data and board switching
-3. Board renderer with absolute-positioned scraps
-4. Three scrap components:
+3. Board renderer with absolute-positioned notes
+4. Three note components:
    - Note card
    - Image card
    - Website preview card
-5. Dragging scraps within the board
+5. Dragging notes within the board
 6. Optional: lightweight pan/zoom
 
 ---
@@ -92,7 +92,7 @@ Do **not** begin with `tldraw` unless we specifically want to prototype advanced
 ### Why Not Start with `tldraw`
 
 - The hardest part of the app is content rendering and interaction design, not infinite-canvas infrastructure
-- Embedding custom note, image, and website preview cards is easy to prototype in plain React
+- Embedding custom text note, image, and website preview cards is easy to prototype in plain React
 - A simpler board lets us iterate on visuals and layout faster
 - We can still migrate to `tldraw` later if pan/zoom, selection, and richer manipulation become the bottleneck
 
@@ -105,24 +105,24 @@ Do **not** begin with `tldraw` unless we specifically want to prototype advanced
 - Fixed left sidebar for board list
 - Main content area dedicated to the active board
 - Large board surface with subtle background texture or grid
-- Scrap cards with distinct visual treatments by type
+- Note cards with distinct visual treatments by type
 
-### Scrap Types
+### Note Types
 
-#### Note Scrap
+#### Text Note
 
 - Title optional
 - Body text preview
 - Soft card styling
 - Sized to feel quick and lightweight
 
-#### Image Scrap
+#### Image Note
 
 - Large image-first presentation
 - Optional caption
 - Rounded card container
 
-#### Website Preview Scrap
+#### Website Preview Note
 
 - Site hostname / favicon area
 - Preview image if available
@@ -139,34 +139,34 @@ Use local TypeScript objects for the prototype.
 type Board = {
   id: string
   title: string
-  scraps: Scrap[]
+  notes: Note[]
 }
 
-type Scrap = NoteScrap | ImageScrap | LinkScrap
+type Note = TextNote | ImageNote | LinkNote
 
-type ScrapBase = {
+type NoteBase = {
   id: string
-  type: "note" | "image" | "link"
+  type: "text" | "image" | "link"
   x: number
   y: number
   width: number
   height: number
 }
 
-type NoteScrap = ScrapBase & {
-  type: "note"
+type TextNote = NoteBase & {
+  type: "text"
   title?: string
   body: string
 }
 
-type ImageScrap = ScrapBase & {
+type ImageNote = NoteBase & {
   type: "image"
   src: string
   alt: string
   caption?: string
 }
 
-type LinkScrap = ScrapBase & {
+type LinkNote = NoteBase & {
   type: "link"
   url: string
   siteName: string
@@ -189,15 +189,15 @@ type LinkScrap = ScrapBase & {
 
 ### Phase 2: Board Rendering
 
-- [ ] Render scraps from local data
-- [ ] Add note scrap component
-- [ ] Add image scrap component
-- [ ] Add website preview scrap component
+- [ ] Render notes from local data
+- [ ] Add text note component
+- [ ] Add image note component
+- [ ] Add website preview note component
 - [ ] Add visual board background
 
 ### Phase 3: Interaction
 
-- [ ] Make scraps draggable
+- [ ] Make notes draggable
 - [ ] Keep drag state local in memory
 - [ ] Add active / hover styling
 - [ ] Optional pan and zoom
@@ -221,11 +221,11 @@ plumboard/
 │   │   ├── board/
 │   │   │   ├── BoardView.tsx
 │   │   │   ├── BoardSurface.tsx
-│   │   │   ├── ScrapRenderer.tsx
-│   │   │   └── scraps/
-│   │   │       ├── NoteScrap.tsx
-│   │   │       ├── ImageScrap.tsx
-│   │   │       └── LinkScrap.tsx
+│   │   │   ├── NoteRenderer.tsx
+│   │   │   └── notes/
+│   │   │       ├── TextNote.tsx
+│   │   │       ├── ImageNote.tsx
+│   │   │       └── LinkNote.tsx
 │   │   └── sidebar/
 │   │       └── BoardSidebar.tsx
 │   ├── data/
@@ -259,7 +259,7 @@ plumboard/
 If the prototype works, the next real MVP can add:
 
 1. Local persistence
-2. Create/edit/delete scraps
+2. Create/edit/delete notes
 3. Board creation
 4. Real image upload flow
 5. Real link preview fetching

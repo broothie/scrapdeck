@@ -1,11 +1,11 @@
-import type { Scrap } from "@plumboard/core";
+import type { Note } from "@plumboard/core";
 import { placementColors } from "@plumboard/core";
 import type { Node } from "@xyflow/react";
 import { PLACEMENT_PREVIEW_NODE_ID } from "./boardSurface.constants";
 import type { PlacementNodeData, PlacementPreview } from "./boardSurface.types";
 
-export function getPlacementColor(scrapType: Scrap["type"]): string {
-  return placementColors[scrapType];
+export function getPlacementColor(noteType: Note["type"]): string {
+  return placementColors[noteType];
 }
 
 export function withAlpha(hexColor: string, alpha: number) {
@@ -58,17 +58,17 @@ type MiniMapPalette = {
 };
 
 export function getMiniMapNodeColor(node: Node, palette: MiniMapPalette): string {
-  const scrap = (node.data as { scrap?: Scrap } | undefined)?.scrap;
+  const note = (node.data as { note?: Note } | undefined)?.note;
 
-  if (!scrap) {
+  if (!note) {
     return palette.textMuted;
   }
 
-  if (scrap.type === "note") {
+  if (note.type === "text") {
     return palette.accentLight;
   }
 
-  if (scrap.type === "image") {
+  if (note.type === "image") {
     return palette.accentDefault;
   }
 

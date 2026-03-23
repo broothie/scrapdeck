@@ -12,15 +12,15 @@ import {
 } from "@xyflow/react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
-import { useAppStore, type Board, type Scrap } from "@plumboard/core";
+import { useAppStore, type Board, type Note } from "@plumboard/core";
 import { PlacementPreviewNode } from "./PlacementPreviewNode";
 import {
-  resolveScrapMenuActions,
-  ScrapActionMenu,
-  type ScrapContextMenuAction,
-} from "./ScrapActionMenu";
-import { ScrapCreateFab } from "./ScrapCreateFab";
-import { ScrapNode, type ScrapFlowNode } from "./ScrapNode";
+  resolveNoteMenuActions,
+  NoteActionMenu,
+  type NoteContextMenuAction,
+} from "./NoteActionMenu";
+import { NoteCreateFab } from "./NoteCreateFab";
+import { NoteNode, type NoteFlowNode } from "./NoteNode";
 import {
   CONTEXT_MENU_CLAMP_WIDTH,
   CONTEXT_MENU_HEIGHT,
@@ -28,41 +28,41 @@ import {
   CONTROLS_PANEL_GAP,
   MINIMAP_SIZE,
 } from "./boardSurface.constants";
-import type { FabAction, PlacementPreview, ScrapContextMenuState } from "./boardSurface.types";
+import type { FabAction, PlacementPreview, NoteContextMenuState } from "./boardSurface.types";
 import {
   buildPlacementPreviewNode,
   clampContextMenuPosition,
   getMiniMapNodeColor,
   withAlpha,
 } from "./boardSurface.utils";
-import { useScrapMenuActions } from "./useScrapMenuActions";
+import { useNoteMenuActions } from "./useNoteMenuActions";
 
 const nodeTypes: NodeTypes = {
-  scrap: ScrapNode,
+  note: NoteNode,
   "placement-preview": PlacementPreviewNode,
 };
 
 type BoardSurfaceProps = {
   board: Board;
   isUploadingFile?: boolean;
-  onCreateNote?: () => void;
+  onCreateTextNote?: () => void;
   onCreateFile?: () => void;
   onCreateLink?: () => void;
   placementPreview?: PlacementPreview | null;
-  onPlaceScrap?: (position: { x: number; y: number }) => void;
+  onPlaceNote?: (position: { x: number; y: number }) => void;
 };
 
 export function BoardSurface({
   board,
   isUploadingFile,
-  onCreateNote,
+  onCreateTextNote,
   onCreateFile,
   onCreateLink,
   placementPreview,
-  onPlaceScrap,
+  onPlaceNote,
 }: BoardSurfaceProps) {
   const theme = useTheme();
-  const updateScrapLayout = useAppStore((state) => state.updateScrapLayout);
+  const updateNoteLayout = useAppStore((state) => state.updateNoteLayout);
   const boardSurfaceRef = useRef<HTMLDivElement | null>(null);
   const [flowInstance, setFlowInstance] = useState<ReactFlowInstance | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -70,22 +70,22 @@ export function BoardSurface({
     x: number;
     y: number;
   } | null>(null);
-  const [scrapContextMenu, setScrapContextMenu] = useState<ScrapContextMenuState | null>(null);
+  const [noteContextMenu, setNoteContextMenu] = useState<NoteContextMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
-  const handleScrapActionComplete = useCallback((scrapId: string, action: ScrapContextMenuAction) => {
+  const handleNoteActionComplete = useCallback((noteId: string, action: NoteContextMenuAction) => {
     if (action !== "send-back") {
       return;
     }
 
     setNodes((previousNodes) =>
       previousNodes.map((node) =>
-        node.id === scrapId
+        node.id === noteId
           ? { ...node, selected: false }
           : node,
       ));
   }, [setNodes]);
-  const { runScrapMenuAction } = useScrapMenuActions(board, {
-    onActionComplete: handleScrapActionComplete,
+  const { runNoteMenuAction } = useNoteMenuActions(board, {
+    onActionComplete: handleNoteActionComplete,
   });
 
   useEffect(() => {
@@ -96,58 +96,58 @@ export function BoardSurface({
           .map((node) => node.id),
       );
 
-      return board.scraps.map((scrap, index) => ({
-        id: scrap.id,
-        type: "scrap",
-        selected: selectedNodeIds.has(scrap.id),
+      return board.notes.map((note, index) => ({
+        id: note.id,
+        type: "note",
+        selected: selectedNodeIds.has(note.id),
         position: {
-          x: scrap.x,
-          y: scrap.y,
+          x: note.x,
+          y: note.y,
         },
         zIndex: index + 1,
-        width: scrap.width,
-        height: scrap.height,
+        width: note.width,
+        height: note.height,
         data: {
           boardId: board.id,
-          scrap,
-          showPinnedMenu: !scrapContextMenu,
-          onMenuAction: runScrapMenuAction,
-          onAutoGrowHeight: (scrapId: string, nextHeight: number) => {
-            if (nextHeight <= scrap.height + 1) {
+          note,
+          showPinnedMenu: !noteContextMenu,
+          onMenuAction: runNoteMenuAction,
+          onAutoGrowHeight: (noteId: string, nextHeight: number) => {
+            if (nextHeight <= note.height + 1) {
               return;
             }
 
-            updateScrapLayout(board.id, scrapId, { height: nextHeight });
+            updateNoteLayout(board.id, noteId, { height: nextHeight });
           },
           onResizeEnd: (
-            scrapId: string,
-            nextLayout: Pick<Scrap, "x" | "y" | "width" | "height">,
+            noteId: string,
+            nextLayout: Pick<Note, "x" | "y" | "width" | "height">,
           ) => {
-            updateScrapLayout(board.id, scrapId, nextLayout);
+            updateNoteLayout(board.id, noteId, nextLayout);
           },
         },
       }));
     });
-  }, [board, runScrapMenuAction, scrapContextMenu, setNodes, updateScrapLayout]);
+  }, [board, runNoteMenuAction, noteContextMenu, setNodes, updateNoteLayout]);
 
   useEffect(() => {
-    setScrapContextMenu(null);
+    setNoteContextMenu(null);
     setIsFabMenuOpen(false);
   }, [board.id]);
 
   useEffect(() => {
-    if (!scrapContextMenu && !isFabMenuOpen) {
+    if (!noteContextMenu && !isFabMenuOpen) {
       return;
     }
 
     const handleGlobalPointerDown = () => {
-      setScrapContextMenu(null);
+      setNoteContextMenu(null);
       setIsFabMenuOpen(false);
     };
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setScrapContextMenu(null);
+        setNoteContextMenu(null);
         setIsFabMenuOpen(false);
       }
     };
@@ -159,28 +159,28 @@ export function BoardSurface({
       window.removeEventListener("pointerdown", handleGlobalPointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [isFabMenuOpen, scrapContextMenu]);
+  }, [isFabMenuOpen, noteContextMenu]);
 
   const handleNodeDragStop = (_event: unknown, node: Node) => {
-    if (node.type !== "scrap") {
+    if (node.type !== "note") {
       return;
     }
 
-    const scrapNode = node as ScrapFlowNode;
+    const noteNode = node as NoteFlowNode;
 
-    updateScrapLayout(board.id, node.id, {
-      x: scrapNode.position.x,
-      y: scrapNode.position.y,
+    updateNoteLayout(board.id, node.id, {
+      x: noteNode.position.x,
+      y: noteNode.position.y,
     });
   };
 
-  const runScrapContextMenuAction = (action: ScrapContextMenuAction) => {
-    if (!scrapContextMenu) {
+  const runNoteContextMenuAction = (action: NoteContextMenuAction) => {
+    if (!noteContextMenu) {
       return;
     }
 
-    runScrapMenuAction(scrapContextMenu.scrapId, action);
-    setScrapContextMenu(null);
+    runNoteMenuAction(noteContextMenu.noteId, action);
+    setNoteContextMenu(null);
   };
 
   const getFlowPositionFromEvent = (event: ReactMouseEvent) => {
@@ -221,10 +221,10 @@ export function BoardSurface({
   };
 
   const handlePaneClick = (event: ReactMouseEvent) => {
-    setScrapContextMenu(null);
+    setNoteContextMenu(null);
     setIsFabMenuOpen(false);
 
-    if (!placementPreview || !onPlaceScrap) {
+    if (!placementPreview || !onPlaceNote) {
       return;
     }
 
@@ -234,7 +234,7 @@ export function BoardSurface({
       return;
     }
 
-    onPlaceScrap({
+    onPlaceNote({
       x: resolvedPosition.x,
       y: resolvedPosition.y,
     });
@@ -246,7 +246,7 @@ export function BoardSurface({
   };
 
   const handleNodeContextMenu = (event: ReactMouseEvent, node: Node) => {
-    if (node.type !== "scrap") {
+    if (node.type !== "note") {
       return;
     }
 
@@ -271,8 +271,8 @@ export function BoardSurface({
       inset: CONTEXT_MENU_INSET,
     });
 
-    setScrapContextMenu({
-      scrapId: node.id,
+    setNoteContextMenu({
+      noteId: node.id,
       x,
       y,
     });
@@ -280,8 +280,8 @@ export function BoardSurface({
   };
 
   const handleFabAction = (action: FabAction) => {
-    if (action === "note") {
-      onCreateNote?.();
+    if (action === "text") {
+      onCreateTextNote?.();
       setIsFabMenuOpen(false);
       return;
     }
@@ -303,8 +303,8 @@ export function BoardSurface({
 
     return [...nodes, buildPlacementPreviewNode(placementPreview, placementPosition)];
   }, [nodes, placementPreview, placementPosition]);
-  const contextMenuScrap = scrapContextMenu
-    ? board.scraps.find((scrap) => scrap.id === scrapContextMenu.scrapId)
+  const contextMenuNote = noteContextMenu
+    ? board.notes.find((note) => note.id === noteContextMenu.noteId)
     : null;
 
   return (
@@ -376,22 +376,22 @@ export function BoardSurface({
           }}
         />
       </ReactFlow>
-      {scrapContextMenu ? (
+      {noteContextMenu ? (
         <div
           style={{
             position: "absolute",
-            left: scrapContextMenu.x,
-            top: scrapContextMenu.y,
+            left: noteContextMenu.x,
+            top: noteContextMenu.y,
             zIndex: 30,
           }}
         >
-          <ScrapActionMenu
-            actions={contextMenuScrap ? resolveScrapMenuActions(contextMenuScrap.type) : undefined}
-            onAction={runScrapContextMenuAction}
+          <NoteActionMenu
+            actions={contextMenuNote ? resolveNoteMenuActions(contextMenuNote.type) : undefined}
+            onAction={runNoteContextMenuAction}
           />
         </div>
       ) : null}
-      <ScrapCreateFab
+      <NoteCreateFab
         isOpen={isFabMenuOpen}
         isUploadingFile={isUploadingFile}
         onToggle={() => setIsFabMenuOpen((current) => !current)}
@@ -413,7 +413,7 @@ export function BoardSurface({
           }}
         >
           <Text style={{ color: theme.textPrimary.val, fontSize: 13 }}>
-            {`Place ${placementPreview.type}`}
+            {`Place ${placementPreview.type === "text" ? "text note" : `${placementPreview.type} note`}`}
           </Text>
         </View>
       ) : null}

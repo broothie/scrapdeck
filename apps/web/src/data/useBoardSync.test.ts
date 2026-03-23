@@ -9,10 +9,10 @@ const boardsFixture: Board[] = [
     id: "board-1",
     title: "Ideas",
     description: "Prototype ideas",
-    scraps: [
+    notes: [
       {
-        id: "scrap-note",
-        type: "note",
+        id: "note-note",
+        type: "text",
         x: 0,
         y: 0,
         width: 260,
@@ -30,10 +30,10 @@ beforeEach(() => {
     activeBoardId: "",
     addBoard: useAppStore.getState().addBoard,
     setBoards: useAppStore.getState().setBoards,
-    addScrap: useAppStore.getState().addScrap,
+    addNote: useAppStore.getState().addNote,
     setActiveBoard: useAppStore.getState().setActiveBoard,
-    updateNoteScrap: useAppStore.getState().updateNoteScrap,
-    updateScrapLayout: useAppStore.getState().updateScrapLayout,
+    updateTextNote: useAppStore.getState().updateTextNote,
+    updateNoteLayout: useAppStore.getState().updateNoteLayout,
   });
   vi.restoreAllMocks();
 });
@@ -77,18 +77,18 @@ describe("useBoardSync", () => {
         id: "board-2",
         title: "Draft board",
         description: "Needs polish",
-        scraps: [],
+        notes: [],
       });
     });
 
     await new Promise((resolve) => {
-      setTimeout(resolve, 249);
+      setTimeout(resolve, 100);
     });
 
     expect(saveSpy).not.toHaveBeenCalled();
 
     await new Promise((resolve) => {
-      setTimeout(resolve, 2);
+      setTimeout(resolve, 200);
     });
 
     expect(saveSpy).toHaveBeenCalledTimes(1);
@@ -114,7 +114,7 @@ describe("useBoardSync", () => {
         id: "board-2",
         title: "Needs save",
         description: "x",
-        scraps: [],
+        notes: [],
       });
     });
 

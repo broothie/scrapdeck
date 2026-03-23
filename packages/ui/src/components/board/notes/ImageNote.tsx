@@ -1,11 +1,11 @@
 import { Card, Paragraph, YStack, useTheme } from "tamagui";
-import type { ImageScrap } from "@plumboard/core";
+import type { ImageNote } from "@plumboard/core";
 
-type ImageScrapCardProps = {
-  scrap: ImageScrap;
+type ImageNoteCardProps = {
+  note: ImageNote;
 };
 
-export function ImageScrapCard({ scrap }: ImageScrapCardProps) {
+export function ImageNoteCard({ note }: ImageNoteCardProps) {
   const theme = useTheme();
 
   return (
@@ -16,18 +16,18 @@ export function ImageScrapCard({ scrap }: ImageScrapCardProps) {
     >
       <YStack height="100%">
         <img
-          alt={scrap.alt}
-          src={scrap.src}
+          alt={note.alt}
+          src={note.src}
           style={{
             width: "100%",
-            height: scrap.caption ? "calc(100% - 4rem)" : "100%",
+            height: note.caption ? "calc(100% - 4rem)" : "100%",
             objectFit: "cover",
             display: "block",
           }}
         />
-        {scrap.caption ? (
+        {note.caption ? (
           <Paragraph style={{ padding: "0.75rem" }}>
-            {scrap.caption}
+            {note.caption}
           </Paragraph>
         ) : null}
       </YStack>

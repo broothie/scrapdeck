@@ -26,7 +26,7 @@ describe("boardSurface utils", () => {
 
   it("builds a placement preview node with expected shape", () => {
     const node = buildPlacementPreviewNode(
-      { type: "note", width: 260, height: 190 },
+      { type: "text", width: 260, height: 190 },
       { x: 120, y: 80 },
     );
 
@@ -37,16 +37,16 @@ describe("boardSurface utils", () => {
     expect(node.selectable).toBe(false);
   });
 
-  it("resolves minimap colors by scrap type", () => {
+  it("resolves minimap colors by note type", () => {
     const palette = {
       textMuted: "#111",
       accentLight: "#222",
       accentDefault: "#333",
       accentStrong: "#444",
     };
-    const noteNode = { data: { scrap: { type: "note" } } } as unknown as Node;
-    const imageNode = { data: { scrap: { type: "image" } } } as unknown as Node;
-    const linkNode = { data: { scrap: { type: "link" } } } as unknown as Node;
+    const noteNode = { data: { note: { type: "text" } } } as unknown as Node;
+    const imageNode = { data: { note: { type: "image" } } } as unknown as Node;
+    const linkNode = { data: { note: { type: "link" } } } as unknown as Node;
     const emptyNode = { data: {} } as unknown as Node;
 
     expect(getMiniMapNodeColor(noteNode, palette)).toBe("#222");

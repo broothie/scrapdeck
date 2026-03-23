@@ -1,7 +1,7 @@
-import type { Scrap } from "@plumboard/core";
+import type { Note } from "@plumboard/core";
 
 export type PlacementPreview = {
-  type: Scrap["type"];
+  type: Note["type"];
   width: number;
   height: number;
 };
@@ -12,10 +12,10 @@ export type PlacementNodeData = {
   borderColor: string;
 };
 
-export type ScrapContextMenuState = {
-  scrapId: string;
+export type NoteContextMenuState = {
+  noteId: string;
   x: number;
   y: number;
 };
 
-export type FabAction = "note" | "file" | "link";
+export type FabAction = "text" | "file" | "link";

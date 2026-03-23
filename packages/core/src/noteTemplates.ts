@@ -1,7 +1,7 @@
-import type { Scrap } from "./types";
+import type { Note } from "./types";
 
-export const scrapDefaults = {
-  note: {
+export const noteDefaults = {
+  text: {
     width: 260,
     height: 190,
   },
@@ -16,15 +16,15 @@ export const scrapDefaults = {
 } as const;
 
 export const placementColors = {
-  note: "#f1c66f",
+  text: "#f1c66f",
   image: "#7fd3b5",
   link: "#82a7ff",
 } as const;
 
-export function createScrapId(prefix: Scrap["type"]) {
+export function createNoteId(prefix: Note["type"]) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function resolveScrapDefaults(type: Scrap["type"]) {
-  return scrapDefaults[type];
+export function resolveNoteDefaults(type: Note["type"]) {
+  return noteDefaults[type];
 }

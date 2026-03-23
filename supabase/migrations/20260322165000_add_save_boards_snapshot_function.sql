@@ -1,7 +1,7 @@
 create or replace function public.save_boards_snapshot(
   p_user_id uuid,
   p_boards jsonb,
-  p_scraps jsonb
+  p_notes jsonb
 )
 returns void
 language plpgsql
@@ -21,7 +21,7 @@ begin
     description text not null
   ) on commit drop;
 
-  create temp table temp_scraps (
+  create temp table temp_notes (
     id text primary key,
     board_id text not null,
     type text not null,
@@ -50,8 +50,8 @@ begin
     );
   end if;
 
-  if coalesce(jsonb_typeof(p_scraps), 'null') = 'array' then
-    insert into temp_scraps (
+  if coalesce(jsonb_typeof(p_notes), 'null') = 'array' then
+    insert into temp_notes (
       id,
       board_id,
       type,
@@ -86,7 +86,7 @@ begin
       site_name,
       description,
       preview_image
-    from jsonb_to_recordset(p_scraps) as payload(
+    from jsonb_to_recordset(p_notes) as payload(
       id text,
       board_id text,
       type text,
@@ -116,7 +116,7 @@ begin
       where incoming.id = existing.id
     );
 
-  update public.scraps as existing
+  update public.notes as existing
   set deleted_at = v_soft_deleted_at
   where existing.user_id = p_user_id
     and existing.deleted_at is null
@@ -127,8 +127,8 @@ begin
     )
     and not exists (
       select 1
-      from temp_scraps as incoming_scrap
-      where incoming_scrap.id = existing.id
+      from temp_notes as incoming_note
+      where incoming_note.id = existing.id
     );
 
   insert into public.boards (
@@ -152,7 +152,7 @@ begin
     description = excluded.description,
     deleted_at = null;
 
-  insert into public.scraps (
+  insert into public.notes (
     id,
     board_id,
     user_id,
@@ -191,7 +191,7 @@ begin
     incoming.description,
     incoming.preview_image,
     null
-  from temp_scraps as incoming
+  from temp_notes as incoming
   where exists (
     select 1
     from temp_boards as incoming_board

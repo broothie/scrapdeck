@@ -44,7 +44,7 @@ export type Database = {
         }
         Relationships: []
       }
-      scraps: {
+      notes: {
         Row: {
           alt: string | null
           board_id: string
@@ -113,7 +113,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "scraps_board_id_fkey"
+            foreignKeyName: "notes_board_id_fkey"
             columns: ["board_id"]
             isOneToOne: false
             referencedRelation: "boards"
@@ -127,7 +127,7 @@ export type Database = {
     }
     Functions: {
       save_boards_snapshot: {
-        Args: { p_boards: Json; p_scraps: Json; p_user_id: string }
+        Args: { p_boards: Json; p_notes: Json; p_user_id: string }
         Returns: undefined
       }
     }

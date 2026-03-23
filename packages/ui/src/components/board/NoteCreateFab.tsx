@@ -3,19 +3,19 @@ import { Text, XStack } from "tamagui";
 import { AppButton } from "../primitives/AppButton";
 import type { FabAction } from "./boardSurface.types";
 
-type ScrapCreateFabProps = {
+type NoteCreateFabProps = {
   isOpen: boolean;
   isUploadingFile?: boolean;
   onToggle: () => void;
   onAction: (action: FabAction) => void;
 };
 
-export function ScrapCreateFab({
+export function NoteCreateFab({
   isOpen,
   isUploadingFile,
   onToggle,
   onAction,
-}: ScrapCreateFabProps) {
+}: NoteCreateFabProps) {
   return (
     <div
       onPointerDown={(event) => event.stopPropagation()}
@@ -30,10 +30,10 @@ export function ScrapCreateFab({
         gap: "0.45rem",
       }}
     >
-      <AppButton
-        className="nodrag nopan"
-        onClick={onToggle}
-        aria-label="Create scrap"
+        <AppButton
+          className="nodrag nopan"
+          onClick={onToggle}
+          aria-label="Create note"
         variant="cta"
         style={{
           width: "fit-content",
@@ -71,9 +71,9 @@ export function ScrapCreateFab({
             className="nodrag nopan"
             variant="outline"
             style={fabOptionButtonStyle()}
-            onClick={() => onAction("note")}
+            onClick={() => onAction("text")}
           >
-            Add note
+            Add text note
           </AppButton>
           <AppButton
             className="nodrag nopan"

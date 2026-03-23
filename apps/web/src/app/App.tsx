@@ -152,8 +152,8 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     addBoard({
       id: boardId,
       title: "Untitled board",
-      description: "A blank board ready for notes, files, and links.",
-      scraps: [],
+      description: "A blank board ready for text notes, files, and links.",
+      notes: [],
     });
 
     setActiveBoard(boardId);
@@ -167,7 +167,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     }
 
     const confirmed = window.confirm(
-      `Delete "${board.title}"? The board will be hidden, and its scraps will be preserved for potential restore.`,
+      `Delete "${board.title}"? The board will be hidden, and its notes will be preserved for potential restore.`,
     );
 
     if (!confirmed) {
@@ -189,7 +189,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     const objectPath = `${user.id}/${Date.now()}-${randomId}.${extension}`;
 
     const { error: uploadError } = await supabase.storage
-      .from("scrap-images")
+      .from("note-images")
       .upload(objectPath, file, {
         upsert: false,
         contentType: file.type || undefined,
@@ -201,7 +201,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     }
 
     const { data } = supabase.storage
-      .from("scrap-images")
+      .from("note-images")
       .getPublicUrl(objectPath);
 
     return {

@@ -1,16 +1,16 @@
 import { useState, type CSSProperties } from "react";
 import { useTheme } from "tamagui";
-import type { Scrap } from "@plumboard/core";
+import type { Note } from "@plumboard/core";
 
-export type ScrapContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
+export type NoteContextMenuAction = "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 
-type ScrapActionMenuProps = {
-  onAction: (action: ScrapContextMenuAction) => void;
-  actions?: ScrapContextMenuAction[];
+type NoteActionMenuProps = {
+  onAction: (action: NoteContextMenuAction) => void;
+  actions?: NoteContextMenuAction[];
 };
 
 const menuItems: Array<{
-  action: ScrapContextMenuAction;
+  action: NoteContextMenuAction;
   label: string;
   isDanger?: boolean;
 }> = [
@@ -21,19 +21,19 @@ const menuItems: Array<{
   { action: "delete", label: "Delete", isDanger: true },
 ];
 
-const defaultScrapMenuActions = menuItems.map((item) => item.action);
+const defaultNoteMenuActions = menuItems.map((item) => item.action);
 
-export function resolveScrapMenuActions(scrapType: Scrap["type"]): ScrapContextMenuAction[] {
-  if (scrapType === "note") {
-    return defaultScrapMenuActions.filter((action) => action !== "edit");
+export function resolveNoteMenuActions(noteType: Note["type"]): NoteContextMenuAction[] {
+  if (noteType === "text") {
+    return defaultNoteMenuActions.filter((action) => action !== "edit");
   }
 
-  return defaultScrapMenuActions;
+  return defaultNoteMenuActions;
 }
 
-export function ScrapActionMenu({ onAction, actions = defaultScrapMenuActions }: ScrapActionMenuProps) {
+export function NoteActionMenu({ onAction, actions = defaultNoteMenuActions }: NoteActionMenuProps) {
   const theme = useTheme();
-  const [hoveredAction, setHoveredAction] = useState<ScrapContextMenuAction | null>(null);
+  const [hoveredAction, setHoveredAction] = useState<NoteContextMenuAction | null>(null);
   const filteredMenuItems = menuItems.filter((item) => actions.includes(item.action));
 
   return (

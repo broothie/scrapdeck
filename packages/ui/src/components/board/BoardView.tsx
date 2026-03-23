@@ -3,7 +3,7 @@ import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tama
 import type { Board } from "@plumboard/core";
 import { BoardSurface } from "./BoardSurface";
 import { useBoardMetadataEditor } from "./useBoardMetadataEditor";
-import { useScrapComposer } from "./useScrapComposer";
+import { useNoteComposer } from "./useNoteComposer";
 import { AppButton } from "../primitives/AppButton";
 
 type BoardViewProps = {
@@ -49,14 +49,14 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
     placementIntent,
     setLinkUrl,
     closeLinkComposer,
-    handleAddNote,
+    handleAddTextNote,
     handleAddFile,
     handleAddLink,
     handleSaveLink,
     handleImageFileChange,
-    handlePlaceScrap,
+    handlePlaceNote,
     clearPlacementIntent,
-  } = useScrapComposer({
+  } = useNoteComposer({
     boardId: board.id,
     onUploadImage,
     onResolveLinkPreview,
@@ -159,7 +159,7 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
               <YStack gap="$1">
                 <Text fontWeight="700">Save a link</Text>
                 <Paragraph>
-                  Paste a full URL and we&apos;ll create a link scrap for this board.
+                  Paste a full URL and we&apos;ll create a link note for this board.
                 </Paragraph>
               </YStack>
               <Input
@@ -209,7 +209,7 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
       <BoardSurface
         board={board}
         isUploadingFile={isUploadingFile}
-        onCreateNote={handleAddNote}
+        onCreateTextNote={handleAddTextNote}
         onCreateFile={handleAddFile}
         onCreateLink={handleAddLink}
         placementPreview={
@@ -221,7 +221,7 @@ export function BoardView({ board, onUploadImage, onResolveLinkPreview }: BoardV
               }
             : null
         }
-        onPlaceScrap={handlePlaceScrap}
+        onPlaceNote={handlePlaceNote}
       />
     </YStack>
   );

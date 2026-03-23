@@ -1,11 +1,11 @@
 import { create } from "zustand";
-import { createScrapId } from "../scrapTemplates";
-import type { Board, ImageScrap, LinkScrap, NoteScrap, Scrap } from "../types";
+import { createNoteId } from "../noteTemplates";
+import type { Board, ImageNote, LinkNote, TextNote, Note } from "../types";
 
-type ScrapLayoutPatch = Partial<Pick<Scrap, "x" | "y" | "width" | "height">>;
-type NoteScrapPatch = Partial<Pick<NoteScrap, "title" | "body">>;
-type ImageScrapPatch = Partial<Pick<ImageScrap, "src" | "alt" | "caption">>;
-type LinkScrapPatch = Partial<Pick<LinkScrap, "url" | "siteName" | "title" | "description" | "previewImage">>;
+type NoteLayoutPatch = Partial<Pick<Note, "x" | "y" | "width" | "height">>;
+type TextNotePatch = Partial<Pick<TextNote, "title" | "body">>;
+type ImageNotePatch = Partial<Pick<ImageNote, "src" | "alt" | "caption">>;
+type LinkNotePatch = Partial<Pick<LinkNote, "url" | "siteName" | "title" | "description" | "previewImage">>;
 type BoardPatch = Partial<Pick<Board, "title" | "description">>;
 
 type AppState = {
@@ -16,31 +16,31 @@ type AppState = {
   updateBoard: (boardId: string, patch: BoardPatch) => void;
   deleteBoard: (boardId: string) => void;
   setActiveBoard: (boardId: string) => void;
-  addScrap: (boardId: string, scrap: Scrap) => void;
-  deleteScrap: (boardId: string, scrapId: string) => void;
-  updateNoteScrap: (
+  addNote: (boardId: string, note: Note) => void;
+  deleteNote: (boardId: string, noteId: string) => void;
+  updateTextNote: (
     boardId: string,
-    scrapId: string,
-    patch: NoteScrapPatch,
+    noteId: string,
+    patch: TextNotePatch,
   ) => void;
-  updateImageScrap: (
+  updateImageNote: (
     boardId: string,
-    scrapId: string,
-    patch: ImageScrapPatch,
+    noteId: string,
+    patch: ImageNotePatch,
   ) => void;
-  updateLinkScrap: (
+  updateLinkNote: (
     boardId: string,
-    scrapId: string,
-    patch: LinkScrapPatch,
+    noteId: string,
+    patch: LinkNotePatch,
   ) => void;
-  updateScrapLayout: (
+  updateNoteLayout: (
     boardId: string,
-    scrapId: string,
-    patch: ScrapLayoutPatch,
+    noteId: string,
+    patch: NoteLayoutPatch,
   ) => void;
-  duplicateScrap: (boardId: string, scrapId: string) => void;
-  moveScrapToFront: (boardId: string, scrapId: string) => void;
-  moveScrapToBack: (boardId: string, scrapId: string) => void;
+  duplicateNote: (boardId: string, noteId: string) => void;
+  moveNoteToFront: (boardId: string, noteId: string) => void;
+  moveNoteToBack: (boardId: string, noteId: string) => void;
 };
 
 function resolveActiveBoardId(
@@ -62,27 +62,27 @@ function mapBoardById(
   return boards.map((board) => (board.id === boardId ? updateBoard(board) : board));
 }
 
-function mapBoardScrapsById(
+function mapBoardNotesById(
   boards: Board[],
   boardId: string,
-  updateScraps: (scraps: Scrap[]) => Scrap[],
+  updateNotes: (notes: Note[]) => Note[],
 ) {
   return mapBoardById(boards, boardId, (board) => ({
     ...board,
-    scraps: updateScraps(board.scraps),
+    notes: updateNotes(board.notes),
   }));
 }
 
-function patchScrapByType<TPatch>(
-  scraps: Scrap[],
-  scrapId: string,
-  scrapType: Scrap["type"],
+function patchNoteByType<TPatch>(
+  notes: Note[],
+  noteId: string,
+  noteType: Note["type"],
   patch: TPatch,
 ) {
-  return scraps.map((scrap) =>
-    scrap.id === scrapId && scrap.type === scrapType
-      ? { ...scrap, ...patch }
-      : scrap,
+  return notes.map((note) =>
+    note.id === noteId && note.type === noteType
+      ? { ...note, ...patch }
+      : note,
   );
 }
 
@@ -113,101 +113,101 @@ export const useAppStore = create<AppState>((set) => ({
       };
     }),
   setActiveBoard: (boardId) => set({ activeBoardId: boardId }),
-  addScrap: (boardId, scrap) =>
+  addNote: (boardId, note) =>
     set((state) => ({
-      boards: mapBoardScrapsById(state.boards, boardId, (scraps) => [...scraps, scrap]),
+      boards: mapBoardNotesById(state.boards, boardId, (notes) => [...notes, note]),
     })),
-  deleteScrap: (boardId, scrapId) =>
+  deleteNote: (boardId, noteId) =>
     set((state) => ({
-      boards: mapBoardScrapsById(
+      boards: mapBoardNotesById(
         state.boards,
         boardId,
-        (scraps) => scraps.filter((scrap) => scrap.id !== scrapId),
+        (notes) => notes.filter((note) => note.id !== noteId),
       ),
     })),
-  updateNoteScrap: (boardId, scrapId, patch) =>
+  updateTextNote: (boardId, noteId, patch) =>
     set((state) => ({
-      boards: mapBoardScrapsById(
+      boards: mapBoardNotesById(
         state.boards,
         boardId,
-        (scraps) => patchScrapByType(scraps, scrapId, "note", patch),
+        (notes) => patchNoteByType(notes, noteId, "text", patch),
       ),
     })),
-  updateImageScrap: (boardId, scrapId, patch) =>
+  updateImageNote: (boardId, noteId, patch) =>
     set((state) => ({
-      boards: mapBoardScrapsById(
+      boards: mapBoardNotesById(
         state.boards,
         boardId,
-        (scraps) => patchScrapByType(scraps, scrapId, "image", patch),
+        (notes) => patchNoteByType(notes, noteId, "image", patch),
       ),
     })),
-  updateLinkScrap: (boardId, scrapId, patch) =>
+  updateLinkNote: (boardId, noteId, patch) =>
     set((state) => ({
-      boards: mapBoardScrapsById(
+      boards: mapBoardNotesById(
         state.boards,
         boardId,
-        (scraps) => patchScrapByType(scraps, scrapId, "link", patch),
+        (notes) => patchNoteByType(notes, noteId, "link", patch),
       ),
     })),
-  updateScrapLayout: (boardId, scrapId, patch) =>
+  updateNoteLayout: (boardId, noteId, patch) =>
     set((state) => ({
-      boards: mapBoardScrapsById(
+      boards: mapBoardNotesById(
         state.boards,
         boardId,
-        (scraps) => scraps.map((scrap) => (scrap.id === scrapId ? { ...scrap, ...patch } : scrap)),
+        (notes) => notes.map((note) => (note.id === noteId ? { ...note, ...patch } : note)),
       ),
     })),
-  duplicateScrap: (boardId, scrapId) =>
+  duplicateNote: (boardId, noteId) =>
     set((state) => ({
       boards: mapBoardById(state.boards, boardId, (board) => {
-        const sourceScrap = board.scraps.find((scrap) => scrap.id === scrapId);
-        if (!sourceScrap) {
+        const sourceNote = board.notes.find((note) => note.id === noteId);
+        if (!sourceNote) {
           return board;
         }
 
-        const duplicate: Scrap = {
-          ...sourceScrap,
-          id: createScrapId(sourceScrap.type),
-          x: sourceScrap.x + 24,
-          y: sourceScrap.y + 24,
+        const duplicate: Note = {
+          ...sourceNote,
+          id: createNoteId(sourceNote.type),
+          x: sourceNote.x + 24,
+          y: sourceNote.y + 24,
         };
 
         return {
           ...board,
-          scraps: [...board.scraps, duplicate],
+          notes: [...board.notes, duplicate],
         };
       }),
     })),
-  moveScrapToFront: (boardId, scrapId) =>
+  moveNoteToFront: (boardId, noteId) =>
     set((state) => ({
       boards: mapBoardById(state.boards, boardId, (board) => {
-        const targetScrap = board.scraps.find((scrap) => scrap.id === scrapId);
-        if (!targetScrap) {
+        const targetNote = board.notes.find((note) => note.id === noteId);
+        if (!targetNote) {
           return board;
         }
 
         return {
           ...board,
-          scraps: [
-            ...board.scraps.filter((scrap) => scrap.id !== scrapId),
-            targetScrap,
+          notes: [
+            ...board.notes.filter((note) => note.id !== noteId),
+            targetNote,
           ],
         };
       }),
     })),
-  moveScrapToBack: (boardId, scrapId) =>
+  moveNoteToBack: (boardId, noteId) =>
     set((state) => ({
       boards: mapBoardById(state.boards, boardId, (board) => {
-        const targetScrap = board.scraps.find((scrap) => scrap.id === scrapId);
-        if (!targetScrap) {
+        const targetNote = board.notes.find((note) => note.id === noteId);
+        if (!targetNote) {
           return board;
         }
 
         return {
           ...board,
-          scraps: [
-            targetScrap,
-            ...board.scraps.filter((scrap) => scrap.id !== scrapId),
+          notes: [
+            targetNote,
+            ...board.notes.filter((note) => note.id !== noteId),
           ],
         };
       }),

@@ -1,9 +1,9 @@
-export type ScrapEditAdapter = {
+export type NoteEditAdapter = {
   prompt: (message: string, defaultValue?: string) => string | null;
   alert: (message: string) => void;
 };
 
-export const browserScrapEditAdapter: ScrapEditAdapter = {
+export const browserNoteEditAdapter: NoteEditAdapter = {
   prompt(message, defaultValue) {
     return window.prompt(message, defaultValue);
   },

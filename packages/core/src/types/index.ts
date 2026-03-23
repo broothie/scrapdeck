@@ -2,10 +2,10 @@ export type Board = {
   id: string;
   title: string;
   description: string;
-  scraps: Scrap[];
+  notes: Note[];
 };
 
-type ScrapBase = {
+type NoteBase = {
   id: string;
   x: number;
   y: number;
@@ -13,20 +13,20 @@ type ScrapBase = {
   height: number;
 };
 
-export type NoteScrap = ScrapBase & {
-  type: "note";
+export type TextNote = NoteBase & {
+  type: "text";
   title?: string;
   body: string;
 };
 
-export type ImageScrap = ScrapBase & {
+export type ImageNote = NoteBase & {
   type: "image";
   src: string;
   alt: string;
   caption?: string;
 };
 
-export type LinkScrap = ScrapBase & {
+export type LinkNote = NoteBase & {
   type: "link";
   url: string;
   siteName: string;
@@ -35,4 +35,4 @@ export type LinkScrap = ScrapBase & {
   previewImage?: string;
 };
 
-export type Scrap = NoteScrap | ImageScrap | LinkScrap;
+export type Note = TextNote | ImageNote | LinkNote;

@@ -1,21 +1,21 @@
-import type { Board, Database, Scrap } from "@plumboard/core";
+import type { Board, Database, Note } from "@plumboard/core";
 import { supabase } from "../auth/supabase";
 
 type BoardRow = Database["public"]["Tables"]["boards"]["Row"];
 type BoardInsert = Database["public"]["Tables"]["boards"]["Insert"];
-type ScrapRow = Database["public"]["Tables"]["scraps"]["Row"];
-type ScrapInsert = Database["public"]["Tables"]["scraps"]["Insert"];
-type ScrapSoftDeleteCandidate = Pick<ScrapRow, "id" | "board_id" | "deleted_at">;
+type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
+type NoteInsert = Database["public"]["Tables"]["notes"]["Insert"];
+type NoteSoftDeleteCandidate = Pick<NoteRow, "id" | "board_id" | "deleted_at">;
 
 function assertUnreachable(value: never): never {
-  throw new Error(`Unsupported scrap row type: ${value}`);
+  throw new Error(`Unsupported note row type: ${value}`);
 }
 
-export function mapScrapRowToScrap(row: ScrapRow): Scrap {
-  if (row.type === "note") {
+export function mapNoteRowToNote(row: NoteRow): Note {
+  if (row.type === "text") {
     return {
       id: row.id,
-      type: "note",
+      type: "text",
       x: row.x,
       y: row.y,
       width: row.width,
@@ -58,25 +58,25 @@ export function mapScrapRowToScrap(row: ScrapRow): Scrap {
   return assertUnreachable(row.type as never);
 }
 
-export function mapScrapToRow(userId: string, boardId: string, scrap: Scrap): ScrapInsert {
+export function mapNoteToRow(userId: string, boardId: string, note: Note): NoteInsert {
   return {
-    id: scrap.id,
+    id: note.id,
     board_id: boardId,
     user_id: userId,
-    type: scrap.type,
-    x: scrap.x,
-    y: scrap.y,
-    width: scrap.width,
-    height: scrap.height,
-    title: "title" in scrap ? scrap.title ?? null : null,
-    body: scrap.type === "note" ? scrap.body : null,
-    src: scrap.type === "image" ? scrap.src : null,
-    alt: scrap.type === "image" ? scrap.alt : null,
-    caption: scrap.type === "image" ? scrap.caption ?? null : null,
-    url: scrap.type === "link" ? scrap.url : null,
-    site_name: scrap.type === "link" ? scrap.siteName : null,
-    description: scrap.type === "link" ? scrap.description ?? null : null,
-    preview_image: scrap.type === "link" ? scrap.previewImage ?? null : null,
+    type: note.type,
+    x: note.x,
+    y: note.y,
+    width: note.width,
+    height: note.height,
+    title: "title" in note ? note.title ?? null : null,
+    body: note.type === "text" ? note.body : null,
+    src: note.type === "image" ? note.src : null,
+    alt: note.type === "image" ? note.alt : null,
+    caption: note.type === "image" ? note.caption ?? null : null,
+    url: note.type === "link" ? note.url : null,
+    site_name: note.type === "link" ? note.siteName : null,
+    description: note.type === "link" ? note.description ?? null : null,
+    preview_image: note.type === "link" ? note.previewImage ?? null : null,
     deleted_at: null,
   };
 }
@@ -91,27 +91,27 @@ export function mapBoardToRow(userId: string, board: Board): BoardInsert {
   };
 }
 
-export function assembleBoards(boardRows: BoardRow[], scrapRows: ScrapRow[]): Board[] {
+export function assembleBoards(boardRows: BoardRow[], noteRows: NoteRow[]): Board[] {
   return boardRows.map((board) => ({
     id: board.id,
     title: board.title,
     description: board.description,
-    scraps: scrapRows
-      .filter((scrap) => scrap.board_id === board.id)
-      .map(mapScrapRowToScrap),
+    notes: noteRows
+      .filter((note) => note.board_id === board.id)
+      .map(mapNoteRowToNote),
   }));
 }
 
-export function resolveScrapIdsToSoftDelete(
-  existingScraps: ScrapSoftDeleteCandidate[],
+export function resolveNoteIdsToSoftDelete(
+  existingNotes: NoteSoftDeleteCandidate[],
   boardIds: Set<string>,
-  scrapIds: Set<string>,
+  noteIds: Set<string>,
 ) {
-  return existingScraps
-    .filter((scrap) => !scrap.deleted_at)
-    .filter((scrap) => !scrapIds.has(scrap.id))
-    .filter((scrap) => boardIds.has(scrap.board_id))
-    .map((scrap) => scrap.id);
+  return existingNotes
+    .filter((note) => !note.deleted_at)
+    .filter((note) => !noteIds.has(note.id))
+    .filter((note) => boardIds.has(note.board_id))
+    .map((note) => note.id);
 }
 
 export async function fetchBoards(userId: string) {
@@ -119,7 +119,7 @@ export async function fetchBoards(userId: string) {
     throw new Error("Supabase is not configured.");
   }
 
-  const [{ data: boards, error: boardsError }, { data: scraps, error: scrapsError }] =
+  const [{ data: boards, error: boardsError }, { data: notes, error: notesError }] =
     await Promise.all([
       supabase
         .from("boards")
@@ -128,7 +128,7 @@ export async function fetchBoards(userId: string) {
         .is("deleted_at", null)
         .order("created_at", { ascending: true }),
       supabase
-        .from("scraps")
+        .from("notes")
         .select(
           "id, board_id, user_id, type, x, y, width, height, title, body, src, alt, caption, url, site_name, description, preview_image, created_at, updated_at, deleted_at",
         )
@@ -141,11 +141,11 @@ export async function fetchBoards(userId: string) {
     throw boardsError;
   }
 
-  if (scrapsError) {
-    throw scrapsError;
+  if (notesError) {
+    throw notesError;
   }
 
-  return assembleBoards(boards ?? [], scraps ?? []);
+  return assembleBoards(boards ?? [], notes ?? []);
 }
 
 export async function saveBoards(userId: string, boards: Board[]) {
@@ -154,8 +154,8 @@ export async function saveBoards(userId: string, boards: Board[]) {
   }
 
   const boardRows = boards.map((board) => mapBoardToRow(userId, board));
-  const scrapRows = boards.flatMap((board) =>
-    board.scraps.map((scrap) => mapScrapToRow(userId, board.id, scrap)),
+  const noteRows = boards.flatMap((board) =>
+    board.notes.map((note) => mapNoteToRow(userId, board.id, note)),
   );
 
   const boardSnapshotRows = boardRows.map((board) => ({
@@ -163,29 +163,29 @@ export async function saveBoards(userId: string, boards: Board[]) {
     title: board.title,
     description: board.description,
   }));
-  const scrapSnapshotRows = scrapRows.map((scrap) => ({
-    id: scrap.id,
-    board_id: scrap.board_id,
-    type: scrap.type,
-    x: scrap.x,
-    y: scrap.y,
-    width: scrap.width,
-    height: scrap.height,
-    title: scrap.title,
-    body: scrap.body,
-    src: scrap.src,
-    alt: scrap.alt,
-    caption: scrap.caption,
-    url: scrap.url,
-    site_name: scrap.site_name,
-    description: scrap.description,
-    preview_image: scrap.preview_image,
+  const noteSnapshotRows = noteRows.map((note) => ({
+    id: note.id,
+    board_id: note.board_id,
+    type: note.type,
+    x: note.x,
+    y: note.y,
+    width: note.width,
+    height: note.height,
+    title: note.title,
+    body: note.body,
+    src: note.src,
+    alt: note.alt,
+    caption: note.caption,
+    url: note.url,
+    site_name: note.site_name,
+    description: note.description,
+    preview_image: note.preview_image,
   }));
 
   const { error } = await supabase.rpc("save_boards_snapshot", {
     p_user_id: userId,
     p_boards: boardSnapshotRows,
-    p_scraps: scrapSnapshotRows,
+    p_notes: noteSnapshotRows,
   });
 
   if (error) {

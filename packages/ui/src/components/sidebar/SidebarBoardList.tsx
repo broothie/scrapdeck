@@ -64,7 +64,7 @@ export function SidebarBoardList({
                     fontSize: 14,
                   }}
                 >
-                  {board.scraps.length} scraps
+                  {board.notes.length} notes
                 </Text>
               </YStack>
             </Button>
@@ -84,7 +84,7 @@ export function SidebarBoardList({
 
       {boards.length === 0 ? (
         <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
-          No boards yet. Create your first one to start arranging scraps.
+          No boards yet. Create your first one to start arranging notes.
         </Paragraph>
       ) : null}
     </YStack>

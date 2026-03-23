@@ -37,14 +37,14 @@ SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=...
 
 ## Board Data
 
-Board and scrap data now live in Supabase too.
+Board and note data now live in Supabase too.
 
-Apply the SQL migration in `supabase/migrations/20260320183000_create_boards_and_scraps.sql`
-to create the `boards` and `scraps` tables plus RLS policies.
+Apply the SQL migration in `supabase/migrations/20260320183000_create_boards_and_notes.sql`
+to create the `boards` and `notes` tables plus RLS policies.
 
 ## Link Preview Function
 
-Link scraps can fetch Open Graph metadata through a Supabase Edge Function:
+Link notes can fetch Open Graph metadata through a Supabase Edge Function:
 
 ```sh
 supabase functions deploy link-preview
@@ -74,25 +74,25 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 ## Todo
 
 - [x] Rename boards
-- [ ] Rename boards to decks across UI copy and data model naming
+- [ ] Standardize board terminology across UI copy and data model naming
 - [x] Edit board descriptions
 - [x] Delete boards
-- [x] Edit existing note scraps
-- [ ] Fix notes scraps UX to feel more natural
+- [x] Edit existing text notes
+- [ ] Fix text notes UX to feel more natural
 - [x] Add rich text support to notes
 - [ ] Remove "Edit" from notes context menu
-- [ ] Edit existing link scraps
-- [ ] Edit existing image scraps
-- [x] Delete scraps
+- [ ] Edit existing link notes
+- [ ] Edit existing image notes
+- [x] Delete notes
 - [x] Upload real images with Supabase Storage
-- [x] Replace placeholder image scraps with uploaded images
+- [x] Replace placeholder image notes with uploaded images
 - [ ] Rename "images" to "files" across UI and data labels
 - [x] Fetch real link metadata and social preview images
-- [ ] Fix link scrap text clipping/cutoff (links unreadable)
-- [ ] Fix file scrap details spacing (filename has too much bottom padding)
+- [ ] Fix link note text clipping/cutoff (links unreadable)
+- [ ] Fix file note details spacing (filename has too much bottom padding)
 - [x] Persist deletions to Supabase
-- [ ] Fix board/deck trash icon
-- [ ] Fix deck list layout/UX in the sidebar
+- [ ] Fix board trash icon
+- [ ] Fix board list layout/UX in the sidebar
 - [ ] Add shared boards / multi-user collaboration
 - [ ] Add realtime sync
 - [ ] Handle multi-session conflicts cleanly
@@ -103,7 +103,7 @@ If `supabase link` prompts for credentials, use your local Supabase access token
 - [ ] Add lasso selection
 - [x] Dial down the minimap and zoom-controls shadow
 - [x] Make zoom-controls colors adapt to light/dark theme
-- [ ] Make deck title/description editing feel more natural
+- [ ] Make board title/description editing feel more natural
 - [x] Add tests
 - [x] Refactor into smaller, more modular/testable files
 - [ ] Reduce bundle size with code-splitting/perf cleanup
@@ -125,6 +125,23 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:4173`.
+
+### Env Profile Switching
+
+Use one command to switch web auth keys between local and prod:
+
+```sh
+npm run env:local   # copy apps/web/.env.local.local -> apps/web/.env.local
+npm run env:prod    # copy apps/web/.env.local.prod  -> apps/web/.env.local
+npm run env:which   # print active VITE_SUPABASE_URL
+```
+
+You can also switch and start the app in one command:
+
+```sh
+npm run dev:local
+npm run dev:prod
+```
 
 ## Build
 

@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useAppStore, type Board } from "@plumboard/core";
 import {
   assembleBoards,
-  mapScrapRowToScrap,
-  mapScrapToRow,
+  mapNoteRowToNote,
+  mapNoteToRow,
   mapBoardToRow,
-  resolveScrapIdsToSoftDelete,
+  resolveNoteIdsToSoftDelete,
 } from "./boards";
 
-type SampleScrapRow = {
+type SampleNoteRow = {
   id: string;
   board_id: string;
   user_id: string;
@@ -31,11 +31,11 @@ type SampleScrapRow = {
   deleted_at: string | null;
 };
 
-const noteScrapRow: SampleScrapRow = {
-  id: "scrap-note",
+const noteNoteRow: SampleNoteRow = {
+  id: "note-note",
   board_id: "board-1",
   user_id: "user-1",
-  type: "note",
+  type: "text",
   x: 16,
   y: 24,
   width: 300,
@@ -58,12 +58,12 @@ beforeEach(() => {
   useAppStore.setState({ boards: [], activeBoardId: "" });
 });
 
-describe("mapScrapRowToScrap", () => {
-  it("maps a note scrap row", () => {
-    const scrap = mapScrapRowToScrap(noteScrapRow);
-    expect(scrap).toEqual({
-      id: "scrap-note",
-      type: "note",
+describe("mapNoteRowToNote", () => {
+  it("maps a text note row", () => {
+    const note = mapNoteRowToNote(noteNoteRow);
+    expect(note).toEqual({
+      id: "note-note",
+      type: "text",
       x: 16,
       y: 24,
       width: 300,
@@ -73,14 +73,14 @@ describe("mapScrapRowToScrap", () => {
     });
   });
 
-  it("throws for unknown scrap types", () => {
+  it("throws for unknown note types", () => {
     const invalidRow = {
-      ...noteScrapRow,
+      ...noteNoteRow,
       type: "video",
-    } as unknown as SampleScrapRow;
+    } as unknown as SampleNoteRow;
 
-    expect(() => mapScrapRowToScrap(invalidRow)).toThrowError(
-      "Unsupported scrap row type: video",
+    expect(() => mapNoteRowToNote(invalidRow)).toThrowError(
+      "Unsupported note row type: video",
     );
   });
 });
@@ -108,30 +108,30 @@ describe("board row helpers", () => {
       },
     ];
 
-    const imageScrapRow = {
-      ...noteScrapRow,
-      id: "scrap-image",
+    const imageNoteRow = {
+      ...noteNoteRow,
+      id: "note-image",
       type: "image",
       board_id: "board-1",
       src: "/asset.png",
       alt: "Alt text",
-    } as unknown as SampleScrapRow;
+    } as unknown as SampleNoteRow;
 
-    const linkScrapRow = {
-      ...noteScrapRow,
-      id: "scrap-link",
+    const linkNoteRow = {
+      ...noteNoteRow,
+      id: "note-link",
       type: "link",
       board_id: "board-1",
-      title: "Scrap title",
+      title: "Note title",
       description: "desc",
       url: "https://example.com",
       site_name: "example.com",
       preview_image: "/preview.png",
-    } as unknown as SampleScrapRow;
+    } as unknown as SampleNoteRow;
 
     const boardModels = assembleBoards(
       boardRowsInput,
-      [noteScrapRow, imageScrapRow, linkScrapRow],
+      [noteNoteRow, imageNoteRow, linkNoteRow],
     );
 
     expect(boardModels).toEqual([
@@ -139,10 +139,10 @@ describe("board row helpers", () => {
         id: "board-1",
         title: "Ideas",
         description: "Board description",
-        scraps: [
+        notes: [
           {
-            id: "scrap-note",
-            type: "note",
+            id: "note-note",
+            type: "text",
             x: 16,
             y: 24,
             width: 300,
@@ -151,7 +151,7 @@ describe("board row helpers", () => {
             body: "Note body",
           },
           {
-            id: "scrap-image",
+            id: "note-image",
             type: "image",
             x: 16,
             y: 24,
@@ -162,7 +162,7 @@ describe("board row helpers", () => {
             caption: undefined,
           },
           {
-            id: "scrap-link",
+            id: "note-link",
             type: "link",
             x: 16,
             y: 24,
@@ -170,7 +170,7 @@ describe("board row helpers", () => {
             height: 220,
             url: "https://example.com",
             siteName: "example.com",
-            title: "Scrap title",
+            title: "Note title",
             description: "desc",
             previewImage: "/preview.png",
           },
@@ -180,22 +180,22 @@ describe("board row helpers", () => {
         id: "board-2",
         title: "Archive",
         description: "Other",
-        scraps: [],
+        notes: [],
       },
     ]);
   });
 });
 
 describe("save mapping helpers", () => {
-  it("maps board and scrap data to insert payloads", () => {
+  it("maps board and note data to insert payloads", () => {
       const board: Board = {
         id: "board-1",
         title: "Workspace",
         description: "Focus area",
-      scraps: [
+      notes: [
         {
-          id: "scrap-note",
-          type: "note",
+          id: "note-note",
+          type: "text",
           x: 0,
           y: 0,
           width: 260,
@@ -214,11 +214,11 @@ describe("save mapping helpers", () => {
       deleted_at: null,
     });
 
-    expect(mapScrapToRow("user-1", board.id, board.scraps[0])).toEqual({
-      id: "scrap-note",
+    expect(mapNoteToRow("user-1", board.id, board.notes[0])).toEqual({
+      id: "note-note",
       board_id: "board-1",
       user_id: "user-1",
-      type: "note",
+      type: "text",
       x: 0,
       y: 0,
       width: 260,
@@ -237,21 +237,21 @@ describe("save mapping helpers", () => {
   });
 });
 
-describe("resolveScrapIdsToSoftDelete", () => {
-  it("skips scraps that belong to soft-deleted boards", () => {
-    const existingScraps = [
-      { id: "scrap-on-active-board", board_id: "board-1", deleted_at: null },
-      { id: "scrap-on-removed-board", board_id: "board-2", deleted_at: null },
+describe("resolveNoteIdsToSoftDelete", () => {
+  it("skips notes that belong to soft-deleted boards", () => {
+    const existingNotes = [
+      { id: "note-on-active-board", board_id: "board-1", deleted_at: null },
+      { id: "note-on-removed-board", board_id: "board-2", deleted_at: null },
       { id: "already-deleted", board_id: "board-1", deleted_at: "2026-01-01T00:00:00.000Z" },
       { id: "still-present", board_id: "board-1", deleted_at: null },
     ];
 
-    const scrapIdsToSoftDelete = resolveScrapIdsToSoftDelete(
-      existingScraps,
+    const noteIdsToSoftDelete = resolveNoteIdsToSoftDelete(
+      existingNotes,
       new Set(["board-1"]),
       new Set(["still-present"]),
     );
 
-    expect(scrapIdsToSoftDelete).toEqual(["scrap-on-active-board"]);
+    expect(noteIdsToSoftDelete).toEqual(["note-on-active-board"]);
   });
 });

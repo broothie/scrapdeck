@@ -14,13 +14,13 @@ describe("useAppStore", () => {
       id: "board-1",
       title: "Active",
       description: "Primary",
-      scraps: [],
+      notes: [],
     };
     const secondBoard: Board = {
       id: "board-2",
       title: "Later",
       description: "Secondary",
-      scraps: [],
+      notes: [],
     };
 
     useAppStore.getState().addBoard(firstBoard);
@@ -42,7 +42,7 @@ describe("useAppStore", () => {
       id: "board-1",
       title: "Original",
       description: "Original description",
-      scraps: [],
+      notes: [],
     };
 
     useAppStore.getState().addBoard(board);
@@ -58,15 +58,15 @@ describe("useAppStore", () => {
     });
   });
 
-  it("updates note contents, layout, and supports scrap deletion", () => {
+  it("updates note contents, layout, and supports note deletion", () => {
     const board: Board = {
       id: "board-1",
       title: "Board",
       description: "Working",
-      scraps: [
+      notes: [
         {
           id: "note-1",
-          type: "note",
+          type: "text",
           x: 10,
           y: 20,
           width: 260,
@@ -90,21 +90,21 @@ describe("useAppStore", () => {
 
     useAppStore.getState().addBoard(board);
 
-    useAppStore.getState().updateNoteScrap("board-1", "note-1", { title: "Fresh" });
+    useAppStore.getState().updateTextNote("board-1", "note-1", { title: "Fresh" });
     useAppStore
       .getState()
-      .updateScrapLayout("board-1", "image-1", { x: 400, y: 80, width: 280, height: 240 });
+      .updateNoteLayout("board-1", "image-1", { x: 400, y: 80, width: 280, height: 240 });
 
-    expect(useAppStore.getState().boards[0].scraps[0]).toMatchObject({
+    expect(useAppStore.getState().boards[0].notes[0]).toMatchObject({
       id: "note-1",
-      type: "note",
+      type: "text",
       title: "Fresh",
     });
 
-    useAppStore.getState().deleteScrap("board-1", "note-1");
+    useAppStore.getState().deleteNote("board-1", "note-1");
 
     const activeBoard = useAppStore.getState().boards[0];
-    const image = activeBoard.scraps[0];
+    const image = activeBoard.notes[0];
 
     expect(image).toMatchObject({
       id: "image-1",
@@ -114,18 +114,18 @@ describe("useAppStore", () => {
       width: 280,
       height: 240,
     });
-    expect(activeBoard.scraps).toHaveLength(1);
+    expect(activeBoard.notes).toHaveLength(1);
   });
 
-  it("duplicates, reorders, and edits link/image scraps", () => {
+  it("duplicates, reorders, and edits link/image notes", () => {
     const board: Board = {
       id: "board-1",
       title: "Board",
       description: "Working",
-      scraps: [
+      notes: [
         {
           id: "note-1",
-          type: "note",
+          type: "text",
           x: 10,
           y: 20,
           width: 260,
@@ -162,29 +162,29 @@ describe("useAppStore", () => {
 
     useAppStore.getState().addBoard(board);
 
-    useAppStore.getState().duplicateScrap("board-1", "link-1");
+    useAppStore.getState().duplicateNote("board-1", "link-1");
     const duplicatedBoard = useAppStore.getState().boards[0];
-    expect(duplicatedBoard.scraps).toHaveLength(4);
-    expect(duplicatedBoard.scraps[3].type).toBe("link");
+    expect(duplicatedBoard.notes).toHaveLength(4);
+    expect(duplicatedBoard.notes[3].type).toBe("link");
 
-    useAppStore.getState().moveScrapToBack("board-1", "link-1");
-    expect(useAppStore.getState().boards[0].scraps[0].id).toBe("link-1");
+    useAppStore.getState().moveNoteToBack("board-1", "link-1");
+    expect(useAppStore.getState().boards[0].notes[0].id).toBe("link-1");
 
-    useAppStore.getState().moveScrapToFront("board-1", "note-1");
-    const scrapsAfterReorder = useAppStore.getState().boards[0].scraps;
-    expect(scrapsAfterReorder[scrapsAfterReorder.length - 1].id).toBe("note-1");
+    useAppStore.getState().moveNoteToFront("board-1", "note-1");
+    const notesAfterReorder = useAppStore.getState().boards[0].notes;
+    expect(notesAfterReorder[notesAfterReorder.length - 1].id).toBe("note-1");
 
-    useAppStore.getState().updateImageScrap("board-1", "image-1", {
+    useAppStore.getState().updateImageNote("board-1", "image-1", {
       caption: "Updated caption",
     });
-    useAppStore.getState().updateLinkScrap("board-1", "link-1", {
+    useAppStore.getState().updateLinkNote("board-1", "link-1", {
       title: "Updated link",
       url: "https://example.com/new",
     });
 
-    const updatedScraps = useAppStore.getState().boards[0].scraps;
-    const updatedImage = updatedScraps.find((scrap) => scrap.id === "image-1");
-    const updatedLink = updatedScraps.find((scrap) => scrap.id === "link-1");
+    const updatedNotes = useAppStore.getState().boards[0].notes;
+    const updatedImage = updatedNotes.find((note) => note.id === "image-1");
+    const updatedLink = updatedNotes.find((note) => note.id === "link-1");
 
     expect(updatedImage).toMatchObject({
       id: "image-1",

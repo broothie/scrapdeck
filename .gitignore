@@ -3,4 +3,6 @@ dist/
 *.tsbuildinfo
 .env.local
 */.env.local
+.env.local.*
+*/.env.local.*
 supabase/.env

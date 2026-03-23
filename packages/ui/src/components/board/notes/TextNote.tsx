@@ -16,11 +16,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Card, XStack, YStack, useTheme } from "tamagui";
-import { useAppStore, type NoteScrap } from "@plumboard/core";
+import { useAppStore, type TextNote } from "@plumboard/core";
 
-type NoteScrapCardProps = {
+type TextNoteCardProps = {
   boardId: string;
-  scrap: NoteScrap;
+  note: TextNote;
   onAutoGrowHeight: (nextHeight: number) => void;
 };
 
@@ -38,15 +38,15 @@ type ToolbarAction = {
   onClick: () => void;
 };
 
-export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCardProps) {
+export function TextNoteCard({ boardId, note, onAutoGrowHeight }: TextNoteCardProps) {
   const theme = useTheme();
-  const updateNoteScrap = useAppStore((state) => state.updateNoteScrap);
+  const updateTextNote = useAppStore((state) => state.updateTextNote);
   const [isEditing, setIsEditing] = useState(false);
   const [toolbarOffsetX, setToolbarOffsetX] = useState(0);
   const readBodyRef = useRef<HTMLDivElement | null>(null);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const autoGrowFrameRef = useRef<number | null>(null);
-  const normalizedBody = normalizeNoteBodyForEditor(scrap.body);
+  const normalizedBody = normalizeNoteBodyForEditor(note.body);
 
   const autoGrowIfNeeded = useCallback((element: HTMLElement | null) => {
     if (!element) {
@@ -61,12 +61,12 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
     const cardBorderThickness = 2;
     const nextHeight = Math.ceil(element.scrollHeight + shellVerticalPadding + cardBorderThickness);
 
-    if (nextHeight <= scrap.height + 2) {
+    if (nextHeight <= note.height + 2) {
       return;
     }
 
     onAutoGrowHeight(nextHeight);
-  }, [onAutoGrowHeight, scrap.height]);
+  }, [onAutoGrowHeight, note.height]);
   const scheduleAutoGrow = useCallback((element: HTMLElement | null) => {
     if (autoGrowFrameRef.current !== null) {
       cancelAnimationFrame(autoGrowFrameRef.current);
@@ -118,11 +118,11 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
       const nextBody = currentEditor.getHTML();
       scheduleAutoGrow(currentEditor.view.dom as HTMLElement | null);
 
-      if (nextBody === scrap.body) {
+      if (nextBody === note.body) {
         return;
       }
 
-      updateNoteScrap(boardId, scrap.id, {
+      updateTextNote(boardId, note.id, {
         body: nextBody,
       });
     },
@@ -203,7 +203,7 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
         cancelAnimationFrame(autoGrowFrameRef.current);
       }
     };
-  }, [editor, isEditing, normalizedBody, scheduleAutoGrow, scrap.body]);
+  }, [editor, isEditing, normalizedBody, scheduleAutoGrow, note.body]);
 
   useEffect(() => {
     if (!editor || !isEditing) {
@@ -239,10 +239,10 @@ export function NoteScrapCard({ boardId, scrap, onAutoGrowHeight }: NoteScrapCar
     isEditing,
     normalizedBody,
     recalculateToolbarOffset,
-    scrap.height,
-    scrap.width,
-    scrap.x,
-    scrap.y,
+    note.height,
+    note.width,
+    note.x,
+    note.y,
   ]);
 
   useEffect(() => {

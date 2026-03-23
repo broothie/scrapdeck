@@ -1,8 +1,8 @@
 import { Anchor, Card, YStack, useTheme } from "tamagui";
-import type { LinkScrap } from "@plumboard/core";
+import type { LinkNote } from "@plumboard/core";
 
-type LinkScrapCardProps = {
-  scrap: LinkScrap;
+type LinkNoteCardProps = {
+  note: LinkNote;
 };
 
 function hasMeaningfulLabel(value: string) {
@@ -23,11 +23,11 @@ function getUrlLabel(url: string) {
   }
 }
 
-export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
+export function LinkNoteCard({ note }: LinkNoteCardProps) {
   const theme = useTheme();
-  const hasPreview = Boolean(scrap.previewImage);
-  const rawTitle = scrap.title?.trim() || "";
-  const linkLabel = hasMeaningfulLabel(rawTitle) ? rawTitle : getUrlLabel(scrap.url);
+  const hasPreview = Boolean(note.previewImage);
+  const rawTitle = note.title?.trim() || "";
+  const linkLabel = hasMeaningfulLabel(rawTitle) ? rawTitle : getUrlLabel(note.url);
 
   return (
     <Card
@@ -44,8 +44,8 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
       <YStack height="100%">
         {hasPreview ? (
           <img
-            alt={scrap.title}
-            src={scrap.previewImage}
+            alt={note.title}
+            src={note.previewImage}
             style={{
               width: "100%",
               height: "calc(100% - 4.5rem)",
@@ -62,7 +62,7 @@ export function LinkScrapCard({ scrap }: LinkScrapCardProps) {
           }}
         >
         <Anchor
-          href={scrap.url}
+          href={note.url}
           target="_blank"
           rel="noreferrer"
           className="nodrag nopan"

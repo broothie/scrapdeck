@@ -10,6 +10,11 @@
     "packages/*"
   ],
   "scripts": {
+    "env:local": "sh -c 'cp apps/web/.env.local.local apps/web/.env.local && echo \"Now using LOCAL Supabase in apps/web/.env.local\"'",
+    "env:prod": "sh -c 'cp apps/web/.env.local.prod apps/web/.env.local && echo \"Now using PROD Supabase in apps/web/.env.local\"'",
+    "env:which": "sh -c 'if [ -f apps/web/.env.local ]; then grep \"^VITE_SUPABASE_URL=\" apps/web/.env.local; else echo \"apps/web/.env.local is missing\"; fi'",
+    "dev:local": "npm run env:local && npm run dev",
+    "dev:prod": "npm run env:prod && npm run dev",
     "dev": "npm --workspace @plumboard/web run dev",
     "build": "npm --workspace @plumboard/web run build",
     "preview": "npm --workspace @plumboard/web run preview",

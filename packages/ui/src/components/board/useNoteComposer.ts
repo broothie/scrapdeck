@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState, type ChangeEvent } from "react";
-import { createScrapId, resolveScrapDefaults, useAppStore, type Scrap } from "@plumboard/core";
+import { createNoteId, resolveNoteDefaults, useAppStore, type Note } from "@plumboard/core";
 
 export type PlacementIntent = {
-  type: Scrap["type"];
+  type: Note["type"];
   width: number;
   height: number;
-  create: (position: { x: number; y: number }) => Scrap;
+  create: (position: { x: number; y: number }) => Note;
 };
 
 type UploadImageFn = (file: File) => Promise<{
@@ -22,7 +22,7 @@ type ResolveLinkPreviewFn = (url: string) => Promise<{
   previewImage?: string;
 }>;
 
-type UseScrapComposerOptions = {
+type UseNoteComposerOptions = {
   boardId: string;
   onUploadImage?: UploadImageFn;
   onResolveLinkPreview?: ResolveLinkPreviewFn;
@@ -33,12 +33,12 @@ function hasMeaningfulTitle(value: string) {
   return alphanumericCount >= 3;
 }
 
-export function useScrapComposer({
+export function useNoteComposer({
   boardId,
   onUploadImage,
   onResolveLinkPreview,
-}: UseScrapComposerOptions) {
-  const addScrap = useAppStore((state) => state.addScrap);
+}: UseNoteComposerOptions) {
+  const addNote = useAppStore((state) => state.addNote);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [isResolvingLink, setIsResolvingLink] = useState(false);
@@ -48,16 +48,16 @@ export function useScrapComposer({
   const [fileUploadError, setFileUploadError] = useState("");
   const [placementIntent, setPlacementIntent] = useState<PlacementIntent | null>(null);
 
-  const addNoteIntent = useMemo<PlacementIntent>(() => {
-    const { width, height } = resolveScrapDefaults("note");
+  const addTextNoteIntent = useMemo<PlacementIntent>(() => {
+    const { width, height } = resolveNoteDefaults("text");
 
     return {
-      type: "note",
-      width,
-      height,
-      create: ({ x, y }: { x: number; y: number }) => ({
-        id: createScrapId("note"),
-        type: "note",
+        type: "text",
+        width,
+        height,
+        create: ({ x, y }: { x: number; y: number }) => ({
+        id: createNoteId("text"),
+        type: "text",
         x,
         y,
         width,
@@ -73,8 +73,8 @@ export function useScrapComposer({
     setLinkError("");
   };
 
-  const handleAddNote = () => {
-    setPlacementIntent(addNoteIntent);
+  const handleAddTextNote = () => {
+    setPlacementIntent(addTextNoteIntent);
   };
 
   const handleAddFile = () => {
@@ -154,7 +154,7 @@ export function useScrapComposer({
       const siteName = metadata?.siteName?.trim() || hostname || "Saved Link";
       const previewImage = metadata?.previewImage?.trim() || undefined;
 
-      const { width, height } = resolveScrapDefaults("link");
+      const { width, height } = resolveNoteDefaults("link");
       const resolvedHeight = previewImage ? height : 148;
 
       setPlacementIntent({
@@ -162,7 +162,7 @@ export function useScrapComposer({
         width,
         height: resolvedHeight,
         create: ({ x, y }) => ({
-          id: createScrapId("link"),
+          id: createNoteId("link"),
           type: "link",
           x,
           y,
@@ -182,12 +182,12 @@ export function useScrapComposer({
     }
   };
 
-  const handlePlaceScrap = (position: { x: number; y: number }) => {
+  const handlePlaceNote = (position: { x: number; y: number }) => {
     if (!placementIntent) {
       return;
     }
 
-    addScrap(boardId, placementIntent.create(position));
+    addNote(boardId, placementIntent.create(position));
     setPlacementIntent(null);
   };
 
@@ -209,14 +209,14 @@ export function useScrapComposer({
 
     try {
       const uploadedImage = await onUploadImage(file);
-      const { width, height } = resolveScrapDefaults("image");
+      const { width, height } = resolveNoteDefaults("image");
 
       setPlacementIntent({
         type: "image",
         width,
         height,
         create: ({ x, y }: { x: number; y: number }) => ({
-          id: createScrapId("image"),
+          id: createNoteId("image"),
           type: "image",
           x,
           y,
@@ -250,12 +250,12 @@ export function useScrapComposer({
     placementIntent,
     setLinkUrl,
     closeLinkComposer,
-    handleAddNote,
+    handleAddTextNote,
     handleAddFile,
     handleAddLink,
     handleSaveLink,
     handleImageFileChange,
-    handlePlaceScrap,
+    handlePlaceNote,
     clearPlacementIntent,
   };
 }
