@@ -4,32 +4,26 @@ import { SidebarAccountSection } from "./SidebarAccountSection";
 import { SidebarBoardList } from "./SidebarBoardList";
 import { SidebarBrand } from "./SidebarBrand";
 
-type ThemePreference = "system" | "light" | "dark";
-
 type BoardSidebarProps = {
   boards: Board[];
   activeBoardId: string;
   brandLogoUrl?: string;
+  onOpenBoards?: () => void;
   onSelectBoard: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
-  themePreference?: ThemePreference;
-  onThemePreferenceChange?: (nextPreference: ThemePreference) => void;
-  onSignOut?: () => void;
-  isSigningOut?: boolean;
+  onOpenAccount?: () => void;
 };
 
 export function BoardSidebar({
   boards,
   activeBoardId,
   brandLogoUrl,
+  onOpenBoards,
   onSelectBoard,
   onCreateBoard,
   accountUsername,
-  themePreference = "system",
-  onThemePreferenceChange,
-  onSignOut,
-  isSigningOut = false,
+  onOpenAccount,
 }: BoardSidebarProps) {
   const theme = useTheme();
 
@@ -45,7 +39,12 @@ export function BoardSidebar({
         backdropFilter: "blur(24px)",
       }}
     >
-      <SidebarBrand title="Boards" subtitle="Plumboard" logoUrl={brandLogoUrl} />
+      <SidebarBrand
+        title="Boards"
+        subtitle="Plumboard"
+        logoUrl={brandLogoUrl}
+        onOpenBoards={onOpenBoards}
+      />
       <SidebarBoardList
         boards={boards}
         activeBoardId={activeBoardId}
@@ -54,10 +53,7 @@ export function BoardSidebar({
       />
       <SidebarAccountSection
         accountUsername={accountUsername}
-        themePreference={themePreference}
-        onThemePreferenceChange={onThemePreferenceChange}
-        onSignOut={onSignOut}
-        isSigningOut={isSigningOut}
+        onOpenAccount={onOpenAccount}
       />
     </YStack>
   );
