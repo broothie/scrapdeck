@@ -212,7 +212,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const addBoard = useAppStore((state) => state.addBoard);
   const deleteBoard = useAppStore((state) => state.deleteBoard);
   const setActiveBoard = useAppStore((state) => state.setActiveBoard);
-  const { isConfigured, isLoading, user, username, signOut } = useAuth();
+  const { isConfigured, isLoading, user, username, saveUsername, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
   const {
@@ -300,6 +300,8 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     await signOut();
     setIsSigningOut(false);
   };
+
+  const handleSaveUsername = async (nextUsername: string) => saveUsername(nextUsername);
 
   const handleCreateBoard = () => {
     const boardId = createId("board");
@@ -454,6 +456,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
               email={user.email}
               themePreference={themePreference}
               onThemePreferenceChange={onThemePreferenceChange}
+              onSaveUsername={handleSaveUsername}
               onSignOut={handleSignOut}
               isSigningOut={isSigningOut}
             />
