@@ -44,38 +44,9 @@ type UseNoteComposerOptions = {
   onResolveLinkPreview?: ResolveLinkPreviewFn;
 };
 
-const IMAGE_FILE_EXTENSIONS = new Set([
-  "apng",
-  "avif",
-  "bmp",
-  "gif",
-  "heic",
-  "heif",
-  "jpeg",
-  "jpg",
-  "png",
-  "svg",
-  "tif",
-  "tiff",
-  "webp",
-]);
-
 function hasMeaningfulTitle(value: string) {
   const alphanumericCount = (value.match(/[A-Za-z0-9]/g) ?? []).length;
   return alphanumericCount >= 3;
-}
-
-function isImageFile(file: File) {
-  if (file.type.toLowerCase().startsWith("image/")) {
-    return true;
-  }
-
-  const extension = file.name.split(".").pop()?.toLowerCase();
-  if (!extension) {
-    return false;
-  }
-
-  return IMAGE_FILE_EXTENSIONS.has(extension);
 }
 
 export function useNoteComposer({
@@ -268,11 +239,6 @@ export function useNoteComposer({
         return;
       }
 
-      if (!isImageFile(pendingFile)) {
-        setFileUploadError("Only image files are supported for file notes right now.");
-        return;
-      }
-
       if (!onUploadImage) {
         setFileUploadError("File upload is not configured.");
         return;
@@ -297,12 +263,7 @@ export function useNoteComposer({
     }
 
     if (!pendingFile) {
-      setFileUploadError("Choose an image file to continue.");
-      return;
-    }
-
-    if (!isImageFile(pendingFile)) {
-      setFileUploadError("Only image files are supported for file notes right now.");
+      setFileUploadError("Choose a file to continue.");
       return;
     }
 
@@ -519,11 +480,6 @@ export function useNoteComposer({
   };
 
   const handleDropFileAtPosition = async (file: File, position: { x: number; y: number }) => {
-    if (!isImageFile(file)) {
-      setFileUploadError("Only image files are supported for file notes right now.");
-      return;
-    }
-
     if (!onUploadImage) {
       setFileUploadError("File upload is not configured.");
       return;

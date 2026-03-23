@@ -387,7 +387,7 @@ export function BoardView({
                 <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
                   {isEditingFile
                     ? "Update the caption, or replace the file."
-                    : "Choose an image file and optional caption."}
+                    : "Choose a file and optional caption."}
                 </Paragraph>
               </YStack>
 
@@ -397,7 +397,6 @@ export function BoardView({
                 </Text>
                 <Input
                   type="file"
-                  accept="image/*"
                   onChange={handleFileInputChange}
                   disabled={isUploadingFile}
                 />

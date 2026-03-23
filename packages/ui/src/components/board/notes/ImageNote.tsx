@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { ExternalLink, FileImage } from "lucide-react";
+import { ExternalLink, FileText } from "lucide-react";
 import { createPortal } from "react-dom";
 import { Card, Paragraph, XStack, YStack, useTheme } from "tamagui";
 import type { ImageNote } from "@plumboard/core";
+import { canRenderImagePreview, canRenderPdfPreview } from "../filePreview.utils";
 
 type ImageNoteCardProps = {
   note: ImageNote;
@@ -18,9 +19,13 @@ export function ImageNoteCard({
   const theme = useTheme();
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [hasImageError, setHasImageError] = useState(false);
+  const [hasPdfError, setHasPdfError] = useState(false);
+  const supportsImagePreview = canRenderImagePreview(note.src);
+  const supportsPdfPreview = !supportsImagePreview && canRenderPdfPreview(note.src);
 
   useEffect(() => {
     setHasImageError(false);
+    setHasPdfError(false);
     setIsLightboxOpen(false);
   }, [note.id, note.src]);
 
@@ -43,13 +48,21 @@ export function ImageNoteCard({
   }, [isLightboxOpen]);
 
   useEffect(() => {
-    if (!shouldOpenLightbox || hasImageError) {
+    if (!shouldOpenLightbox || hasImageError || !supportsImagePreview) {
       return;
     }
 
     setIsLightboxOpen(true);
     onOpenLightboxHandled?.();
-  }, [hasImageError, onOpenLightboxHandled, shouldOpenLightbox]);
+  }, [hasImageError, onOpenLightboxHandled, shouldOpenLightbox, supportsImagePreview]);
+
+  useEffect(() => {
+    if (supportsImagePreview) {
+      return;
+    }
+
+    setIsLightboxOpen(false);
+  }, [supportsImagePreview]);
 
   return (
     <>
@@ -59,7 +72,7 @@ export function ImageNoteCard({
         style={{ borderRadius: 18, borderWidth: 1, borderColor: theme.borderSubtle.val }}
       >
         <YStack height="100%">
-          {!hasImageError ? (
+          {supportsImagePreview && !hasImageError ? (
             <button
               type="button"
               onDoubleClick={(event) => {
@@ -93,6 +106,32 @@ export function ImageNoteCard({
                 }}
               />
             </button>
+          ) : supportsPdfPreview && !hasPdfError ? (
+            <div
+              className="nodrag nopan"
+              style={{
+                flex: 1,
+                minHeight: 0,
+                backgroundColor: theme.surfaceHover.val,
+              }}
+            >
+              <iframe
+                src={note.src}
+                title={note.alt || note.caption || "PDF preview"}
+                className="nodrag nopan"
+                onError={() => {
+                  setHasPdfError(true);
+                }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  border: 0,
+                  display: "block",
+                  backgroundColor: theme.surfaceHover.val,
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
           ) : (
             <YStack
               className="nodrag nopan"
@@ -106,7 +145,7 @@ export function ImageNoteCard({
                 backgroundColor: theme.surfaceHover.val,
               }}
             >
-              <FileImage size={22} color={theme.textSecondary.val} />
+              <FileText size={22} color={theme.textSecondary.val} />
               <Paragraph
                 style={{
                   margin: 0,
@@ -115,7 +154,7 @@ export function ImageNoteCard({
                   lineHeight: 1.35,
                 }}
               >
-                Preview not available for this file type.
+                Preview not available for this file.
               </Paragraph>
               <a
                 href={note.src}
@@ -151,7 +190,7 @@ export function ImageNoteCard({
           ) : null}
         </YStack>
       </Card>
-      {isLightboxOpen && !hasImageError && typeof document !== "undefined"
+      {isLightboxOpen && supportsImagePreview && !hasImageError && typeof document !== "undefined"
         ? createPortal(
           <div
             role="dialog"

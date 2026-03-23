@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Copy, Pencil, Search, Trash2 } from "lucide-react";
 import type { Note } from "@plumboard/core";
 import { ContextActionMenu, type ContextActionMenuItem } from "./ContextActionMenu";
+import { canRenderImagePreview } from "./filePreview.utils";
 
 export type NoteContextMenuAction = "view" | "edit" | "duplicate" | "bring-front" | "send-back" | "delete";
 
@@ -20,12 +21,16 @@ const menuItems: ContextActionMenuItem<NoteContextMenuAction>[] = [
 
 const defaultNoteMenuActions = menuItems.map((item) => item.action);
 
-export function resolveNoteMenuActions(noteType: Note["type"]): NoteContextMenuAction[] {
-  if (noteType === "image") {
+export function resolveNoteMenuActions(note: Note): NoteContextMenuAction[] {
+  if (note.type === "image") {
+    if (!canRenderImagePreview(note.src)) {
+      return defaultNoteMenuActions.filter((action) => action !== "view");
+    }
+
     return defaultNoteMenuActions;
   }
 
-  if (noteType !== "link") {
+  if (note.type !== "link") {
     return defaultNoteMenuActions.filter((action) => action !== "edit" && action !== "view");
   }
 

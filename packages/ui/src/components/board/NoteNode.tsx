@@ -49,7 +49,7 @@ function NoteNodeComponent({
         offset={10}
       >
         <NoteActionMenu
-          actions={resolveNoteMenuActions(data.note.type)}
+          actions={resolveNoteMenuActions(data.note)}
           onAction={(action) => data.onMenuAction(data.note.id, action)}
         />
       </NodeToolbar>

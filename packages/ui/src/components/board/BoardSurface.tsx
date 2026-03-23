@@ -678,7 +678,7 @@ export function BoardSurface({
           }}
         >
           <NoteActionMenu
-            actions={contextMenuNote ? resolveNoteMenuActions(contextMenuNote.type) : undefined}
+            actions={contextMenuNote ? resolveNoteMenuActions(contextMenuNote) : undefined}
             onAction={runNoteContextMenuAction}
           />
         </div>
