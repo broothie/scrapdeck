@@ -1,4 +1,4 @@
-import { H2, Text, XStack, YStack, useTheme } from "tamagui";
+import { Text, XStack, YStack, useTheme } from "tamagui";
 
 type SidebarBrandProps = {
   title: string;
@@ -35,9 +35,17 @@ export function SidebarBrand({ title, subtitle, logoUrl }: SidebarBrandProps) {
           {subtitle}
         </Text>
       </XStack>
-      <H2 style={{ margin: 0 }}>
+      <Text
+        style={{
+          margin: 0,
+          fontSize: 20,
+          lineHeight: 24,
+          fontWeight: 700,
+          color: theme.textPrimary.val,
+        }}
+      >
         {title}
-      </H2>
+      </Text>
     </YStack>
   );
 }
