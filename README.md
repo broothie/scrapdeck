@@ -15,7 +15,8 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_PUBLISHABLE_KEY=...
 ```
 
-The current auth flow uses passwordless email magic links through Supabase.
+The current auth flow supports email/password sign-in and sign-up, with an optional passwordless
+email magic-link fallback through Supabase.
 After the first sign-in, the app asks the user to choose a username and stores it in Supabase auth metadata.
 
 ## Board Data

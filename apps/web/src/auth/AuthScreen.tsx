@@ -5,13 +5,88 @@ import { useAuth } from "./AuthProvider";
 export function AuthScreen() {
   const brandLogoUrl = `${import.meta.env.BASE_URL}plumboard-logo.png`;
   const theme = useTheme();
-  const { signInWithMagicLink } = useAuth();
+  const { signInWithMagicLink, signInWithPassword, signUpWithPassword } = useAuth();
+  const [authMode, setAuthMode] = useState<"password" | "magic-link">("password");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"sign-in" | "sign-up" | "magic-link" | null>(null);
+  const isSubmitting = pendingAction !== null;
 
-  const handleSubmit = async () => {
+  const validateCredentials = () => {
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError("Enter an email address to continue.");
+      return null;
+    }
+
+    if (!password) {
+      setError("Enter your password to continue.");
+      return null;
+    }
+
+    if (password.length < 6) {
+      setError("Passwords must be at least 6 characters.");
+      return null;
+    }
+
+    return {
+      email: trimmedEmail,
+      password,
+    };
+  };
+
+  const handlePasswordSignIn = async () => {
+    const credentials = validateCredentials();
+
+    if (!credentials) {
+      return;
+    }
+
+    setPendingAction("sign-in");
+    setError("");
+    setNotice("");
+
+    const result = await signInWithPassword(credentials.email, credentials.password);
+
+    setPendingAction(null);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+  };
+
+  const handlePasswordSignUp = async () => {
+    const credentials = validateCredentials();
+
+    if (!credentials) {
+      return;
+    }
+
+    setPendingAction("sign-up");
+    setError("");
+    setNotice("");
+
+    const result = await signUpWithPassword(credentials.email, credentials.password);
+
+    setPendingAction(null);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    setNotice(
+      result.requiresEmailConfirmation
+        ? `Account created for ${credentials.email}. Check your inbox to confirm your email, then sign in.`
+        : "Account created. You can sign in now.",
+    );
+  };
+
+  const handleMagicLinkSignIn = async () => {
     const trimmedEmail = email.trim();
 
     if (!trimmedEmail) {
@@ -19,13 +94,13 @@ export function AuthScreen() {
       return;
     }
 
-    setIsSubmitting(true);
+    setPendingAction("magic-link");
     setError("");
     setNotice("");
 
     const result = await signInWithMagicLink(trimmedEmail);
 
-    setIsSubmitting(false);
+    setPendingAction(null);
 
     if (result.error) {
       setError(result.error);
@@ -33,6 +108,13 @@ export function AuthScreen() {
     }
 
     setNotice(`Magic link sent to ${trimmedEmail}. Open the email to sign in.`);
+  };
+
+  const handleSwapMode = () => {
+    setAuthMode((currentMode) => (currentMode === "password" ? "magic-link" : "password"));
+    setError("");
+    setNotice("");
+    setPendingAction(null);
   };
 
   return (
@@ -81,7 +163,9 @@ export function AuthScreen() {
             </XStack>
             <H2 style={{ margin: 0, color: theme.textInk.val }}>Sign in to your boards</H2>
             <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
-              We&apos;ll send you a magic link and bring you right back into the prototype.
+              {authMode === "password"
+                ? "Use email + password to sign in or create a new account."
+                : "Use a magic link for passwordless sign-in."}
             </Paragraph>
           </YStack>
         </Card.Header>
@@ -97,7 +181,12 @@ export function AuthScreen() {
               onChange={(event) => setEmail(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
-                  handleSubmit();
+                  if (authMode === "password") {
+                    handlePasswordSignIn();
+                    return;
+                  }
+
+                  handleMagicLinkSignIn();
                 }
               }}
               style={{
@@ -106,32 +195,108 @@ export function AuthScreen() {
                 color: theme.textPrimary.val,
               }}
             />
+            {authMode === "password" ? (
+              <Input
+                autoCapitalize="none"
+                autoComplete="current-password"
+                secureTextEntry
+                placeholder="Password"
+                placeholderTextColor="$placeholderColor"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    handlePasswordSignIn();
+                  }
+                }}
+                style={{
+                  borderColor: theme.borderDefault.val,
+                  backgroundColor: theme.surfaceHover.val,
+                  color: theme.textPrimary.val,
+                }}
+              />
+            ) : null}
             {error ? (
               <Text style={{ color: theme.danger.val }}>{error}</Text>
             ) : null}
             {notice ? (
               <Text style={{ color: theme.success.val }}>{notice}</Text>
             ) : null}
-            <Button
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-              style={{
-                backgroundColor: theme.accentStrong.val,
-                borderColor: theme.accentStrong.val,
-                borderWidth: 1,
-              }}
-            >
-              {isSubmitting ? (
-                <Spinner color={theme.accentSubtle.val} />
-              ) : (
-                <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
-                  Send magic link
-                </Text>
-              )}
-            </Button>
+            {authMode === "password" ? (
+              <YStack gap="$2">
+                <Button
+                  onPress={handlePasswordSignIn}
+                  disabled={isSubmitting}
+                  style={{
+                    backgroundColor: theme.accentStrong.val,
+                    borderColor: theme.accentStrong.val,
+                    borderWidth: 1,
+                  }}
+                >
+                  {pendingAction === "sign-in" ? (
+                    <Spinner color={theme.accentSubtle.val} />
+                  ) : (
+                    <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
+                      Sign in
+                    </Text>
+                  )}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onPress={handlePasswordSignUp}
+                  disabled={isSubmitting}
+                  style={{
+                    borderColor: theme.borderDefault.val,
+                    backgroundColor: theme.surface.val,
+                  }}
+                >
+                  {pendingAction === "sign-up" ? (
+                    <Spinner color={theme.textPrimary.val} />
+                  ) : (
+                    <Text style={{ color: theme.textPrimary.val, fontWeight: 600 }}>
+                      Create account
+                    </Text>
+                  )}
+                </Button>
+              </YStack>
+            ) : (
+              <Button
+                onPress={handleMagicLinkSignIn}
+                disabled={isSubmitting}
+                style={{
+                  backgroundColor: theme.accentStrong.val,
+                  borderColor: theme.accentStrong.val,
+                  borderWidth: 1,
+                }}
+              >
+                {pendingAction === "magic-link" ? (
+                  <Spinner color={theme.accentSubtle.val} />
+                ) : (
+                  <Text style={{ color: theme.accentSubtle.val, fontWeight: 700 }}>
+                    Send magic link
+                  </Text>
+                )}
+              </Button>
+            )}
           </YStack>
         </Card.Footer>
       </Card>
+      <Button
+        variant="outlined"
+        onPress={handleSwapMode}
+        disabled={isSubmitting}
+        style={{
+          marginTop: "0.85rem",
+          borderColor: theme.borderDefault.val,
+          backgroundColor: theme.surface.val,
+        }}
+      >
+        <Text style={{ color: theme.textSecondary.val }}>
+          {authMode === "password"
+            ? "Use passwordless magic link"
+            : "Use email + password"}
+        </Text>
+      </Button>
     </YStack>
   );
 }

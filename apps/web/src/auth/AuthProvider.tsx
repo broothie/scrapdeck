@@ -16,6 +16,14 @@ type AuthContextValue = {
   user: User | null;
   username: string | null;
   signInWithMagicLink: (email: string) => Promise<{ error?: string }>;
+  signInWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ error?: string }>;
+  signUpWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ error?: string; requiresEmailConfirmation?: boolean }>;
   saveUsername: (username: string) => Promise<{ error?: string }>;
   signOut: () => Promise<{ error?: string }>;
 };
@@ -84,6 +92,39 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         return error ? { error: error.message } : {};
+      },
+      async signInWithPassword(email, password) {
+        if (!supabase) {
+          return { error: "Supabase is not configured yet." };
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        return error ? { error: error.message } : {};
+      },
+      async signUpWithPassword(email, password) {
+        if (!supabase) {
+          return { error: "Supabase is not configured yet." };
+        }
+
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+          },
+        });
+
+        if (error) {
+          return { error: error.message };
+        }
+
+        return {
+          requiresEmailConfirmation: !data.session,
+        };
       },
       async saveUsername(nextUsername) {
         if (!supabase) {
