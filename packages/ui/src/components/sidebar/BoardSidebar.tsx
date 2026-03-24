@@ -14,6 +14,7 @@ type BoardSidebarProps = {
   onOpenBoardSettings?: (boardId: string) => void;
   onCreateBoard?: () => void;
   accountUsername?: string;
+  accountAvatarUrl?: string;
   onOpenAccount?: () => void;
 };
 
@@ -27,6 +28,7 @@ export function BoardSidebar({
   onOpenBoardSettings,
   onCreateBoard,
   accountUsername,
+  accountAvatarUrl,
   onOpenAccount,
 }: BoardSidebarProps) {
   const theme = useTheme();
@@ -59,6 +61,7 @@ export function BoardSidebar({
       />
       <SidebarAccountSection
         accountUsername={accountUsername}
+        accountAvatarUrl={accountAvatarUrl}
         onOpenAccount={onOpenAccount}
       />
     </YStack>

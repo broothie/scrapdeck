@@ -1,12 +1,14 @@
-import { Button, Text, YStack, useTheme } from "tamagui";
+import { Button, Text, XStack, YStack, useTheme } from "tamagui";
 
 type SidebarAccountSectionProps = {
   accountUsername?: string;
+  accountAvatarUrl?: string;
   onOpenAccount?: () => void;
 };
 
 export function SidebarAccountSection({
   accountUsername,
+  accountAvatarUrl,
   onOpenAccount,
 }: SidebarAccountSectionProps) {
   const theme = useTheme();
@@ -58,16 +60,32 @@ export function SidebarAccountSection({
           boxShadow: "none",
         }}
       >
-        <Text
-          style={{
-            fontSize: 20,
-            lineHeight: 24,
-            fontWeight: 800,
-            color: onOpenAccount ? theme.textInk.val : theme.textSecondary.val,
-          }}
-        >
-          {accountUsername}
-        </Text>
+        <XStack style={{ alignItems: "center", gap: "0.55rem" }}>
+          {accountAvatarUrl ? (
+            <img
+              src={accountAvatarUrl}
+              alt={`${accountUsername} avatar`}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 999,
+                objectFit: "cover",
+                border: `1px solid ${theme.borderDefault.val}`,
+                display: "block",
+              }}
+            />
+          ) : null}
+          <Text
+            style={{
+              fontSize: 20,
+              lineHeight: 24,
+              fontWeight: 800,
+              color: onOpenAccount ? theme.textInk.val : theme.textSecondary.val,
+            }}
+          >
+            {accountUsername}
+          </Text>
+        </XStack>
       </Button>
     </YStack>
   );

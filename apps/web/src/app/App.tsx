@@ -188,8 +188,11 @@ function BoardRoutePage({
     selectedNoteIds: participant.selectedNoteIds,
     color: resolvePresenceColor(participant.userId),
   }));
-  const isBoardOwner = (board?.ownerUserId ?? currentUserId) === currentUserId;
-  const ownerLabel = isBoardOwner ? currentUsername : "collaborator";
+  const ownerUserId = board?.ownerUserId ?? currentUserId;
+  const isBoardOwner = ownerUserId === currentUserId;
+  const ownerLabel = isBoardOwner
+    ? currentUsername
+    : (presenceUsers.find((participant) => participant.userId === ownerUserId)?.name ?? "unknown");
 
   if (!board) {
     return (
@@ -571,6 +574,9 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       previewImage: typeof data.previewImage === "string" ? data.previewImage : undefined,
     };
   };
+  const accountAvatarUrl = resolveGravatarUrl(
+    normalizeGravatarHash(resolveEmailHash(user.email) ?? user.id),
+  );
 
   return (
     <XStack
@@ -591,6 +597,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
           onSelectBoard={handleSelectBoard}
           onOpenBoardSettings={handleOpenBoardSettings}
           accountUsername={username}
+          accountAvatarUrl={accountAvatarUrl}
           onOpenAccount={() => navigate("/account")}
         />
       ) : null}

@@ -3,6 +3,7 @@ import { Card, H2, Input, Paragraph, Text, ToggleGroup, XStack, YStack, useTheme
 import { AppButton } from "@plumboard/ui";
 
 type ThemePreference = "system" | "light" | "dark";
+const GRAVATAR_PROFILE_URL = "https://gravatar.com/";
 
 type AccountPageProps = {
   username: string;
@@ -161,6 +162,29 @@ export function AccountPage({
               <Text style={{ fontSize: 16 }}>
                 {email ?? "No email provided"}
               </Text>
+            </YStack>
+
+            <YStack gap="$2">
+              <Text style={{ color: theme.textMuted.val, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase" }}>
+                Profile photo
+              </Text>
+              <Text style={{ color: theme.textSecondary.val }}>
+                Profile photos are provided by Gravatar from your account email.
+              </Text>
+              <XStack style={{ justifyContent: "flex-start" }}>
+                <a
+                  href={GRAVATAR_PROFILE_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    color: theme.accentDefault.val,
+                    fontWeight: 600,
+                    textDecoration: "none",
+                  }}
+                >
+                  Manage profile on Gravatar
+                </a>
+              </XStack>
             </YStack>
 
             <YStack gap="$2">
