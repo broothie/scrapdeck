@@ -10,6 +10,7 @@ import {
   type ReactFlowInstance,
   useNodesState,
 } from "@xyflow/react";
+import { MousePointer2 } from "lucide-react";
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from "react";
 import { Text, View, useTheme } from "tamagui";
 import { resolveNoteDefaults, useAppStore, type Board, type Note } from "@plumboard/core";
@@ -72,6 +73,18 @@ type BoardSurfaceProps = {
   onAutoEditTextNoteHandled?: (noteId: string) => void;
   onDropFileAtPosition?: (file: File, position: { x: number; y: number }) => void | Promise<void>;
   onDropLinkAtPosition?: (url: string, position: { x: number; y: number }) => void | Promise<void>;
+  remotePresenceParticipants?: Array<{
+    id: string;
+    name: string;
+    color?: string;
+    cursor?: {
+      x: number;
+      y: number;
+    } | null;
+    selectedNoteIds?: string[];
+  }>;
+  onCursorPositionChange?: (position: { x: number; y: number } | null) => void;
+  onSelectedNoteIdsChange?: (noteIds: string[]) => void;
 };
 
 export function BoardSurface({
@@ -94,6 +107,9 @@ export function BoardSurface({
   onAutoEditTextNoteHandled,
   onDropFileAtPosition,
   onDropLinkAtPosition,
+  remotePresenceParticipants = [],
+  onCursorPositionChange,
+  onSelectedNoteIdsChange,
 }: BoardSurfaceProps) {
   const theme = useTheme();
   const updateNoteLayout = useAppStore((state) => state.updateNoteLayout);
@@ -114,6 +130,11 @@ export function BoardSurface({
   const [noteContextMenu, setNoteContextMenu] = useState<NoteContextMenuState | null>(null);
   const [canvasAddMenu, setCanvasAddMenu] = useState<CanvasAddMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+  const [viewportRevision, setViewportRevision] = useState(0);
+  const cursorEmitTimeoutRef = useRef<number | null>(null);
+  const lastCursorEmitAtRef = useRef(0);
+  const lastEmittedCursorRef = useRef<string>("none");
+  const lastEmittedSelectionRef = useRef("");
   const handleNoteActionComplete = useCallback((noteId: string, action: NoteContextMenuAction) => {
     if (action !== "send-back") {
       return;
@@ -132,6 +153,106 @@ export function BoardSurface({
     onEditLinkNote,
     onViewImageNote,
   });
+  const remoteSelectionsByNoteId = useMemo(() => {
+    const selections = new Map<string, Array<{ name: string; color?: string }>>();
+
+    remotePresenceParticipants.forEach((participant) => {
+      participant.selectedNoteIds?.forEach((noteId) => {
+        const currentSelections = selections.get(noteId) ?? [];
+        currentSelections.push({
+          name: participant.name,
+          color: participant.color,
+        });
+        selections.set(noteId, currentSelections);
+      });
+    });
+
+    return selections;
+  }, [remotePresenceParticipants]);
+  const remoteCursorOverlays = useMemo(() => {
+    if (!flowInstance) {
+      return [];
+    }
+
+    const paneBounds = boardSurfaceRef.current?.getBoundingClientRect();
+    if (!paneBounds) {
+      return [];
+    }
+
+    return remotePresenceParticipants
+      .filter((participant) => participant.cursor && Number.isFinite(participant.cursor.x) && Number.isFinite(participant.cursor.y))
+      .map((participant) => {
+        const screenPosition = flowInstance.flowToScreenPosition({
+          x: participant.cursor!.x,
+          y: participant.cursor!.y,
+        });
+
+        return {
+          id: participant.id,
+          name: participant.name,
+          color: participant.color ?? theme.accentDefault.val,
+          left: screenPosition.x - paneBounds.left,
+          top: screenPosition.y - paneBounds.top,
+        };
+      });
+  }, [flowInstance, remotePresenceParticipants, theme.accentDefault.val, viewportRevision]);
+
+  const emitCursorPosition = useCallback((position: { x: number; y: number } | null) => {
+    if (!onCursorPositionChange) {
+      return;
+    }
+
+    const now = Date.now();
+    const nextCursor = position
+      ? { x: Math.round(position.x), y: Math.round(position.y) }
+      : null;
+    const nextCursorKey = nextCursor ? `${nextCursor.x}:${nextCursor.y}` : "none";
+
+    if (nextCursorKey === lastEmittedCursorRef.current) {
+      return;
+    }
+
+    const flush = () => {
+      lastCursorEmitAtRef.current = Date.now();
+      lastEmittedCursorRef.current = nextCursorKey;
+      onCursorPositionChange(nextCursor);
+    };
+
+    const elapsed = now - lastCursorEmitAtRef.current;
+    if (elapsed >= 80 || nextCursor === null) {
+      if (cursorEmitTimeoutRef.current) {
+        window.clearTimeout(cursorEmitTimeoutRef.current);
+        cursorEmitTimeoutRef.current = null;
+      }
+      flush();
+      return;
+    }
+
+    if (cursorEmitTimeoutRef.current) {
+      window.clearTimeout(cursorEmitTimeoutRef.current);
+    }
+
+    cursorEmitTimeoutRef.current = window.setTimeout(() => {
+      cursorEmitTimeoutRef.current = null;
+      flush();
+    }, 80 - elapsed);
+  }, [onCursorPositionChange]);
+
+  const emitSelectedNoteIds = useCallback((noteIds: string[]) => {
+    if (!onSelectedNoteIdsChange) {
+      return;
+    }
+
+    const normalized = [...new Set(noteIds)].sort();
+    const selectionKey = normalized.join("|");
+
+    if (selectionKey === lastEmittedSelectionRef.current) {
+      return;
+    }
+
+    lastEmittedSelectionRef.current = selectionKey;
+    onSelectedNoteIdsChange(normalized);
+  }, [onSelectedNoteIdsChange]);
 
   useEffect(() => {
     setNodes((previousNodes) => {
@@ -141,47 +262,55 @@ export function BoardSurface({
           .map((node) => node.id),
       );
 
-      return board.notes.map((note, index) => ({
-        id: note.id,
-        type: "note",
-        selected: selectedNodeIds.has(note.id),
-        position: {
-          x: note.x,
-          y: note.y,
-        },
-        zIndex: index + 1,
-        width: note.width,
-        height: note.height,
-        data: {
-          boardId: board.id,
-          note,
-          showPinnedMenu: !noteContextMenu,
-          onMenuAction: runNoteMenuAction,
-          onAutoGrowHeight: (noteId: string, nextHeight: number) => {
-            if (nextHeight <= note.height + 1) {
-              return;
-            }
+      return board.notes.map((note, index) => {
+        const isSelectionLocked = remoteSelectionsByNoteId.has(note.id);
 
-            updateNoteLayout(board.id, noteId, { height: nextHeight });
+        return {
+          id: note.id,
+          type: "note",
+          selected: !isSelectionLocked && selectedNodeIds.has(note.id),
+          selectable: !isSelectionLocked,
+          draggable: !isSelectionLocked,
+          position: {
+            x: note.x,
+            y: note.y,
           },
-          onResizeEnd: (
-            noteId: string,
-            nextLayout: Pick<Note, "x" | "y" | "width" | "height">,
-          ) => {
-            updateNoteLayout(board.id, noteId, nextLayout);
+          zIndex: index + 1,
+          width: note.width,
+          height: note.height,
+          data: {
+            boardId: board.id,
+            note,
+            remoteSelectedBy: remoteSelectionsByNoteId.get(note.id) ?? [],
+            showPinnedMenu: !noteContextMenu,
+            onMenuAction: runNoteMenuAction,
+            onAutoGrowHeight: (noteId: string, nextHeight: number) => {
+              if (nextHeight <= note.height + 1) {
+                return;
+              }
+
+              updateNoteLayout(board.id, noteId, { height: nextHeight });
+            },
+            onResizeEnd: (
+              noteId: string,
+              nextLayout: Pick<Note, "x" | "y" | "width" | "height">,
+            ) => {
+              updateNoteLayout(board.id, noteId, nextLayout);
+            },
+            shouldStartEditing: note.type === "text" && autoEditTextNoteId === note.id,
+            onStartEditingHandled: () => onAutoEditTextNoteHandled?.(note.id),
+            shouldOpenLightbox: note.type === "image" && activeLightboxImageNoteId === note.id,
+            onOpenLightboxHandled: () => onLightboxImageNoteHandled?.(note.id),
           },
-          shouldStartEditing: note.type === "text" && autoEditTextNoteId === note.id,
-          onStartEditingHandled: () => onAutoEditTextNoteHandled?.(note.id),
-          shouldOpenLightbox: note.type === "image" && activeLightboxImageNoteId === note.id,
-          onOpenLightboxHandled: () => onLightboxImageNoteHandled?.(note.id),
-        },
-      }));
+        };
+      });
     });
   }, [
     activeLightboxImageNoteId,
     autoEditTextNoteId,
     board,
     noteContextMenu,
+    remoteSelectionsByNoteId,
     onLightboxImageNoteHandled,
     onAutoEditTextNoteHandled,
     runNoteMenuAction,
@@ -197,7 +326,43 @@ export function BoardSurface({
     setIsDropOverlayVisible(false);
     setDragPlacementPreview(null);
     setDragPlacementPosition(null);
+    emitCursorPosition(null);
+    emitSelectedNoteIds([]);
   }, [board.id]);
+
+  useEffect(() => () => {
+    if (cursorEmitTimeoutRef.current) {
+      window.clearTimeout(cursorEmitTimeoutRef.current);
+    }
+  }, []);
+  useEffect(() => {
+    const clearCursorSync = () => {
+      emitCursorPosition(null);
+    };
+
+    const handleDocumentMouseOut = (event: MouseEvent) => {
+      const relatedTarget = event.relatedTarget as Node | null;
+      if (!relatedTarget) {
+        clearCursorSync();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        clearCursorSync();
+      }
+    };
+
+    window.addEventListener("blur", clearCursorSync);
+    document.addEventListener("mouseout", handleDocumentMouseOut);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("blur", clearCursorSync);
+      document.removeEventListener("mouseout", handleDocumentMouseOut);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [emitCursorPosition]);
 
   useEffect(() => {
     if (!noteContextMenu && !canvasAddMenu && !isFabMenuOpen) {
@@ -278,20 +443,37 @@ export function BoardSurface({
   }, []);
 
   const handlePaneMouseMove = (event: ReactMouseEvent) => {
-    if (!placementPreview) {
-      return;
-    }
-
     const resolvedPosition = getFlowPositionFromClientCoordinates(event);
 
     if (!resolvedPosition) {
       return;
     }
 
+    emitCursorPosition(resolvedPosition);
+
+    if (!placementPreview) {
+      return;
+    }
+
     setPlacementPosition(resolvedPosition);
   };
 
+  const handleCanvasPointerMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    const resolvedPosition = getFlowPositionFromClientCoordinates(event);
+    if (!resolvedPosition) {
+      return;
+    }
+
+    emitCursorPosition(resolvedPosition);
+  };
+
+  const handleCanvasPointerLeave = () => {
+    emitCursorPosition(null);
+  };
+
   const handlePaneMouseLeave = () => {
+    emitCursorPosition(null);
+
     if (!placementPreview) {
       return;
     }
@@ -539,7 +721,10 @@ export function BoardSurface({
       return nodes;
     }
 
-    return [...nodes, buildPlacementPreviewNode(activePlacementPreview, activePlacementPosition)];
+    return [
+      ...nodes,
+      buildPlacementPreviewNode(activePlacementPreview, activePlacementPosition),
+    ];
   }, [activePlacementPosition, activePlacementPreview, nodes]);
   const contextMenuNote = noteContextMenu
     ? board.notes.find((note) => note.id === noteContextMenu.noteId)
@@ -562,6 +747,8 @@ export function BoardSurface({
   return (
     <div
       ref={boardSurfaceRef}
+      onMouseMoveCapture={handleCanvasPointerMove}
+      onMouseLeave={handleCanvasPointerLeave}
       onDragEnterCapture={handleCanvasDragEnter}
       onDragOverCapture={handleCanvasDragOver}
       onDragLeaveCapture={handleCanvasDragLeave}
@@ -587,6 +774,16 @@ export function BoardSurface({
         onPaneMouseMove={handlePaneMouseMove}
         onPaneMouseLeave={handlePaneMouseLeave}
         onPaneClick={handlePaneClick}
+        onSelectionChange={(selection) => {
+          const selectedNoteIds = selection.nodes
+            .filter((node) => node.type === "note")
+            .map((node) => node.id)
+            .filter((noteId) => !remoteSelectionsByNoteId.has(noteId));
+          emitSelectedNoteIds(selectedNoteIds);
+        }}
+        onMove={() => {
+          setViewportRevision((current) => current + 1);
+        }}
         fitView
         fitViewOptions={{ padding: 0.18 }}
         minZoom={0.4}
@@ -701,6 +898,46 @@ export function BoardSurface({
         onToggle={() => setIsFabMenuOpen((current) => !current)}
         onAction={handleFabAction}
       />
+      {remoteCursorOverlays.map((cursor) => (
+        <div
+          key={`cursor-overlay-${cursor.id}`}
+          style={{
+            position: "absolute",
+            left: cursor.left,
+            top: cursor.top,
+            transform: "translate(-2px, -2px)",
+            pointerEvents: "none",
+            zIndex: 34,
+          }}
+        >
+          <div
+            style={{
+              color: cursor.color,
+              filter: "drop-shadow(0 3px 8px rgba(13, 16, 32, 0.35))",
+            }}
+          >
+            <MousePointer2 size={18} strokeWidth={2.35} />
+          </div>
+          <div
+            style={{
+              position: "absolute",
+              left: 12,
+              top: -8,
+              borderRadius: 999,
+              border: `1px solid ${cursor.color}`,
+              backgroundColor: "rgba(23, 24, 42, 0.88)",
+              color: "#f4f5ff",
+              padding: "0.15rem 0.45rem",
+              fontSize: 11,
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              transform: "translate(0, -50%)",
+            }}
+          >
+            {cursor.name}
+          </div>
+        </div>
+      ))}
       {activePlacementPreview ? (
         <View
           style={{

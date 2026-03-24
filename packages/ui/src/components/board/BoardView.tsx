@@ -15,7 +15,15 @@ type BoardViewProps = {
     id: string;
     name: string;
     avatarUrl?: string;
+    color?: string;
     isCurrentUser?: boolean;
+    isCurrentSession?: boolean;
+    userId?: string;
+    cursor?: {
+      x: number;
+      y: number;
+    } | null;
+    selectedNoteIds?: string[];
   }>;
   shouldOpenMetadataEditor?: boolean;
   onMetadataEditorOpenHandled?: () => void;
@@ -34,6 +42,8 @@ type BoardViewProps = {
     previewImage?: string;
   }>;
   isMobileLayout?: boolean;
+  onLocalCursorPositionChange?: (position: { x: number; y: number } | null) => void;
+  onLocalSelectedNoteIdsChange?: (noteIds: string[]) => void;
 };
 
 export function BoardView({
@@ -47,6 +57,8 @@ export function BoardView({
   onUploadImage,
   onResolveLinkPreview,
   isMobileLayout = false,
+  onLocalCursorPositionChange,
+  onLocalSelectedNoteIdsChange,
 }: BoardViewProps) {
   const theme = useTheme();
   const [activeLightboxImageNoteId, setActiveLightboxImageNoteId] = useState<string | null>(null);
@@ -280,8 +292,8 @@ export function BoardView({
                     style={{
                       alignItems: "center",
                       borderRadius: 999,
-                      border: `1px solid ${theme.borderDefault.val}`,
-                      backgroundColor: participant.isCurrentUser ? theme.accentLight.val : theme.surfaceHover.val,
+                      border: `1px solid ${participant.color ?? theme.borderDefault.val}`,
+                      backgroundColor: participant.isCurrentSession ? theme.accentLight.val : theme.surfaceHover.val,
                       padding: "0.2rem 0.45rem 0.2rem 0.3rem",
                       gap: "0.35rem",
                     }}
@@ -294,20 +306,29 @@ export function BoardView({
                           width: 18,
                           height: 18,
                           borderRadius: 999,
-                          border: `1px solid ${theme.borderSubtle.val}`,
+                          border: `1px solid ${participant.color ?? theme.borderSubtle.val}`,
                           objectFit: "cover",
                           display: "block",
                         }}
                       />
                     ) : null}
+                    <span
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 999,
+                        flexShrink: 0,
+                        backgroundColor: participant.color ?? theme.accentDefault.val,
+                      }}
+                    />
                     <Text
                       style={{
                         fontSize: 12,
                         fontWeight: 600,
-                        color: participant.isCurrentUser ? theme.accentText.val : theme.textSecondary.val,
+                        color: participant.isCurrentSession ? theme.accentText.val : theme.textSecondary.val,
                       }}
                     >
-                      {participant.isCurrentUser ? "You" : participant.name}
+                      {participant.isCurrentSession ? "You" : participant.name}
                     </Text>
                   </XStack>
                 ))}
@@ -406,7 +427,10 @@ export function BoardView({
         <>
           <BoardSurface
             board={board}
+            remotePresenceParticipants={presenceParticipants.filter((participant) => !participant.isCurrentSession)}
             isUploadingFile={isUploadingFile}
+            onCursorPositionChange={onLocalCursorPositionChange}
+            onSelectedNoteIdsChange={onLocalSelectedNoteIdsChange}
             onCreateTextNote={handleAddTextNote}
             onCreateTextNoteAtPosition={handleAddTextNoteAtPosition}
             onCreateFile={handleAddFile}

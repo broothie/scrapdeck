@@ -18,6 +18,10 @@ export type NoteNodeData = {
   onStartEditingHandled?: () => void;
   shouldOpenLightbox?: boolean;
   onOpenLightboxHandled?: () => void;
+  remoteSelectedBy?: Array<{
+    name: string;
+    color?: string;
+  }>;
   onMenuAction: (noteId: string, action: NoteContextMenuAction) => void;
   onAutoGrowHeight: (noteId: string, nextHeight: number) => void;
   onResizeEnd: (
@@ -34,6 +38,10 @@ function NoteNodeComponent({
   positionAbsoluteX,
   positionAbsoluteY,
 }: NodeProps<NoteFlowNode>) {
+  const remoteSelectedBy = data.remoteSelectedBy ?? [];
+  const isRemotelySelected = remoteSelectedBy.length > 0;
+  const remoteSelectionLeadColor = remoteSelectedBy[0]?.color ?? "#6f74ff";
+
   return (
     <div
       style={{
@@ -79,11 +87,51 @@ function NoteNodeComponent({
           width: "100%",
           height: "100%",
           borderRadius: 18,
+          border: isRemotelySelected
+            ? `1px solid ${remoteSelectionLeadColor}`
+            : "1px solid transparent",
           boxShadow: selected
             ? "0 10px 22px rgba(5, 8, 14, 0.12)"
-            : "0 4px 10px rgba(5, 8, 14, 0.08)",
+            : (isRemotelySelected
+              ? `0 0 0 2px ${remoteSelectionLeadColor}33, 0 6px 14px rgba(5, 8, 14, 0.12)`
+              : "0 4px 10px rgba(5, 8, 14, 0.08)"),
         }}
       >
+        {isRemotelySelected ? (
+          <div
+            style={{
+              position: "absolute",
+              top: -10,
+              left: 12,
+              zIndex: 5,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              flexWrap: "wrap",
+              pointerEvents: "none",
+            }}
+          >
+            {remoteSelectedBy.map((participant, index) => (
+              <span
+                key={`${participant.name}-${index}`}
+                style={{
+                  borderRadius: 999,
+                  border: `1px solid ${participant.color ?? "#6f74ff"}`,
+                  backgroundColor: "rgba(23, 24, 42, 0.88)",
+                  color: "#f4f5ff",
+                  padding: "0.1rem 0.45rem",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  letterSpacing: 0.1,
+                  whiteSpace: "nowrap",
+                  lineHeight: 1.3,
+                }}
+              >
+                {participant.name}
+              </span>
+            ))}
+          </div>
+        ) : null}
         {data.note.type === "text" ? (
           <TextNoteCard
             boardId={data.boardId}

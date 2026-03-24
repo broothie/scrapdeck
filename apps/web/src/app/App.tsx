@@ -40,6 +40,26 @@ const MOBILE_LAYOUT_MEDIA_QUERY = [
   "(max-width: 1024px)",
   "(max-height: 640px) and (orientation: landscape)",
 ].join(", ");
+const PRESENCE_COLORS = [
+  "#5C7CFA",
+  "#12B886",
+  "#F08C00",
+  "#E8590C",
+  "#7950F2",
+];
+
+function resolvePresenceColor(seed: string) {
+  if (!seed) {
+    return PRESENCE_COLORS[0];
+  }
+
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+  }
+
+  return PRESENCE_COLORS[hash % PRESENCE_COLORS.length];
+}
 
 function resolveSystemThemeMode(): AppThemeMode {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -120,6 +140,13 @@ type BoardRoutePageProps = {
   }>;
   onResolveLinkPreview: (url: string) => Promise<LinkPreviewResponse>;
   isMobileLayout?: boolean;
+  localCursorPosition: {
+    x: number;
+    y: number;
+  } | null;
+  localSelectedNoteIds: string[];
+  onLocalCursorPositionChange: (position: { x: number; y: number } | null) => void;
+  onLocalSelectedNoteIdsChange: (noteIds: string[]) => void;
 };
 
 function BoardRoutePage({
@@ -135,6 +162,10 @@ function BoardRoutePage({
   onUploadImage,
   onResolveLinkPreview,
   isMobileLayout = false,
+  localCursorPosition,
+  localSelectedNoteIds,
+  onLocalCursorPositionChange,
+  onLocalSelectedNoteIdsChange,
 }: BoardRoutePageProps) {
   const theme = useTheme();
   const { boardId = "" } = useParams<{ boardId: string }>();
@@ -144,11 +175,18 @@ function BoardRoutePage({
     userId: currentUserId,
     username: currentUsername,
     emailHash: currentUserEmailHash,
+    cursor: localCursorPosition,
+    selectedNoteIds: localSelectedNoteIds,
   }).map((participant) => ({
-    id: participant.userId,
+    id: participant.sessionId,
     name: participant.username,
     avatarUrl: resolveGravatarUrl(normalizeGravatarHash(participant.avatarHash ?? participant.userId)),
     isCurrentUser: participant.userId === currentUserId,
+    isCurrentSession: participant.isCurrentSession,
+    userId: participant.userId,
+    cursor: participant.cursor ?? null,
+    selectedNoteIds: participant.selectedNoteIds,
+    color: resolvePresenceColor(participant.userId),
   }));
   const isBoardOwner = (board?.ownerUserId ?? currentUserId) === currentUserId;
   const ownerLabel = isBoardOwner ? currentUsername : "collaborator";
@@ -212,6 +250,8 @@ function BoardRoutePage({
           onUploadImage={onUploadImage}
           onResolveLinkPreview={onResolveLinkPreview}
           isMobileLayout={isMobileLayout}
+          onLocalCursorPositionChange={onLocalCursorPositionChange}
+          onLocalSelectedNoteIdsChange={onLocalSelectedNoteIdsChange}
         />
       </View>
     </YStack>
@@ -233,6 +273,8 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const [isMobileLayout, setIsMobileLayout] = useState(resolveIsMobileLayout);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
+  const [localCursorPosition, setLocalCursorPosition] = useState<{ x: number; y: number } | null>(null);
+  const [localSelectedNoteIds, setLocalSelectedNoteIds] = useState<string[]>([]);
   const [isCreatingBoard, setIsCreatingBoard] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState("");
   const [newBoardDescription, setNewBoardDescription] = useState("");
@@ -251,6 +293,11 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       setActiveBoard(routeBoardId);
     }
   }, [activeBoardId, boardLoadError, boards, isBoardLoading, routeBoardId, setActiveBoard]);
+
+  useEffect(() => {
+    setLocalCursorPosition(null);
+    setLocalSelectedNoteIds([]);
+  }, [routeBoardId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
@@ -596,6 +643,10 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
                 onUploadImage={handleUploadImage}
                 onResolveLinkPreview={handleResolveLinkPreview}
                 isMobileLayout={isMobileLayout}
+                localCursorPosition={localCursorPosition}
+                localSelectedNoteIds={localSelectedNoteIds}
+                onLocalCursorPositionChange={setLocalCursorPosition}
+                onLocalSelectedNoteIdsChange={setLocalSelectedNoteIds}
               />
             )}
           />
