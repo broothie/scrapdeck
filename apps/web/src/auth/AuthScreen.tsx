@@ -50,7 +50,7 @@ export function AuthScreen() {
   return (
     <YStack
       style={{
-        minHeight: "100vh",
+        minHeight: "var(--app-viewport-height)",
         alignItems: "center",
         justifyContent: "center",
         padding: "3.25rem 1.25rem",

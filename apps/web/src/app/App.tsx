@@ -237,7 +237,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
   if (isLoading) {
     return (
-      <YStack style={{ minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>
+      <YStack style={{ minHeight: "var(--app-viewport-height)", alignItems: "center", justifyContent: "center" }}>
         <Spinner size="large" />
       </YStack>
     );
@@ -253,7 +253,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
   if (isBoardLoading) {
     return (
-      <YStack style={{ minHeight: "100vh", alignItems: "center", justifyContent: "center" }}>
+      <YStack style={{ minHeight: "var(--app-viewport-height)", alignItems: "center", justifyContent: "center" }}>
         <Spinner size="large" />
       </YStack>
     );
@@ -263,7 +263,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     return (
       <YStack
         style={{
-          minHeight: "100vh",
+          minHeight: "var(--app-viewport-height)",
           alignItems: "center",
           justifyContent: "center",
           padding: "1.5rem",
@@ -431,7 +431,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   return (
     <XStack
       style={{
-        height: "100vh",
+        height: "var(--app-viewport-height)",
         backgroundColor: theme.canvas.val,
       }}
     >

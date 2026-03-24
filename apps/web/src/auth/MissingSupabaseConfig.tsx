@@ -6,7 +6,7 @@ export function MissingSupabaseConfig() {
   return (
     <YStack
       style={{
-        minHeight: "100vh",
+        minHeight: "var(--app-viewport-height)",
         alignItems: "center",
         justifyContent: "center",
         padding: "1.5rem",
