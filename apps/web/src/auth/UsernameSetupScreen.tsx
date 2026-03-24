@@ -95,7 +95,7 @@ export function UsernameSetupScreen() {
             <Input
               autoCapitalize="none"
               autoCorrect={false}
-              placeholder="andrew_booth"
+              placeholder="your_username"
               placeholderTextColor="$placeholderColor"
               value={username}
               onChange={(event) => {
