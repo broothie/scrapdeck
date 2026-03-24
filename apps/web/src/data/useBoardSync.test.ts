@@ -55,7 +55,7 @@ describe("useBoardSync", () => {
       expect(result.current.isLoading).toBe(false);
     });
 
-    expect(fetchSpy).toHaveBeenCalledWith("user-1");
+    expect(fetchSpy).toHaveBeenCalledWith("user-1", { noteBoardId: null });
     expect(useAppStore.getState().boards).toEqual(boardsFixture);
     expect(saveSpy).not.toHaveBeenCalled();
   });
@@ -92,7 +92,18 @@ describe("useBoardSync", () => {
     });
 
     expect(saveSpy).toHaveBeenCalledTimes(1);
-    expect(saveSpy).toHaveBeenCalledWith("user-1", useAppStore.getState().boards);
+    expect(saveSpy).toHaveBeenCalledWith(
+      "user-1",
+      expect.arrayContaining([
+        expect.objectContaining({ id: "board-2" }),
+      ]),
+      {
+        boardUpsertIds: ["board-2"],
+        boardDeleteIds: [],
+        noteUpsertIds: [],
+        noteDeleteIds: [],
+      },
+    );
 
     unmount();
   });

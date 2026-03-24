@@ -240,7 +240,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     isLoading: isBoardLoading,
     loadError: boardLoadError,
     saveError: boardSaveError,
-  } = useBoardSync(user?.id);
+  } = useBoardSync(user?.id, routeBoardId);
 
   useEffect(() => {
     if (!routeBoardId || isBoardLoading || boardLoadError) {

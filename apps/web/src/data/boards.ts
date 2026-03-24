@@ -116,7 +116,11 @@ export function resolveNoteIdsToSoftDelete(
     .map((note) => note.id);
 }
 
-export async function fetchBoards(userId: string) {
+type FetchBoardsOptions = {
+  noteBoardId?: string | null;
+};
+
+export async function fetchBoards(userId: string, options: FetchBoardsOptions = {}) {
   if (!supabase) {
     throw new Error("Supabase is not configured.");
   }
@@ -173,12 +177,21 @@ export async function fetchBoards(userId: string) {
     return [];
   }
 
+  const requestedNoteBoardId = options.noteBoardId ?? null;
+  const noteBoardIds = requestedNoteBoardId && boardIds.includes(requestedNoteBoardId)
+    ? [requestedNoteBoardId]
+    : [];
+
+  if (noteBoardIds.length === 0) {
+    return assembleBoards(boards, []);
+  }
+
   const { data: notes, error: notesError } = await supabase
     .from("notes")
     .select(
       "id, board_id, user_id, type, x, y, width, height, title, body, src, alt, caption, url, site_name, description, preview_image, created_at, updated_at, deleted_at",
     )
-    .in("board_id", boardIds)
+    .in("board_id", noteBoardIds)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
@@ -189,47 +202,114 @@ export async function fetchBoards(userId: string) {
   return assembleBoards(boards, notes ?? []);
 }
 
-export async function saveBoards(userId: string, boards: Board[]) {
+export type SaveBoardsChangeSet = {
+  boardUpsertIds: string[];
+  boardDeleteIds: string[];
+  noteUpsertIds: string[];
+  noteDeleteIds: string[];
+};
+
+type BoardNoteRef = {
+  boardId: string;
+  note: Note;
+};
+
+function mapBoardNotesById(boards: Board[]) {
+  const notesById = new Map<string, BoardNoteRef>();
+
+  for (const board of boards) {
+    for (const note of board.notes) {
+      notesById.set(note.id, { boardId: board.id, note });
+    }
+  }
+
+  return notesById;
+}
+
+function resolveDefaultChangeSet(boards: Board[]): SaveBoardsChangeSet {
+  return {
+    boardUpsertIds: boards.map((board) => board.id),
+    boardDeleteIds: [],
+    noteUpsertIds: boards.flatMap((board) => board.notes.map((note) => note.id)),
+    noteDeleteIds: [],
+  };
+}
+
+export async function saveBoards(
+  userId: string,
+  boards: Board[],
+  changes?: SaveBoardsChangeSet,
+) {
   if (!supabase) {
     throw new Error("Supabase is not configured.");
   }
 
-  const boardRows = boards.map((board) => mapBoardToRow(userId, board));
-  const noteRows = boards.flatMap((board) =>
-    board.notes.map((note) => mapNoteToRow(userId, board.id, note)),
-  );
+  const boardById = new Map(boards.map((board) => [board.id, board]));
+  const noteById = mapBoardNotesById(boards);
+  const changeSet = changes ?? resolveDefaultChangeSet(boards);
 
-  const boardSnapshotRows = boardRows.map((board) => ({
-    id: board.id,
-    title: board.title,
-    description: board.description,
-  }));
-  const noteSnapshotRows = noteRows.map((note) => ({
-    id: note.id,
-    board_id: note.board_id,
-    type: note.type,
-    x: note.x,
-    y: note.y,
-    width: note.width,
-    height: note.height,
-    title: note.title,
-    body: note.body,
-    src: note.src,
-    alt: note.alt,
-    caption: note.caption,
-    url: note.url,
-    site_name: note.site_name,
-    description: note.description,
-    preview_image: note.preview_image,
-  }));
+  const boardRowsToUpsert = changeSet.boardUpsertIds
+    .map((boardId) => boardById.get(boardId))
+    .filter((board): board is Board => Boolean(board))
+    .map((board) => mapBoardToRow(userId, board));
 
-  const { error } = await supabase.rpc("save_boards_snapshot", {
-    p_user_id: userId,
-    p_boards: boardSnapshotRows,
-    p_notes: noteSnapshotRows,
-  });
+  if (boardRowsToUpsert.length > 0) {
+    const { error: boardUpsertError } = await supabase
+      .from("boards")
+      .upsert(boardRowsToUpsert, { onConflict: "id" });
 
-  if (error) {
-    throw error;
+    if (boardUpsertError) {
+      throw boardUpsertError;
+    }
+  }
+
+  const boardIdsToSoftDelete = [...new Set(changeSet.boardDeleteIds)];
+
+  if (boardIdsToSoftDelete.length > 0) {
+    const { error: boardDeleteError } = await supabase
+      .from("boards")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("user_id", userId)
+      .is("deleted_at", null)
+      .in("id", boardIdsToSoftDelete);
+
+    if (boardDeleteError) {
+      throw boardDeleteError;
+    }
+  }
+
+  const noteRowsToUpsert = changeSet.noteUpsertIds
+    .map((noteId) => {
+      const noteRef = noteById.get(noteId);
+      if (!noteRef) {
+        return null;
+      }
+
+      return mapNoteToRow(userId, noteRef.boardId, noteRef.note);
+    })
+    .filter((row): row is NoteInsert => Boolean(row));
+
+  if (noteRowsToUpsert.length > 0) {
+    const { error: noteUpsertError } = await supabase
+      .from("notes")
+      .upsert(noteRowsToUpsert, { onConflict: "id" });
+
+    if (noteUpsertError) {
+      throw noteUpsertError;
+    }
+  }
+
+  const noteIdsToSoftDelete = [...new Set(changeSet.noteDeleteIds)];
+
+  if (noteIdsToSoftDelete.length > 0) {
+    const { error: noteDeleteError } = await supabase
+      .from("notes")
+      .update({ deleted_at: new Date().toISOString() })
+      .is("deleted_at", null)
+      .in("id", noteIdsToSoftDelete);
+
+    if (noteDeleteError) {
+      throw noteDeleteError;
+    }
   }
 }
