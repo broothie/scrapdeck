@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Card, H2, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useTheme } from "tamagui";
+import { Card, H2, Input, Paragraph, Spinner, Text, Theme, View, XStack, YStack, useTheme } from "tamagui";
 import { useAppStore } from "@plumboard/core";
 import { BoardSidebar, BoardView } from "@plumboard/ui";
 import { Navigate, Route, Routes, useMatch, useNavigate, useParams } from "react-router-dom";
@@ -233,6 +233,9 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const [isMobileLayout, setIsMobileLayout] = useState(resolveIsMobileLayout);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
+  const [isCreatingBoard, setIsCreatingBoard] = useState(false);
+  const [newBoardTitle, setNewBoardTitle] = useState("");
+  const [newBoardDescription, setNewBoardDescription] = useState("");
   const {
     isLoading: isBoardLoading,
     loadError: boardLoadError,
@@ -283,6 +286,24 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
       window.visualViewport?.removeEventListener("resize", syncMobileLayout);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isCreatingBoard) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsCreatingBoard(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isCreatingBoard]);
 
   if (!isConfigured) {
     return <MissingSupabaseConfig />;
@@ -371,19 +392,27 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
   const handleSaveUsername = async (nextUsername: string) => saveUsername(nextUsername);
 
+  const handleOpenCreateBoardModal = () => {
+    setNewBoardTitle(createRandomBoardTitle());
+    setNewBoardDescription("");
+    setIsCreatingBoard(true);
+  };
+
   const handleCreateBoard = () => {
     const boardId = createId("board");
+    const nextTitle = newBoardTitle.trim() || createRandomBoardTitle();
+    const nextDescription = newBoardDescription.trim();
 
     addBoard({
       id: boardId,
-      title: createRandomBoardTitle(),
-      description: "",
+      title: nextTitle,
+      description: nextDescription,
       ownerUserId: user.id,
       notes: [],
     });
 
     setActiveBoard(boardId);
-    setBoardIdNeedingMetadataEdit(boardId);
+    setIsCreatingBoard(false);
     navigate(`/board/${encodeURIComponent(boardId)}`);
   };
 
@@ -511,7 +540,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
           currentUserId={user.id}
           boards={boards}
           onOpenBoards={() => navigate("/")}
-          onCreateBoard={handleCreateBoard}
+          onCreateBoard={handleOpenCreateBoardModal}
           onSelectBoard={handleSelectBoard}
           onOpenBoardSettings={handleOpenBoardSettings}
           accountUsername={username}
@@ -545,7 +574,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
               )
               : (
                 <YStack style={{ flex: 1, minHeight: 0 }}>
-                  <EmptyBoardsState onCreateBoard={handleCreateBoard} />
+                  <EmptyBoardsState onCreateBoard={handleOpenCreateBoardModal} />
                 </YStack>
               )}
           />
@@ -573,6 +602,125 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </View>
+      {isCreatingBoard ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create board"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsCreatingBoard(false);
+            }
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "1.25rem",
+            backgroundColor: "rgba(16, 12, 24, 0.5)",
+            zIndex: 70,
+          }}
+        >
+          <Card
+            style={{
+              width: "100%",
+              maxWidth: 560,
+              borderWidth: 1,
+              borderColor: theme.borderDefault.val,
+              backgroundColor: theme.surface.val,
+              boxShadow: "0 20px 40px rgba(14, 10, 22, 0.28)",
+            }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <YStack gap="$3" style={{ padding: "1rem" }}>
+              <YStack gap="$1">
+                <Text fontWeight="700">Create board</Text>
+                <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
+                  Choose a title and optional description for your new board.
+                </Paragraph>
+              </YStack>
+
+              <YStack gap="$2">
+                <Text style={{ fontWeight: 600 }}>Board title</Text>
+                <Input
+                  autoFocus
+                  aria-label="New board title"
+                  value={newBoardTitle}
+                  onFocus={(event) => {
+                    event.currentTarget.select();
+                  }}
+                  onChange={(event) => setNewBoardTitle(event.currentTarget.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      handleCreateBoard();
+                    }
+                  }}
+                  style={{ width: "100%" }}
+                />
+              </YStack>
+
+              <YStack gap="$2">
+                <Text style={{ fontWeight: 600 }}>Description</Text>
+                <textarea
+                  aria-label="New board description"
+                  value={newBoardDescription}
+                  onChange={(event) => setNewBoardDescription(event.currentTarget.value)}
+                  placeholder="Describe what this board is for"
+                  style={{
+                    margin: 0,
+                    width: "100%",
+                    minHeight: 120,
+                    resize: "vertical",
+                    borderRadius: 12,
+                    border: `1px solid ${theme.borderDefault.val}`,
+                    backgroundColor: theme.surfaceHover.val,
+                    color: theme.textPrimary.val,
+                    font: "inherit",
+                    lineHeight: 1.5,
+                    padding: "0.75rem 0.85rem",
+                    outline: "none",
+                  }}
+                />
+              </YStack>
+
+              <XStack style={{ justifyContent: "flex-end", gap: "0.75rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingBoard(false)}
+                  style={{
+                    cursor: "pointer",
+                    padding: "0.6rem 0.9rem",
+                    borderRadius: 10,
+                    border: `1px solid ${theme.borderDefault.val}`,
+                    background: theme.surfaceHover.val,
+                    color: theme.textPrimary.val,
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCreateBoard}
+                  style={{
+                    cursor: "pointer",
+                    padding: "0.6rem 0.9rem",
+                    borderRadius: 10,
+                    border: `1px solid ${theme.accentDefault.val}`,
+                    background: theme.accentLight.val,
+                    color: theme.accentText.val,
+                    fontWeight: 600,
+                  }}
+                >
+                  Create board
+                </button>
+              </XStack>
+            </YStack>
+          </Card>
+        </div>
+      ) : null}
     </XStack>
   );
 }
