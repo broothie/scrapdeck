@@ -35,6 +35,11 @@ type LinkPreviewResponse = {
   previewImage?: string;
 };
 
+const MOBILE_LAYOUT_MEDIA_QUERY = [
+  "(max-width: 1024px)",
+  "(max-height: 640px) and (orientation: landscape)",
+].join(", ");
+
 function resolveSystemThemeMode(): AppThemeMode {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return "dark";
@@ -60,6 +65,14 @@ function resolveStoredThemePreference(): ThemePreference {
   }
 
   return "system";
+}
+
+function resolveIsMobileLayout() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+
+  return window.matchMedia(MOBILE_LAYOUT_MEDIA_QUERY).matches;
 }
 
 function normalizeGravatarHash(input: string) {
@@ -105,6 +118,7 @@ type BoardRoutePageProps = {
     caption?: string;
   }>;
   onResolveLinkPreview: (url: string) => Promise<LinkPreviewResponse>;
+  isMobileLayout?: boolean;
 };
 
 function BoardRoutePage({
@@ -119,6 +133,7 @@ function BoardRoutePage({
   onInviteCollaborator,
   onUploadImage,
   onResolveLinkPreview,
+  isMobileLayout = false,
 }: BoardRoutePageProps) {
   const theme = useTheme();
   const { boardId = "" } = useParams<{ boardId: string }>();
@@ -195,6 +210,7 @@ function BoardRoutePage({
           onInviteCollaborator={isBoardOwner ? ((email) => onInviteCollaborator(board.id, email)) : undefined}
           onUploadImage={onUploadImage}
           onResolveLinkPreview={onResolveLinkPreview}
+          isMobileLayout={isMobileLayout}
         />
       </View>
     </YStack>
@@ -213,6 +229,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   const deleteBoard = useAppStore((state) => state.deleteBoard);
   const setActiveBoard = useAppStore((state) => state.setActiveBoard);
   const { isConfigured, isLoading, user, username, saveUsername, signOut } = useAuth();
+  const [isMobileLayout, setIsMobileLayout] = useState(resolveIsMobileLayout);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [boardIdNeedingMetadataEdit, setBoardIdNeedingMetadataEdit] = useState<string | null>(null);
   const {
@@ -231,6 +248,41 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     }
   }, [activeBoardId, boardLoadError, boards, isBoardLoading, routeBoardId, setActiveBoard]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia(MOBILE_LAYOUT_MEDIA_QUERY);
+    const syncMobileLayout = () => {
+      setIsMobileLayout(mediaQuery.matches);
+    };
+
+    syncMobileLayout();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", syncMobileLayout);
+    } else {
+      mediaQuery.addListener(syncMobileLayout);
+    }
+
+    window.addEventListener("resize", syncMobileLayout);
+    window.addEventListener("orientationchange", syncMobileLayout);
+    window.visualViewport?.addEventListener("resize", syncMobileLayout);
+
+    return () => {
+      if (typeof mediaQuery.removeEventListener === "function") {
+        mediaQuery.removeEventListener("change", syncMobileLayout);
+      } else {
+        mediaQuery.removeListener(syncMobileLayout);
+      }
+
+      window.removeEventListener("resize", syncMobileLayout);
+      window.removeEventListener("orientationchange", syncMobileLayout);
+      window.visualViewport?.removeEventListener("resize", syncMobileLayout);
+    };
+  }, []);
+
   if (!isConfigured) {
     return <MissingSupabaseConfig />;
   }
@@ -239,7 +291,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     return (
       <YStack
         style={{
-          width: "var(--app-viewport-width)",
+          width: "100%",
           minHeight: "var(--app-viewport-height)",
           alignItems: "center",
           justifyContent: "center",
@@ -262,7 +314,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     return (
       <YStack
         style={{
-          width: "var(--app-viewport-width)",
+          width: "100%",
           minHeight: "var(--app-viewport-height)",
           alignItems: "center",
           justifyContent: "center",
@@ -277,7 +329,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     return (
       <YStack
         style={{
-          width: "var(--app-viewport-width)",
+          width: "100%",
           minHeight: "var(--app-viewport-height)",
           alignItems: "center",
           justifyContent: "center",
@@ -446,75 +498,80 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
   return (
     <XStack
       style={{
-        width: "var(--app-viewport-width)",
+        width: "100%",
         height: "var(--app-viewport-height)",
         backgroundColor: theme.canvas.val,
       }}
     >
-      <BoardSidebar
-        brandLogoUrl={brandLogoUrl}
-        activeBoardId={routeBoardId ?? ""}
-        currentUserId={user.id}
-        boards={boards}
-        onOpenBoards={() => navigate("/")}
-        onCreateBoard={handleCreateBoard}
-        onSelectBoard={handleSelectBoard}
-        onOpenBoardSettings={handleOpenBoardSettings}
-        accountUsername={username}
-        onOpenAccount={() => navigate("/account")}
-      />
-      <Routes>
-        <Route
-          path="/account"
-          element={(
-            <AccountPage
-              username={username}
-              email={user.email}
-              themePreference={themePreference}
-              onThemePreferenceChange={onThemePreferenceChange}
-              onSaveUsername={handleSaveUsername}
-              onSignOut={handleSignOut}
-              isSigningOut={isSigningOut}
-            />
-          )}
+      {!isMobileLayout ? (
+        <BoardSidebar
+          brandLogoUrl={brandLogoUrl}
+          activeBoardId={routeBoardId ?? ""}
+          currentUserId={user.id}
+          boards={boards}
+          onOpenBoards={() => navigate("/")}
+          onCreateBoard={handleCreateBoard}
+          onSelectBoard={handleSelectBoard}
+          onOpenBoardSettings={handleOpenBoardSettings}
+          accountUsername={username}
+          onOpenAccount={() => navigate("/account")}
         />
-        <Route
-          path="/"
-          element={boards.length > 0
-            ? (
-              <BoardsPage
-                boards={boards}
-                onOpenBoard={handleSelectBoard}
+      ) : null}
+      <View style={{ flex: 1, minHeight: 0, minWidth: 0 }}>
+        <Routes>
+          <Route
+            path="/account"
+            element={(
+              <AccountPage
+                username={username}
+                email={user.email}
+                themePreference={themePreference}
+                onThemePreferenceChange={onThemePreferenceChange}
+                onSaveUsername={handleSaveUsername}
+                onSignOut={handleSignOut}
+                isSigningOut={isSigningOut}
               />
-            )
-            : (
-              <YStack style={{ flex: 1, minHeight: 0 }}>
-                <EmptyBoardsState onCreateBoard={handleCreateBoard} />
-              </YStack>
             )}
-        />
-        <Route
-          path="/board/:boardId"
-          element={(
-            <BoardRoutePage
-              boards={boards}
-              currentUserId={user.id}
-              currentUsername={username}
-              currentUserEmailHash={resolveEmailHash(user.email)}
-              boardSaveError={boardSaveError}
-              boardIdNeedingMetadataEdit={boardIdNeedingMetadataEdit}
-              onMetadataEditorOpenHandled={(boardId) => {
-                setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
-              }}
-              onDeleteBoard={handleDeleteBoard}
-              onInviteCollaborator={handleInviteCollaborator}
-              onUploadImage={handleUploadImage}
-              onResolveLinkPreview={handleResolveLinkPreview}
-            />
-          )}
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          />
+          <Route
+            path="/"
+            element={boards.length > 0
+              ? (
+                <BoardsPage
+                  boards={boards}
+                  onOpenBoard={handleSelectBoard}
+                />
+              )
+              : (
+                <YStack style={{ flex: 1, minHeight: 0 }}>
+                  <EmptyBoardsState onCreateBoard={handleCreateBoard} />
+                </YStack>
+              )}
+          />
+          <Route
+            path="/board/:boardId"
+            element={(
+              <BoardRoutePage
+                boards={boards}
+                currentUserId={user.id}
+                currentUsername={username}
+                currentUserEmailHash={resolveEmailHash(user.email)}
+                boardSaveError={boardSaveError}
+                boardIdNeedingMetadataEdit={boardIdNeedingMetadataEdit}
+                onMetadataEditorOpenHandled={(boardId) => {
+                  setBoardIdNeedingMetadataEdit((current) => (current === boardId ? null : current));
+                }}
+                onDeleteBoard={handleDeleteBoard}
+                onInviteCollaborator={handleInviteCollaborator}
+                onUploadImage={handleUploadImage}
+                onResolveLinkPreview={handleResolveLinkPreview}
+                isMobileLayout={isMobileLayout}
+              />
+            )}
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </View>
     </XStack>
   );
 }

@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, H2, Input, Paragraph, Text, XStack, YStack, useTheme } from "tamagui";
 import type { Board } from "@plumboard/core";
 import { BoardSurface } from "./BoardSurface";
 import { useBoardMetadataEditor } from "./useBoardMetadataEditor";
 import { useNoteComposer } from "./useNoteComposer";
 import { AppButton } from "../primitives/AppButton";
+import { ImageNoteCard } from "./notes/ImageNote";
+import { LinkNoteCard } from "./notes/LinkNote";
 
 type BoardViewProps = {
   board: Board;
@@ -31,6 +33,7 @@ type BoardViewProps = {
     description?: string;
     previewImage?: string;
   }>;
+  isMobileLayout?: boolean;
 };
 
 export function BoardView({
@@ -43,6 +46,7 @@ export function BoardView({
   onInviteCollaborator,
   onUploadImage,
   onResolveLinkPreview,
+  isMobileLayout = false,
 }: BoardViewProps) {
   const theme = useTheme();
   const [activeLightboxImageNoteId, setActiveLightboxImageNoteId] = useState<string | null>(null);
@@ -223,6 +227,14 @@ export function BoardView({
     setActiveLightboxImageNoteId(noteId);
     return true;
   }, [board.notes]);
+  const sortedNotesForMobile = useMemo(() =>
+    [...board.notes].sort((leftNote, rightNote) => {
+      if (leftNote.y !== rightNote.y) {
+        return leftNote.y - rightNote.y;
+      }
+
+      return leftNote.x - rightNote.x;
+    }), [board.notes]);
 
   return (
     <YStack flex={1} style={{ minHeight: 0 }}>
@@ -237,8 +249,9 @@ export function BoardView({
         <YStack style={{ gap: "0.25rem" }}>
           <XStack
             style={{
-              alignItems: "center",
+              alignItems: isMobileLayout ? "flex-start" : "center",
               justifyContent: "space-between",
+              flexDirection: isMobileLayout ? "column" : "row",
               gap: "1rem",
               width: "100%",
             }}
@@ -255,10 +268,10 @@ export function BoardView({
               <XStack
                 style={{
                   alignItems: "center",
-                  justifyContent: "flex-end",
+                  justifyContent: isMobileLayout ? "flex-start" : "flex-end",
                   flexWrap: "wrap",
                   gap: "0.4rem",
-                  maxWidth: 340,
+                  maxWidth: isMobileLayout ? "100%" : 340,
                 }}
               >
                 {presenceParticipants.slice(0, 4).map((participant) => (
@@ -317,39 +330,113 @@ export function BoardView({
         ) : null}
       </YStack>
 
-      <BoardSurface
-        board={board}
-        isUploadingFile={isUploadingFile}
-        onCreateTextNote={handleAddTextNote}
-        onCreateTextNoteAtPosition={handleAddTextNoteAtPosition}
-        onCreateFile={handleAddFile}
-        onCreateFileAtPosition={handleAddFileAtPosition}
-        onCreateLink={handleAddLink}
-        onCreateLinkAtPosition={handleAddLinkAtPosition}
-        onEditImageNote={handleEditFileFromContextMenu}
-        onEditLinkNote={handleEditLinkFromContextMenu}
-        onViewImageNote={handleViewImageFromContextMenu}
-        activeLightboxImageNoteId={activeLightboxImageNoteId}
-        onLightboxImageNoteHandled={(noteId) => {
-          setActiveLightboxImageNoteId((current) => (current === noteId ? null : current));
-        }}
-        autoEditTextNoteId={autoEditTextNoteId}
-        onAutoEditTextNoteHandled={handleAutoEditTextNoteHandled}
-        placementPreview={
-          placementIntent
-            ? {
-                type: placementIntent.type,
-                width: placementIntent.width,
-                height: placementIntent.height,
-              }
-            : null
-        }
-        onPlaceNote={handlePlaceNote}
-        onDropFileAtPosition={handleDropFileAtPosition}
-        onDropLinkAtPosition={handleDropLinkAtPosition}
-      />
+      {isMobileLayout ? (
+        <YStack
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            padding: "0.95rem",
+            backgroundColor: theme.surface.val,
+          }}
+        >
+          <YStack gap="$3">
+            {sortedNotesForMobile.length === 0 ? (
+              <Card style={{ borderWidth: 1, borderColor: theme.borderDefault.val }}>
+                <Card.Header style={{ padding: "1rem" }}>
+                  <Paragraph style={{ margin: 0, color: theme.textSecondary.val }}>
+                    No notes yet on this board.
+                  </Paragraph>
+                </Card.Header>
+              </Card>
+            ) : sortedNotesForMobile.map((note) => (
+              <div
+                key={note.id}
+                style={{
+                  width: "100%",
+                }}
+              >
+                {note.type === "text" ? (
+                  <Card
+                    style={{
+                      borderRadius: 18,
+                      borderWidth: 1,
+                      borderColor: theme.borderSubtle.val,
+                    }}
+                  >
+                    <Card.Header style={{ padding: "0.72rem 0.8rem" }}>
+                      <div
+                        className="plumboard-note-prose"
+                        style={{
+                          color: theme.textPrimary.val,
+                          lineHeight: 1.35,
+                          overflowWrap: "anywhere",
+                        }}
+                        // eslint-disable-next-line react/no-danger
+                        dangerouslySetInnerHTML={{ __html: normalizeTextNoteBodyForRead(note.body) }}
+                      />
+                    </Card.Header>
+                  </Card>
+                ) : null}
+                {note.type === "image" ? (
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: resolveMobileCardAspectRatio(note.width, note.height),
+                    }}
+                  >
+                    <ImageNoteCard note={note} />
+                  </div>
+                ) : null}
+                {note.type === "link" ? (
+                  <div
+                    style={{
+                      width: "100%",
+                      aspectRatio: resolveMobileCardAspectRatio(note.width, note.height),
+                    }}
+                  >
+                    <LinkNoteCard note={note} />
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </YStack>
+        </YStack>
+      ) : (
+        <>
+          <BoardSurface
+            board={board}
+            isUploadingFile={isUploadingFile}
+            onCreateTextNote={handleAddTextNote}
+            onCreateTextNoteAtPosition={handleAddTextNoteAtPosition}
+            onCreateFile={handleAddFile}
+            onCreateFileAtPosition={handleAddFileAtPosition}
+            onCreateLink={handleAddLink}
+            onCreateLinkAtPosition={handleAddLinkAtPosition}
+            onEditImageNote={handleEditFileFromContextMenu}
+            onEditLinkNote={handleEditLinkFromContextMenu}
+            onViewImageNote={handleViewImageFromContextMenu}
+            activeLightboxImageNoteId={activeLightboxImageNoteId}
+            onLightboxImageNoteHandled={(noteId) => {
+              setActiveLightboxImageNoteId((current) => (current === noteId ? null : current));
+            }}
+            autoEditTextNoteId={autoEditTextNoteId}
+            onAutoEditTextNoteHandled={handleAutoEditTextNoteHandled}
+            placementPreview={
+              placementIntent
+                ? {
+                    type: placementIntent.type,
+                    width: placementIntent.width,
+                    height: placementIntent.height,
+                  }
+                : null
+            }
+            onPlaceNote={handlePlaceNote}
+            onDropFileAtPosition={handleDropFileAtPosition}
+            onDropLinkAtPosition={handleDropLinkAtPosition}
+          />
 
-      {isAddingFile ? (
+          {isAddingFile ? (
         <div
           role="dialog"
           aria-modal="true"
@@ -446,9 +533,9 @@ export function BoardView({
             </YStack>
           </Card>
         </div>
-      ) : null}
+          ) : null}
 
-      {isAddingLink ? (
+          {isAddingLink ? (
         <div
           role="dialog"
           aria-modal="true"
@@ -574,7 +661,9 @@ export function BoardView({
             </YStack>
           </Card>
         </div>
-      ) : null}
+          ) : null}
+        </>
+      )}
 
       {isEditingBoardMetadata ? (
         <div
@@ -722,4 +811,34 @@ export function BoardView({
       ) : null}
     </YStack>
   );
+}
+
+function resolveMobileCardAspectRatio(width: number, height: number) {
+  const safeWidth = Number.isFinite(width) && width > 0 ? width : 1;
+  const safeHeight = Number.isFinite(height) && height > 0 ? height : 1;
+
+  return `${safeWidth} / ${safeHeight}`;
+}
+
+function normalizeTextNoteBodyForRead(body: string) {
+  const trimmed = body.trim();
+
+  if (!trimmed) {
+    return "<p></p>";
+  }
+
+  if (/<\/?[a-z][\s\S]*>/i.test(body)) {
+    return body;
+  }
+
+  return `<p>${escapeHtml(body).replace(/\n/g, "<br/>")}</p>`;
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
