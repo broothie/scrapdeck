@@ -14,6 +14,7 @@ import { MissingSupabaseConfig } from "../auth/MissingSupabaseConfig";
 import { UsernameSetupScreen } from "../auth/UsernameSetupScreen";
 import { useBoardPresence } from "../data/useBoardPresence";
 import { useBoardSync } from "../data/useBoardSync";
+import { createRandomBoardTitle } from "./createBoardTitle";
 
 function createId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
@@ -375,7 +376,7 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
 
     addBoard({
       id: boardId,
-      title: "Untitled board",
+      title: createRandomBoardTitle(),
       description: "",
       ownerUserId: user.id,
       notes: [],
