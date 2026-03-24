@@ -49,6 +49,7 @@ export function UsernameSetupScreen() {
   return (
     <YStack
       style={{
+        width: "var(--app-viewport-width)",
         minHeight: "var(--app-viewport-height)",
         alignItems: "center",
         justifyContent: "center",
