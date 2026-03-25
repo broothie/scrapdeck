@@ -66,7 +66,11 @@ export function BoardView({
   const [inviteError, setInviteError] = useState("");
   const [inviteSuccess, setInviteSuccess] = useState("");
   const [isInvitingCollaborator, setIsInvitingCollaborator] = useState(false);
-  const extraPresenceCount = Math.max(0, presenceParticipants.length - 4);
+  const otherPresenceParticipants = useMemo(
+    () => presenceParticipants.filter((participant) => !participant.isCurrentUser),
+    [presenceParticipants],
+  );
+  const extraPresenceCount = Math.max(0, otherPresenceParticipants.length - 4);
   const {
     isEditingBoardMetadata,
     boardTitleDraft,
@@ -282,7 +286,7 @@ export function BoardView({
                 {`Owned by ${ownerUsername}`}
               </Text>
             </XStack>
-            {presenceParticipants.length > 0 ? (
+            {otherPresenceParticipants.length > 0 ? (
               <XStack
                 style={{
                   alignItems: "center",
@@ -292,7 +296,7 @@ export function BoardView({
                   maxWidth: isMobileLayout ? "100%" : 340,
                 }}
               >
-                {presenceParticipants.slice(0, 4).map((participant) => (
+                {otherPresenceParticipants.slice(0, 4).map((participant) => (
                   <XStack
                     key={participant.id}
                     style={{
@@ -334,7 +338,7 @@ export function BoardView({
                         color: participant.isCurrentSession ? theme.accentText.val : theme.textSecondary.val,
                       }}
                     >
-                      {participant.isCurrentSession ? "You" : participant.name}
+                      {participant.name}
                     </Text>
                   </XStack>
                 ))}
