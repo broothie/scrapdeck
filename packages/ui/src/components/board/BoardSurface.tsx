@@ -132,6 +132,7 @@ export function BoardSurface({
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [viewportRevision, setViewportRevision] = useState(0);
   const isDraggingNoteRef = useRef(false);
+  const isResizingNoteRef = useRef(false);
   const cursorEmitTimeoutRef = useRef<number | null>(null);
   const lastCursorEmitAtRef = useRef(0);
   const lastEmittedCursorRef = useRef<string>("none");
@@ -290,7 +291,7 @@ export function BoardSurface({
   }, [onSelectedNoteIdsChange]);
 
   useEffect(() => {
-    if (isDraggingNoteRef.current) {
+    if (isDraggingNoteRef.current || isResizingNoteRef.current) {
       return;
     }
 
@@ -330,10 +331,14 @@ export function BoardSurface({
 
               updateNoteLayout(board.id, noteId, { height: nextHeight });
             },
+            onResizeStart: () => {
+              isResizingNoteRef.current = true;
+            },
             onResizeEnd: (
               noteId: string,
               nextLayout: Pick<Note, "x" | "y" | "width" | "height">,
             ) => {
+              isResizingNoteRef.current = false;
               updateNoteLayout(board.id, noteId, nextLayout);
             },
             shouldStartEditing: note.type === "text" && autoEditTextNoteId === note.id,
@@ -365,6 +370,8 @@ export function BoardSurface({
     setIsDropOverlayVisible(false);
     setDragPlacementPreview(null);
     setDragPlacementPosition(null);
+    isDraggingNoteRef.current = false;
+    isResizingNoteRef.current = false;
     emitCursorPosition(null);
     emitSelectedNoteIds([]);
   }, [board.id]);

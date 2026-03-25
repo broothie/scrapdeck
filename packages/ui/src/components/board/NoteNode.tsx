@@ -24,6 +24,7 @@ export type NoteNodeData = {
   }>;
   onMenuAction: (noteId: string, action: NoteContextMenuAction) => void;
   onAutoGrowHeight: (noteId: string, nextHeight: number) => void;
+  onResizeStart?: (noteId: string) => void;
   onResizeEnd: (
     noteId: string,
     nextLayout: Pick<Note, "x" | "y" | "width" | "height">,
@@ -72,6 +73,9 @@ function NoteNodeComponent({
           borderRadius: 999,
           border: "1px solid #dce4ff",
           background: "#7f8cff",
+        }}
+        onResizeStart={() => {
+          data.onResizeStart?.(data.note.id);
         }}
         onResizeEnd={(_, params) => {
           data.onResizeEnd(data.note.id, {
