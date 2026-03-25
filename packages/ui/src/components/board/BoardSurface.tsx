@@ -131,6 +131,7 @@ export function BoardSurface({
   const [canvasAddMenu, setCanvasAddMenu] = useState<CanvasAddMenuState | null>(null);
   const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
   const [viewportRevision, setViewportRevision] = useState(0);
+  const isDraggingNoteRef = useRef(false);
   const cursorEmitTimeoutRef = useRef<number | null>(null);
   const lastCursorEmitAtRef = useRef(0);
   const lastEmittedCursorRef = useRef<string>("none");
@@ -153,22 +154,56 @@ export function BoardSurface({
     onEditLinkNote,
     onViewImageNote,
   });
+  const remoteSelectionsSignature = useMemo(() =>
+    JSON.stringify(
+      remotePresenceParticipants
+        .filter((participant) => (participant.selectedNoteIds?.length ?? 0) > 0)
+        .map((participant) => ({
+          id: participant.id,
+          name: participant.name,
+          color: participant.color ?? null,
+          selectedNoteIds: [...new Set(participant.selectedNoteIds ?? [])].sort(),
+        }))
+        .sort((left, right) => left.id.localeCompare(right.id)),
+    ), [remotePresenceParticipants]);
   const remoteSelectionsByNoteId = useMemo(() => {
     const selections = new Map<string, Array<{ name: string; color?: string }>>();
 
-    remotePresenceParticipants.forEach((participant) => {
-      participant.selectedNoteIds?.forEach((noteId) => {
+    if (!remoteSelectionsSignature) {
+      return selections;
+    }
+
+    let parsedParticipants: Array<{
+      id: string;
+      name: string;
+      color: string | null;
+      selectedNoteIds: string[];
+    }> = [];
+
+    try {
+      parsedParticipants = JSON.parse(remoteSelectionsSignature) as Array<{
+        id: string;
+        name: string;
+        color: string | null;
+        selectedNoteIds: string[];
+      }>;
+    } catch {
+      return selections;
+    }
+
+    parsedParticipants.forEach((participant) => {
+      participant.selectedNoteIds.forEach((noteId) => {
         const currentSelections = selections.get(noteId) ?? [];
         currentSelections.push({
           name: participant.name,
-          color: participant.color,
+          color: participant.color ?? undefined,
         });
         selections.set(noteId, currentSelections);
       });
     });
 
     return selections;
-  }, [remotePresenceParticipants]);
+  }, [remoteSelectionsSignature]);
   const remoteCursorOverlays = useMemo(() => {
     if (!flowInstance) {
       return [];
@@ -255,6 +290,10 @@ export function BoardSurface({
   }, [onSelectedNoteIdsChange]);
 
   useEffect(() => {
+    if (isDraggingNoteRef.current) {
+      return;
+    }
+
     setNodes((previousNodes) => {
       const selectedNodeIds = new Set(
         previousNodes
@@ -393,6 +432,8 @@ export function BoardSurface({
   }, [canvasAddMenu, isFabMenuOpen, noteContextMenu]);
 
   const handleNodeDragStop = (_event: unknown, node: Node) => {
+    isDraggingNoteRef.current = false;
+
     if (node.type !== "note") {
       return;
     }
@@ -403,6 +444,9 @@ export function BoardSurface({
       x: noteNode.position.x,
       y: noteNode.position.y,
     });
+  };
+  const handleNodeDragStart = () => {
+    isDraggingNoteRef.current = true;
   };
 
   const runNoteContextMenuAction = (action: NoteContextMenuAction) => {
@@ -768,6 +812,7 @@ export function BoardSurface({
         edges={[]}
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
+        onNodeDragStart={handleNodeDragStart}
         onNodeDragStop={handleNodeDragStop}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneContextMenu={handlePaneContextMenu}

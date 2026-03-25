@@ -239,6 +239,12 @@ export function BoardView({
     setActiveLightboxImageNoteId(noteId);
     return true;
   }, [board.notes]);
+  const handleLightboxImageNoteHandledForSurface = useCallback((noteId: string) => {
+    setActiveLightboxImageNoteId((current) => (current === noteId ? null : current));
+  }, []);
+  const handleAutoEditTextNoteHandledForSurface = useCallback((noteId: string) => {
+    handleAutoEditTextNoteHandled(noteId);
+  }, [handleAutoEditTextNoteHandled]);
   const sortedNotesForMobile = useMemo(() =>
     [...board.notes].sort((leftNote, rightNote) => {
       if (leftNote.y !== rightNote.y) {
@@ -441,11 +447,9 @@ export function BoardView({
             onEditLinkNote={handleEditLinkFromContextMenu}
             onViewImageNote={handleViewImageFromContextMenu}
             activeLightboxImageNoteId={activeLightboxImageNoteId}
-            onLightboxImageNoteHandled={(noteId) => {
-              setActiveLightboxImageNoteId((current) => (current === noteId ? null : current));
-            }}
+            onLightboxImageNoteHandled={handleLightboxImageNoteHandledForSurface}
             autoEditTextNoteId={autoEditTextNoteId}
-            onAutoEditTextNoteHandled={handleAutoEditTextNoteHandled}
+            onAutoEditTextNoteHandled={handleAutoEditTextNoteHandledForSurface}
             placementPreview={
               placementIntent
                 ? {
