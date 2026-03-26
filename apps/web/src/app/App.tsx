@@ -51,6 +51,7 @@ const PRESENCE_COLORS = [
   "#E8590C",
   "#7950F2",
 ];
+const APP_TITLE = "Plumboard";
 
 function resolvePresenceColor(seed: string) {
   if (!seed) {
@@ -305,6 +306,22 @@ function AppShell({ themePreference, onThemePreferenceChange }: AppShellProps) {
     setLocalCursorPosition(null);
     setLocalSelectedNoteIds([]);
   }, [routeBoardId]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    if (!routeBoardId) {
+      document.title = APP_TITLE;
+      return;
+    }
+
+    const routeBoard = boards.find((board) => board.id === routeBoardId);
+    document.title = routeBoard
+      ? `${routeBoard.title} - ${APP_TITLE}`
+      : APP_TITLE;
+  }, [boards, routeBoardId]);
 
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
