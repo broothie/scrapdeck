@@ -243,6 +243,7 @@ export async function saveBoards(
   if (!supabase) {
     throw new Error("Supabase is not configured.");
   }
+  const supabaseClient = supabase;
 
   const boardById = new Map(boards.map((board) => [board.id, board]));
   const noteById = mapBoardNotesById(boards);
@@ -256,7 +257,7 @@ export async function saveBoards(
   if (boardRowsToUpsert.length > 0) {
     const boardUpdateResults = await Promise.all(
       boardRowsToUpsert.map((boardRow) => (
-        supabase
+        supabaseClient
           .from("boards")
           .update({
             title: boardRow.title,
@@ -284,7 +285,7 @@ export async function saveBoards(
     if (boardRowsToInsert.length > 0) {
       const boardInsertResults = await Promise.all(
         boardRowsToInsert.map((boardRow) => (
-          supabase
+          supabaseClient
             .from("boards")
             .insert(boardRow)
         )),
@@ -301,7 +302,7 @@ export async function saveBoards(
   const boardIdsToSoftDelete = [...new Set(changeSet.boardDeleteIds)];
 
   if (boardIdsToSoftDelete.length > 0) {
-    const { error: boardDeleteError } = await supabase
+    const { error: boardDeleteError } = await supabaseClient
       .from("boards")
       .update({ deleted_at: new Date().toISOString() })
       .eq("user_id", userId)
@@ -325,7 +326,7 @@ export async function saveBoards(
     .filter((row): row is NoteInsert => Boolean(row));
 
   if (noteRowsToUpsert.length > 0) {
-    const { error: noteUpsertError } = await supabase
+    const { error: noteUpsertError } = await supabaseClient
       .from("notes")
       .upsert(noteRowsToUpsert, { onConflict: "id" });
 
@@ -337,7 +338,7 @@ export async function saveBoards(
   const noteIdsToSoftDelete = [...new Set(changeSet.noteDeleteIds)];
 
   if (noteIdsToSoftDelete.length > 0) {
-    const { error: noteDeleteError } = await supabase
+    const { error: noteDeleteError } = await supabaseClient
       .from("notes")
       .update({ deleted_at: new Date().toISOString() })
       .is("deleted_at", null)
