@@ -22,7 +22,11 @@ export const placementColors = {
 } as const;
 
 export function createNoteId(prefix: Note["type"]) {
-  return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}-${crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 export function resolveNoteDefaults(type: Note["type"]) {

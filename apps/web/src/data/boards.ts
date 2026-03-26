@@ -85,7 +85,7 @@ export function mapNoteToRow(userId: string, boardId: string, note: Note): NoteI
 export function mapBoardToRow(userId: string, board: Board): BoardInsert {
   return {
     id: board.id,
-    user_id: userId,
+    user_id: board.ownerUserId ?? userId,
     title: board.title,
     description: board.description,
     deleted_at: null,
@@ -254,12 +254,47 @@ export async function saveBoards(
     .map((board) => mapBoardToRow(userId, board));
 
   if (boardRowsToUpsert.length > 0) {
-    const { error: boardUpsertError } = await supabase
-      .from("boards")
-      .upsert(boardRowsToUpsert, { onConflict: "id" });
+    const boardUpdateResults = await Promise.all(
+      boardRowsToUpsert.map((boardRow) => (
+        supabase
+          .from("boards")
+          .update({
+            title: boardRow.title,
+            description: boardRow.description,
+            deleted_at: null,
+          })
+          .eq("id", boardRow.id)
+          .select("id")
+          .limit(1)
+      )),
+    );
 
-    if (boardUpsertError) {
-      throw boardUpsertError;
+    const boardRowsToInsert: BoardInsert[] = [];
+
+    for (const [index, boardUpdateResult] of boardUpdateResults.entries()) {
+      if (boardUpdateResult.error) {
+        throw boardUpdateResult.error;
+      }
+
+      if (!boardUpdateResult.data || boardUpdateResult.data.length === 0) {
+        boardRowsToInsert.push(boardRowsToUpsert[index]);
+      }
+    }
+
+    if (boardRowsToInsert.length > 0) {
+      const boardInsertResults = await Promise.all(
+        boardRowsToInsert.map((boardRow) => (
+          supabase
+            .from("boards")
+            .insert(boardRow)
+        )),
+      );
+
+      for (const boardInsertResult of boardInsertResults) {
+        if (boardInsertResult.error && boardInsertResult.error.code !== "23505") {
+          throw boardInsertResult.error;
+        }
+      }
     }
   }
 
